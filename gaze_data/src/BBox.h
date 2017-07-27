@@ -8,10 +8,11 @@ class CImage;
 class CBBox : public CBaseBBox
 {
 public:
-	CBBox( CBaseBBox &baseBBox, const cv::Rect &rect, const char *szName ) :
+	inline CBBox( CBaseBBox &baseBBox, const cv::Rect &rect, const char *szName ) :
 		CBaseBBox( baseBBox, rect.x, rect.y, rect.width, rect.height, szName )
 	{
-
+		printf( "Creating BBox \"%s\"; ", szName );
+		printf( "Parent: \"%s\"\n", baseBBox.GetName( ) );
 	}
 	
 	CBBox( CPoint &pt, float rWidth, float rHeight, const char *szName ) :
