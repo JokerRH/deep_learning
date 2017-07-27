@@ -11,10 +11,10 @@ class CLandmarkCandidate
 public:
 	static std::vector<CLandmarkCandidate> GetCandidates( CImage &img );
 	static void Init( void );
-	CLandmarkCandidate( const CBBox &boxFace ) :
+	inline CLandmarkCandidate( const CBBox &boxFace ) :
 		boxFace( boxFace )
 	{
-
+		printf( "Creating new landmark at %p from face at %p\n", this, &boxFace );
 	}
 	void Draw( CImage &img );
 
@@ -23,6 +23,7 @@ public:
 	std::deque<CBBox> aNose;
 
 private:
+	CLandmarkCandidate( const CLandmarkCandidate &other ) = delete;
 
 	static cv::CascadeClassifier s_FaceCascade;
 	static cv::CascadeClassifier s_EyeCascade;

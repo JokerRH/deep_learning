@@ -1,25 +1,11 @@
 #pragma once
 
-class CImage;
-class CPoint;
+#include <assert.h>
+#include "BaseHighlighter.h"
 
-class CBaseBBox
+class CBaseBBox : public CBaseHighlighter
 {
 public:
-	virtual inline unsigned int GetPositionX( unsigned int uLevel = -1 ) const
-	{
-		register unsigned int uPositionX = m_pParentBox->GetPositionX( uLevel );
-		register unsigned int uWidth = m_pParentBox->GetWidth( uLevel );
-		return uPositionX + (unsigned int ) ( uWidth * m_rPositionX );
-	}
-
-	virtual inline unsigned int GetPositionY( unsigned int uLevel = -1 ) const
-	{
-		register unsigned int uPositionY = m_pParentBox->GetPositionY( uLevel );
-		register unsigned int uHeight = m_pParentBox->GetHeight( uLevel );
-		return uPositionY + (unsigned int ) ( uHeight * m_rPositionY );
-	}
-
 	virtual inline unsigned int GetWidth( unsigned int uLevel = -1 ) const
 	{
 		register unsigned int uWidth = m_pParentBox->GetWidth( uLevel );
@@ -31,7 +17,47 @@ public:
 		register unsigned int uHeight = m_pParentBox->GetHeight( uLevel );
 		return (unsigned int) ( uHeight * m_rHeight );
 	}
+
+	inline CBaseBBox *GetParent( unsigned int uLevel = -1 ) override
+	{
+		if( !m_pParentBox || !uLevel-- )
+			return this;
+
+		return m_pParentBox->GetParent( uLevel );
+	}
 	
+	virtual void TransferOwnership( unsigned int uLevel = 1 );
+	virtual void TransferOwnership( CBaseBBox &baseBBox );
+
+protected:
+	CBaseBBox( const char *szName ) :
+		CBaseHighlighter( szName )
+	{
+
+	}
+	
+	CBaseBBox( const CBaseBBox &other ) :
+		CBaseHighlighter( other ),
+		m_rWidth( other.m_rWidth ),
+		m_rHeight( other.m_rHeight )
+	{
+
+	}
+
+	inline CBaseBBox( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uWidth, unsigned int uHeight, unsigned int uLevel, const char *szName ) :
+		CBaseHighlighter( parentBox, uX, uY, uLevel, szName ),
+		m_rWidth( uWidth / (float) baseBBox.GetWidth( uLevel ) ),
+		m_rHeight( uHeight / (float) baseBBox.GetHeight( uLevel ) )
+	{
+		assert( m_rWidth >= 0.0 && m_rPositionX + m_rWidth <= 1.0 );
+		assert( m_rHeight >= 0.0 && m_rPositionY + m_rHeight <= 1.0 );
+	}
+
+	float m_rWidth = 1;		///Width in % of parent's width
+	float m_rHeight = 1;	///Height in % of parent's height
+};
+
+#if 0
 	virtual inline float GetRelPositionX( unsigned int uLevel = 0 ) const
 	{
 		if( !m_pParentBox || !uLevel-- )
@@ -69,74 +95,7 @@ public:
 		register float rHeight = m_pParentBox->GetRelHeight( uLevel );
 		return rHeight * m_rHeight;
 	}
-	
-	virtual inline CImage *GetImage( unsigned int uLevel = -1 )
-	{
-		return m_pParentBox->GetImage( uLevel );
-	}
 
-	inline CBaseBBox *GetParent( unsigned int uLevel = -1 )
-	{
-		if( !m_pParentBox || !uLevel-- )
-			return this;
-
-		return m_pParentBox->GetParent( uLevel );
-	}
-	
-	virtual inline void TransferOwnership( unsigned int uLevel = 1 )
-	{
-		while( uLevel-- )
-		{
-			if( !m_pParentBox->m_pParentBox )
-				break;	//Parent is top level image
-
-			m_rPositionX = m_pParentBox->m_rPositionX + m_pParentBox->m_rWidth * m_rPositionX;
-			m_rPositionY = m_pParentBox->m_rPositionY + m_pParentBox->m_rHeight * m_rPositionY;
-			m_rWidth *= m_pParentBox->m_rWidth;
-			m_rHeight *= m_pParentBox->m_rHeight;
-
-			m_pParentBox = m_pParentBox->m_pParentBox;
-		}
-	}
-	
-	virtual inline void TransferOwnership( CBaseBBox &baseBBox )
-	{
-		m_rPositionX = ( GetPositionX( ) - baseBBox.GetPositionX( ) ) / (float) baseBBox.GetWidth( );
-		m_rPositionY = ( GetPositionY( ) - baseBBox.GetPositionY( ) ) / (float) baseBBox.GetHeight( );
-		m_rWidth = GetWidth( ) / (float) baseBBox.GetWidth( );
-		m_rHeight = GetHeight( ) / (float) baseBBox.GetHeight( );
-		m_pParentBox = &baseBBox;
-	}
-	
-	inline const char *GetName( void )
-	{
-		return m_szName;
-	}
-
-protected:
-	inline CBaseBBox( const char *szName ) :
-		m_pParentBox( nullptr )
-	{
-		strncpy( m_szName, szName, 32 );
-		m_szName[ 31 ] = 0;
-	}
-	
-	inline CBaseBBox( const CBaseBBox &box )
-	{
-		memcpy( this, &box, sizeof( CBaseBBox ) );
-	}
-
-	inline CBaseBBox( CBaseBBox &baseBBox, unsigned int uX, unsigned int uY, unsigned int uWidth, unsigned int uHeight, const char *szName ) :
-		m_pParentBox( &baseBBox ),
-		m_rPositionX( uX / (float) baseBBox.GetWidth( ) ),
-		m_rPositionY( uY / (float) baseBBox.GetHeight( ) ),
-		m_rWidth( uWidth / (float) baseBBox.GetWidth( ) ),
-		m_rHeight( uHeight / (float) baseBBox.GetHeight( ) )
-	{
-		strncpy( m_szName, szName, 32 );
-		m_szName[ 31 ] = 0;
-	}
-	
 	inline CBaseBBox( float rX, float rY, float rWidth, float rHeight, CBaseBBox &baseBBox, const char *szName ) :
 		m_pParentBox( &baseBBox ),
 		m_rPositionX( rX ),
@@ -147,13 +106,4 @@ protected:
 		strncpy( m_szName, szName, 32 );
 		m_szName[ 31 ] = 0;
 	}
-
-	CBaseBBox *m_pParentBox;
-	char m_szName[ 32 ];
-	float m_rPositionX = 0;	//Left X-position in % of parent's width
-	float m_rPositionY = 0;	//Top Y-position in % of parent's height
-	float m_rWidth = 1;		//Width in % of parent's width
-	float m_rHeight = 1;	//Height in % of parent's height
-	
-	friend CPoint;
-};
+#endif

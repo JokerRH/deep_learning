@@ -11,10 +11,17 @@ public:
 	inline CBBox( CBaseBBox &baseBBox, const cv::Rect &rect, const char *szName ) :
 		CBaseBBox( baseBBox, rect.x, rect.y, rect.width, rect.height, szName )
 	{
-		printf( "Creating BBox \"%s\"; ", szName );
-		printf( "Parent: \"%s\"\n", baseBBox.GetName( ) );
+		printf( "Creating BBox \"%s\" at %p; ", GetName( ), this );
+		printf( "Parent: \"%s\" at %p\n", baseBBox.GetName( ), &baseBBox );
 	}
 	
+	inline CBBox( const CBBox &box ) :
+		CBaseBBox( box )
+	{
+		printf( "Copied BBox \"%s\" at %p; ", GetName( ), this );
+		printf( "Parent: \"%s\" at %p\n", GetParent( 1 )->GetName( ), GetParent( 1 ) );
+	}
+	/*
 	CBBox( CPoint &pt, float rWidth, float rHeight, const char *szName ) :
 		CBaseBBox( pt.m_rPositionX - rWidth / 2, pt.m_rPositionY - rHeight / 2, rWidth, rHeight, *pt.m_pParentBox, szName )
 	{
@@ -26,6 +33,7 @@ public:
 	{
 
 	}
+	*/
 
 	inline void Draw( const cv::Scalar &color, int iThickness = 2, unsigned int uLevel = -1 )
 	{
@@ -46,9 +54,11 @@ public:
 		m_rPositionY += m_rHeight * rShiftY;
 	}
 
+	/*
 	inline CBBox &operator=( const CBBox &other )
 	{
 		memcpy( this, &other, sizeof( CBBox ) );
 		return *this;
 	}
+	*/
 };

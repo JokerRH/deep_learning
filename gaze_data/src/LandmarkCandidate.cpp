@@ -23,31 +23,48 @@ std::vector<CLandmarkCandidate> CLandmarkCandidate::GetCandidates( CImage &img )
 	CImage imgFace( "Image_Face", matFace );
 	std::vector<CLandmarkCandidate> vecLandmarks;
 	std::vector<Rect> vecDetected;
+	printf( "Size: %lu\n", vecFaces.size( ) );
 	for( std::vector<Rect>::iterator prectFace = vecFaces.begin( ); prectFace < vecFaces.end( ); prectFace++ )
 	{
 		vecLandmarks.emplace_back( CBBox( imgGray, *prectFace, "BBox_Face" ) );
 		imgFace.Crop( vecLandmarks.back( ).boxFace );
 
-		vecDetected.clear( );
 		s_EyeCascade.detectMultiScale( matFace, vecDetected, 1.1, 10, CV_HAAR_SCALE_IMAGE, Size( 30, 30 ) );
 		for( std::vector<Rect>::iterator prectEye = vecDetected.begin( ); prectEye < vecDetected.end( ); prectEye++ )
 			vecLandmarks.back( ).aEyes.emplace_back( vecLandmarks.back( ).boxFace, *prectEye, "BBox_Eye" );
 
-		vecDetected.clear( );
 		s_NoseCascade.detectMultiScale( matFace, vecDetected, 1.1, 10, CV_HAAR_SCALE_IMAGE, Size( 30, 30 ) );
 		for( std::vector<Rect>::iterator prectNose = vecDetected.begin( ); prectNose < vecDetected.end( ); prectNose++ )
 			vecLandmarks.back( ).aNose.emplace_back( vecLandmarks.back( ).boxFace, *prectNose, "BBox_Nose" );
 
 		vecLandmarks.back( ).boxFace.TransferOwnership( 1 );
+		
+		printf( "1:Face at %p; parent: \"%s\"\n", &vecLandmarks.back( ).boxFace, vecLandmarks.back( ).boxFace.GetParent( 1 )->GetName( ) );
+		for( std::deque<CBBox>::iterator p = vecLandmarks.back( ).aEyes.begin( ); p < vecLandmarks.back( ).aEyes.end( ); p++ )
+		{
+			printf( "  Eye parent at %p: ", p->GetParent( 1 ) );
+			printf( "\"%s\"\n", p->GetParent( 1 )->GetName( ) );
+		}
+		for( std::deque<CBBox>::iterator p = vecLandmarks.back( ).aNose.begin( ); p < vecLandmarks.back( ).aNose.end( ); p++ )
+		{
+			printf( "  Nose parent at %p: ", p->GetParent( 1 ) );
+			printf( "\"%s\"\n", p->GetParent( 1 )->GetName( ) );
+		}
 	}
 	
 	for( std::vector<CLandmarkCandidate>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
 	{
-		printf( "Face parent: \"%s\"\n", it->boxFace.GetParent( 1 )->GetName( ) );
+		printf( "Face at %p; parent: \"%s\"\n", &it->boxFace, it->boxFace.GetParent( 1 )->GetName( ) );
 		for( std::deque<CBBox>::iterator p = it->aEyes.begin( ); p < it->aEyes.end( ); p++ )
-			printf( "  Eye parent: \"%s\"\n", p->GetParent( 1 )->GetName( ) );
+		{
+			printf( "  Eye parent at %p: ", p->GetParent( 1 ) );
+			printf( "\"%s\"\n", p->GetParent( 1 )->GetName( ) );
+		}
 		for( std::deque<CBBox>::iterator p = it->aNose.begin( ); p < it->aNose.end( ); p++ )
-			printf( "  Nose parent: \"%s\"\n", p->GetParent( 1 )->GetName( ) );
+		{
+			printf( "  Nose parent at %p: ", p->GetParent( 1 ) );
+			printf( "\"%s\"\n", p->GetParent( 1 )->GetName( ) );
+		}
 	}
 
 	//img
