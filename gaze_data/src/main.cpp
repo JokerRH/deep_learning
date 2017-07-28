@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "FrameProcessor.h"
+#include <time.h>
 #include "LandmarkCandidate.h"
 #include "Landmark.h"
+#include "GazeCapture.h"
 
 using namespace cv;
 
@@ -67,8 +68,7 @@ int CaptureVideo( void )
 	return EXIT_SUCCESS;
 }
 
-#if 0
-int CaptureVideo( void )
+int CaptureGaze( void )
 {
 	VideoCapture cap( 0 );
 	if( !cap.isOpened( ) )
@@ -76,46 +76,37 @@ int CaptureVideo( void )
 		fprintf( stderr, "Unable to open capture device\n" );
 		return EXIT_FAILURE;
 	}
-	
-	chdir( RESPATH );
-	CFrameProcessor frameprocessor;
 
-	Mat frame;
-	bool fContinue = true;
-	unsigned char c;
-	while( fContinue )
+	chdir( "/home/rainer/Dokumente/deep_learning/gaze_data/" );
+
+	namedWindow( "Window", CV_WINDOW_NORMAL );
+	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+
+	CGazeCapture::Init(cap );
+	std::vector<CGazeCapture> vecGaze;
+	while( true )
 	{
-		cap >> frame;
-
-		frameprocessor.SetImage( frame );
-		frameprocessor.ProcessImage( );
-		
-		c = (unsigned char) waitKey( 5 );
-		switch( c )
+		try
 		{
-		case 27:	//Escape
-			fContinue = false;
-			break;
-		case 10:	//Enter
-			{
-				unsigned int uLandmarks;
-				frameprocessor.ProcessImage( uLandmarks );
+			vecGaze.emplace_back( cap, "Window" );
+		}
+		catch( int i )
+		{
+			if( i == 0 )
+				continue;
+			if( i == 1 )
 				break;
-			}
-		case 255:
-			break;
-		default:
-			printf( "Key: %u\n", c & 0xFF );
+			
+			throw;
 		}
 	}
-
 	return EXIT_SUCCESS;
 }
-#endif
 
 int main(int argc, char **argv)
 {
-	int iReturn = CaptureVideo( );
+	//int iReturn = CaptureVideo( );
+	int iReturn = CaptureGaze( );
 	destroyAllWindows( );
 	return iReturn;
 }

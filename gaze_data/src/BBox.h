@@ -7,6 +7,11 @@ class CImage;
 class CBBox : public CBaseBBox
 {
 public:
+	CBBox( void )
+	{
+
+	}
+
 	inline CBBox( CBaseBBox &parentBox, const cv::Rect &rect, unsigned int uLevel, const char *szName ) :
 		CBaseBBox( parentBox, rect.x, rect.y, rect.width, rect.height, uLevel, szName )
 	{
