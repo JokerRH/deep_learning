@@ -11,60 +11,30 @@ CascadeClassifier CLandmarkCandidate::s_NoseCascade;
 
 std::vector<CLandmarkCandidate> CLandmarkCandidate::GetCandidates( CImage &img )
 {
-	Mat matGray;
-	CImage imgGray( img, "Image_Gray", matGray );
-	cvtColor( matGray, matGray, CV_BGR2GRAY );
-	equalizeHist( matGray, matGray );
+	CImage imgGray( img, "Image_Gray" );
+	cvtColor( imgGray.matImage, imgGray.matImage, CV_BGR2GRAY );
+	equalizeHist( imgGray.matImage, imgGray.matImage );
 
 	std::vector<Rect> vecFaces;
-	s_FaceCascade.detectMultiScale( *imgGray.pmatImage, vecFaces, 1.1, 5, CV_HAAR_SCALE_IMAGE, Size( 30, 30 ) );
+	s_FaceCascade.detectMultiScale( imgGray.matImage, vecFaces, 1.1, 5, CV_HAAR_SCALE_IMAGE, Size( 30, 30 ) );
 
-	Mat matFace;
-	CImage imgFace( "Image_Face", matFace );
+	CImage imgFace( "Image_Face" );
 	std::vector<CLandmarkCandidate> vecLandmarks;
 	std::vector<Rect> vecDetected;
-	printf( "Size: %lu\n", vecFaces.size( ) );
 	for( std::vector<Rect>::iterator prectFace = vecFaces.begin( ); prectFace < vecFaces.end( ); prectFace++ )
 	{
-		vecLandmarks.emplace_back( CBBox( imgGray, *prectFace, "BBox_Face" ) );
+		vecLandmarks.emplace_back( CBBox( imgGray, *prectFace, -1, "BBox_Face" ) );
 		imgFace.Crop( vecLandmarks.back( ).boxFace );
 
-		s_EyeCascade.detectMultiScale( matFace, vecDetected, 1.1, 10, CV_HAAR_SCALE_IMAGE, Size( 30, 30 ) );
+		s_EyeCascade.detectMultiScale( imgFace.matImage, vecDetected, 1.1, 10, CV_HAAR_SCALE_IMAGE, Size( 30, 30 ) );
 		for( std::vector<Rect>::iterator prectEye = vecDetected.begin( ); prectEye < vecDetected.end( ); prectEye++ )
-			vecLandmarks.back( ).aEyes.emplace_back( vecLandmarks.back( ).boxFace, *prectEye, "BBox_Eye" );
+			vecLandmarks.back( ).aEyes.emplace_back( vecLandmarks.back( ).boxFace, *prectEye, -1, "BBox_Eye" );
 
-		s_NoseCascade.detectMultiScale( matFace, vecDetected, 1.1, 10, CV_HAAR_SCALE_IMAGE, Size( 30, 30 ) );
+		s_NoseCascade.detectMultiScale( imgFace.matImage, vecDetected, 1.1, 10, CV_HAAR_SCALE_IMAGE, Size( 30, 30 ) );
 		for( std::vector<Rect>::iterator prectNose = vecDetected.begin( ); prectNose < vecDetected.end( ); prectNose++ )
-			vecLandmarks.back( ).aNose.emplace_back( vecLandmarks.back( ).boxFace, *prectNose, "BBox_Nose" );
+			vecLandmarks.back( ).aNose.emplace_back( vecLandmarks.back( ).boxFace, *prectNose, -1, "BBox_Nose" );
 
 		vecLandmarks.back( ).boxFace.TransferOwnership( 1 );
-		
-		printf( "1:Face at %p; parent: \"%s\"\n", &vecLandmarks.back( ).boxFace, vecLandmarks.back( ).boxFace.GetParent( 1 )->GetName( ) );
-		for( std::deque<CBBox>::iterator p = vecLandmarks.back( ).aEyes.begin( ); p < vecLandmarks.back( ).aEyes.end( ); p++ )
-		{
-			printf( "  Eye parent at %p: ", p->GetParent( 1 ) );
-			printf( "\"%s\"\n", p->GetParent( 1 )->GetName( ) );
-		}
-		for( std::deque<CBBox>::iterator p = vecLandmarks.back( ).aNose.begin( ); p < vecLandmarks.back( ).aNose.end( ); p++ )
-		{
-			printf( "  Nose parent at %p: ", p->GetParent( 1 ) );
-			printf( "\"%s\"\n", p->GetParent( 1 )->GetName( ) );
-		}
-	}
-	
-	for( std::vector<CLandmarkCandidate>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
-	{
-		printf( "Face at %p; parent: \"%s\"\n", &it->boxFace, it->boxFace.GetParent( 1 )->GetName( ) );
-		for( std::deque<CBBox>::iterator p = it->aEyes.begin( ); p < it->aEyes.end( ); p++ )
-		{
-			printf( "  Eye parent at %p: ", p->GetParent( 1 ) );
-			printf( "\"%s\"\n", p->GetParent( 1 )->GetName( ) );
-		}
-		for( std::deque<CBBox>::iterator p = it->aNose.begin( ); p < it->aNose.end( ); p++ )
-		{
-			printf( "  Nose parent at %p: ", p->GetParent( 1 ) );
-			printf( "\"%s\"\n", p->GetParent( 1 )->GetName( ) );
-		}
 	}
 
 	//img

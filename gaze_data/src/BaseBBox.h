@@ -27,34 +27,25 @@ public:
 	}
 	
 	virtual void TransferOwnership( unsigned int uLevel = 1 );
-	virtual void TransferOwnership( CBaseBBox &baseBBox );
+	virtual void TransferOwnership( CBaseBBox &parentBox );
 
 protected:
-	CBaseBBox( const char *szName ) :
-		CBaseHighlighter( szName )
+	CBaseBBox( void )
 	{
 
 	}
+
+	CBaseBBox( const char *szName );
+	CBaseBBox( const CBaseBBox &other );
+	CBaseBBox( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uWidth, unsigned int uHeight, unsigned int uLevel, const char *szName );
+	CBaseBBox( CBaseBBox &parentBox, float rX, float rY, float rWidth, float rHeight, const char *szName );
 	
-	CBaseBBox( const CBaseBBox &other ) :
-		CBaseHighlighter( other ),
-		m_rWidth( other.m_rWidth ),
-		m_rHeight( other.m_rHeight )
-	{
-
-	}
-
-	inline CBaseBBox( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uWidth, unsigned int uHeight, unsigned int uLevel, const char *szName ) :
-		CBaseHighlighter( parentBox, uX, uY, uLevel, szName ),
-		m_rWidth( uWidth / (float) baseBBox.GetWidth( uLevel ) ),
-		m_rHeight( uHeight / (float) baseBBox.GetHeight( uLevel ) )
-	{
-		assert( m_rWidth >= 0.0 && m_rPositionX + m_rWidth <= 1.0 );
-		assert( m_rHeight >= 0.0 && m_rPositionY + m_rHeight <= 1.0 );
-	}
+	void Swap( CBaseBBox &other, bool fSwapChildren = true );
 
 	float m_rWidth = 1;		///Width in % of parent's width
 	float m_rHeight = 1;	///Height in % of parent's height
+	
+	friend CBaseHighlighter;
 };
 
 #if 0

@@ -25,19 +25,17 @@ int CaptureVideo( void )
 
 	CLandmarkCandidate::Init( );
 
-	Mat matFrame;
-	Mat matDraw;
-	CImage imgFrame( "Image_Frame", matFrame );
-	CImage imgDraw( "Image_Draw", matDraw );
+	CImage imgFrame( "Image_Frame" );
+	CImage imgDraw( "Image_Draw" );
 	
 	unsigned char cKey;
 	bool fContinue = true;
 	while( fContinue )
 	{
-		cap >> matFrame;
+		cap >> imgFrame.matImage;
 
 		std::vector<CLandmarkCandidate> vecCandidates = CLandmarkCandidate::GetCandidates( imgFrame );
-		matDraw = matFrame.clone( );
+		imgDraw = CImage( imgFrame, "Image_Draw" );
 		for( std::vector<CLandmarkCandidate>::iterator pCandidate = vecCandidates.begin( ); pCandidate < vecCandidates.end( ); pCandidate++ )
 			pCandidate->Draw( imgDraw );
 
@@ -49,6 +47,7 @@ int CaptureVideo( void )
 		case 27:	//Escape
 			fContinue = false;
 			break;
+		case 141:	//Numpad enter
 		case 10:	//Enter
 			try
 			{
