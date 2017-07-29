@@ -1,0 +1,63 @@
+\hypertarget{class_c_base_b_box}{}\section{C\+Base\+B\+Box Class Reference}
+\label{class_c_base_b_box}\index{C\+Base\+B\+Box@{C\+Base\+B\+Box}}
+Inheritance diagram for C\+Base\+B\+Box\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=3.000000cm]{class_c_base_b_box}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_a9e2972e83ca630b10bf61dd5bea2e521}\label{class_c_base_b_box_a9e2972e83ca630b10bf61dd5bea2e521}} 
+virtual unsigned int {\bfseries Get\+Width} (unsigned int u\+Level=-\/1) const
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_ad96488a621c64bb65eb7809b3e882890}\label{class_c_base_b_box_ad96488a621c64bb65eb7809b3e882890}} 
+virtual unsigned int {\bfseries Get\+Height} (unsigned int u\+Level=-\/1) const
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_aa56bf53aae50f5e9bef2356ec34b2e51}\label{class_c_base_b_box_aa56bf53aae50f5e9bef2356ec34b2e51}} 
+\hyperlink{class_c_base_b_box}{C\+Base\+B\+Box} $\ast$ {\bfseries Get\+Parent} (unsigned int u\+Level=-\/1) override
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_ae71c6114cb963709bc843c871f51093a}\label{class_c_base_b_box_ae71c6114cb963709bc843c871f51093a}} 
+virtual void {\bfseries Transfer\+Ownership} (unsigned int u\+Level=1)
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_a5baea44b1a2a9c18f8edddf8d6e1a365}\label{class_c_base_b_box_a5baea44b1a2a9c18f8edddf8d6e1a365}} 
+virtual void {\bfseries Transfer\+Ownership} (\hyperlink{class_c_base_b_box}{C\+Base\+B\+Box} \&parent\+Box)
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_a98aeefbd3d2a5d3fddbff2a15a1f926d}\label{class_c_base_b_box_a98aeefbd3d2a5d3fddbff2a15a1f926d}} 
+{\bfseries C\+Base\+B\+Box} (const char $\ast$sz\+Name)
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_a7f317d3b2721d89328cedb18afbd910e}\label{class_c_base_b_box_a7f317d3b2721d89328cedb18afbd910e}} 
+{\bfseries C\+Base\+B\+Box} (const \hyperlink{class_c_base_b_box}{C\+Base\+B\+Box} \&other)
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_a8c82f37c693b3c771e1fe3c43b932059}\label{class_c_base_b_box_a8c82f37c693b3c771e1fe3c43b932059}} 
+{\bfseries C\+Base\+B\+Box} (\hyperlink{class_c_base_b_box}{C\+Base\+B\+Box} \&parent\+Box, unsigned int uX, unsigned int uY, unsigned int u\+Width, unsigned int u\+Height, unsigned int u\+Level, const char $\ast$sz\+Name)
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_abdee10baefbacc0376572f31f1c8416c}\label{class_c_base_b_box_abdee10baefbacc0376572f31f1c8416c}} 
+{\bfseries C\+Base\+B\+Box} (\hyperlink{class_c_base_b_box}{C\+Base\+B\+Box} \&parent\+Box, double dX, double dY, double d\+Width, double d\+Height, const char $\ast$sz\+Name)
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_ac98ee8da50886c5b8e74fcbe1130abc4}\label{class_c_base_b_box_ac98ee8da50886c5b8e74fcbe1130abc4}} 
+void {\bfseries Swap} (\hyperlink{class_c_base_b_box}{C\+Base\+B\+Box} \&other, bool f\+Swap\+Children=true)
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_abc694b352766ffc4902c4fd2b8cc978a}\label{class_c_base_b_box_abc694b352766ffc4902c4fd2b8cc978a}} 
+double {\bfseries m\+\_\+d\+Width} = 1
+\item 
+\mbox{\Hypertarget{class_c_base_b_box_a24ab993e6da60fa3a1d67f21a2784e86}\label{class_c_base_b_box_a24ab993e6da60fa3a1d67f21a2784e86}} 
+double \hyperlink{class_c_base_b_box_a24ab993e6da60fa3a1d67f21a2784e86}{m\+\_\+d\+Height} = 1
+\begin{DoxyCompactList}\small\item\em Width in \% of parent\textquotesingle{}s width. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{class_c_base_b_box_a7c5d97459f753e92bfa34497294683f4}\label{class_c_base_b_box_a7c5d97459f753e92bfa34497294683f4}} 
+friend \hyperlink{class_c_base_b_box_a7c5d97459f753e92bfa34497294683f4}{C\+Base\+Highlighter}
+\begin{DoxyCompactList}\small\item\em Height in \% of parent\textquotesingle{}s height. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+D\+:/\+Users/\+Rainer/\+Source/\+Repos/deep\+\_\+learning/gaze\+\_\+data/Base\+B\+Box.\+h\item 
+D\+:/\+Users/\+Rainer/\+Source/\+Repos/deep\+\_\+learning/gaze\+\_\+data/Base\+B\+Box.\+cpp\end{DoxyCompactItemize}

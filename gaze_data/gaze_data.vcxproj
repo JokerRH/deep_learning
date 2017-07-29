@@ -164,6 +164,7 @@
     <ClInclude Include="Landmark.h" />
     <ClInclude Include="LandmarkCandidate.h" />
     <ClInclude Include="Point.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseBBox.cpp" />
@@ -195,6 +196,16 @@
     <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_russian_plate_number.xml" />
     <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_smile.xml" />
     <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_upperbody.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="doxygen\Doxyfile" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="doxygen\eye.ico" />
+    <Image Include="icon1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="gaze_data.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

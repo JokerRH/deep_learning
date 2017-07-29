@@ -1,0 +1,72 @@
+\hypertarget{class_c_image}{}\section{C\+Image Class Reference}
+\label{class_c_image}\index{C\+Image@{C\+Image}}
+Inheritance diagram for C\+Image\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=3.000000cm]{class_c_image}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_c_image_a21cd70160981d8e10e17be1731bcbadc}\label{class_c_image_a21cd70160981d8e10e17be1731bcbadc}} 
+{\bfseries C\+Image} (const char $\ast$sz\+Name)
+\item 
+\mbox{\Hypertarget{class_c_image_a35bee31efed6acd1a6d35c9554d710ce}\label{class_c_image_a35bee31efed6acd1a6d35c9554d710ce}} 
+{\bfseries C\+Image} (cv\+::\+Mat \&mat, const char $\ast$sz\+Name)
+\item 
+\mbox{\Hypertarget{class_c_image_a8b4314c801dc837e80dd95c0783d2bed}\label{class_c_image_a8b4314c801dc837e80dd95c0783d2bed}} 
+{\bfseries C\+Image} (const \hyperlink{class_c_image}{C\+Image} \&other)
+\item 
+\mbox{\Hypertarget{class_c_image_ac606178f3d62ff9f18fb9d78fb21a0ae}\label{class_c_image_ac606178f3d62ff9f18fb9d78fb21a0ae}} 
+{\bfseries C\+Image} (\hyperlink{class_c_image}{C\+Image} \&img, const char $\ast$sz\+Name)
+\item 
+\mbox{\Hypertarget{class_c_image_a9dbac297b3f353e847d1f681aa616b3f}\label{class_c_image_a9dbac297b3f353e847d1f681aa616b3f}} 
+{\bfseries C\+Image} (\hyperlink{class_c_image}{C\+Image} \&parent\+Image, cv\+::\+Mat \&mat\+Image, const cv\+::\+Point \&point, const char $\ast$sz\+Name)
+\item 
+\mbox{\Hypertarget{class_c_image_a5d51142006c5db5e16760523d82ff284}\label{class_c_image_a5d51142006c5db5e16760523d82ff284}} 
+void {\bfseries Swap} (\hyperlink{class_c_image}{C\+Image} \&other, bool f\+Swap\+Children=true)
+\item 
+\mbox{\Hypertarget{class_c_image_a0ef878c3d788d3db9686e1f2e5bfaaaf}\label{class_c_image_a0ef878c3d788d3db9686e1f2e5bfaaaf}} 
+\hyperlink{class_c_image}{C\+Image} \& {\bfseries operator=} (const \hyperlink{class_c_image}{C\+Image} \&other)
+\item 
+\mbox{\Hypertarget{class_c_image_a22fe91a95249af8ead1325b515986f8a}\label{class_c_image_a22fe91a95249af8ead1325b515986f8a}} 
+unsigned int {\bfseries Get\+PositionX} (unsigned int u\+Level=-\/1) const override
+\item 
+\mbox{\Hypertarget{class_c_image_abfde3dc9e893134cd44d642de9d91d87}\label{class_c_image_abfde3dc9e893134cd44d642de9d91d87}} 
+unsigned int {\bfseries Get\+PositionY} (unsigned int u\+Level=-\/1) const override
+\item 
+\mbox{\Hypertarget{class_c_image_a9a3cb583ae8f174275d23f4e815fb995}\label{class_c_image_a9a3cb583ae8f174275d23f4e815fb995}} 
+unsigned int {\bfseries Get\+Width} (unsigned int u\+Level=-\/1) const override
+\item 
+\mbox{\Hypertarget{class_c_image_a473d570aeb9e1b144cd14b2d811c546e}\label{class_c_image_a473d570aeb9e1b144cd14b2d811c546e}} 
+unsigned int {\bfseries Get\+Height} (unsigned int u\+Level=-\/1) const override
+\item 
+\mbox{\Hypertarget{class_c_image_ad6973a532fcbc6f409406b17c4e850da}\label{class_c_image_ad6973a532fcbc6f409406b17c4e850da}} 
+\hyperlink{class_c_image}{C\+Image} $\ast$ {\bfseries Get\+Image} (unsigned int u\+Level=-\/1) override
+\item 
+\mbox{\Hypertarget{class_c_image_a85ee33c3ecfc97f82bbf7034079d785f}\label{class_c_image_a85ee33c3ecfc97f82bbf7034079d785f}} 
+void {\bfseries Transfer\+Ownership} (unsigned int u\+Level=1) override
+\item 
+\mbox{\Hypertarget{class_c_image_a1add3042a22efb5e828fe786fd98f1de}\label{class_c_image_a1add3042a22efb5e828fe786fd98f1de}} 
+void {\bfseries Transfer\+Ownership} (\hyperlink{class_c_base_b_box}{C\+Base\+B\+Box} \&parent\+Box) override
+\item 
+\mbox{\Hypertarget{class_c_image_a924b9367ed2850ab65ef9e21c09f6366}\label{class_c_image_a924b9367ed2850ab65ef9e21c09f6366}} 
+void {\bfseries Show} (const char $\ast$sz\+Window)
+\item 
+\mbox{\Hypertarget{class_c_image_a47709f5aa2f3d830b6077aec02c5af3a}\label{class_c_image_a47709f5aa2f3d830b6077aec02c5af3a}} 
+void {\bfseries Crop} (\hyperlink{class_c_b_box}{C\+B\+Box} \&box, unsigned int u\+Level=0)
+\end{DoxyCompactItemize}
+\subsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{class_c_image_a58684a2b3cfafec2e433018166a21f28}\label{class_c_image_a58684a2b3cfafec2e433018166a21f28}} 
+cv\+::\+Mat {\bfseries mat\+Image}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+D\+:/\+Users/\+Rainer/\+Source/\+Repos/deep\+\_\+learning/gaze\+\_\+data/Image.\+h\item 
+D\+:/\+Users/\+Rainer/\+Source/\+Repos/deep\+\_\+learning/gaze\+\_\+data/Image.\+cpp\end{DoxyCompactItemize}

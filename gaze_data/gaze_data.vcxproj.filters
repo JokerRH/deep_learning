@@ -16,6 +16,9 @@
     <Filter Include="Resource Files\haarcascades">
       <UniqueIdentifier>{d9453dbb-c1fc-4da0-913d-ba3a1b308349}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\doxygen">
+      <UniqueIdentifier>{a09d7bdd-e4cf-472d-9654-f120e2ad4895}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseBBox.h">
@@ -46,6 +49,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Point.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -133,5 +139,23 @@
     <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_upperbody.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="doxygen\Doxyfile">
+      <Filter>Resource Files\doxygen</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="doxygen\eye.ico">
+      <Filter>Resource Files\doxygen</Filter>
+    </Image>
+    <Image Include="icon1.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="gaze_data.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
