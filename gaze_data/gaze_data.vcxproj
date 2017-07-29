@@ -71,9 +71,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\x64\vc14\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -93,6 +97,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -107,6 +112,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opencv_world320d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -125,6 +131,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,58 +150,51 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>opencv_world320.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\BaseBBox.h" />
-    <ClInclude Include="src\BaseHighlighter.h" />
-    <ClInclude Include="src\BBox.h" />
-    <ClInclude Include="src\FrameProcessor.h" />
-    <ClInclude Include="src\Gaze.h" />
-    <ClInclude Include="src\GazeCapture.h" />
-    <ClInclude Include="src\Image.h" />
-    <ClInclude Include="src\Landmark.h" />
-    <ClInclude Include="src\LandmarkCandidate.h" />
-    <ClInclude Include="src\Point.h" />
+    <ClInclude Include="BaseBBox.h" />
+    <ClInclude Include="BaseHighlighter.h" />
+    <ClInclude Include="BBox.h" />
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="Gaze.h" />
+    <ClInclude Include="GazeCapture.h" />
+    <ClInclude Include="Image.h" />
+    <ClInclude Include="Landmark.h" />
+    <ClInclude Include="LandmarkCandidate.h" />
+    <ClInclude Include="Point.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\BaseBBox.cpp" />
-    <ClCompile Include="src\BaseHighlighter.cpp" />
-    <ClCompile Include="src\BBox.cpp" />
-    <ClCompile Include="src\FrameProcessor.cpp" />
-    <ClCompile Include="src\Gaze.cpp" />
-    <ClCompile Include="src\GazeCapture.cpp" />
-    <ClCompile Include="src\Image.cpp" />
-    <ClCompile Include="src\Landmark.cpp" />
-    <ClCompile Include="src\LandmarkCandidate.cpp" />
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Point.cpp" />
+    <ClCompile Include="BaseBBox.cpp" />
+    <ClCompile Include="BaseHighlighter.cpp" />
+    <ClCompile Include="BBox.cpp" />
+    <ClCompile Include="Gaze.cpp" />
+    <ClCompile Include="GazeCapture.cpp" />
+    <ClCompile Include="Image.cpp" />
+    <ClCompile Include="Landmark.cpp" />
+    <ClCompile Include="LandmarkCandidate.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Point.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="haarcascades\haarcascade_eye.xml" />
-    <Xml Include="haarcascades\haarcascade_eye_tree_eyeglasses.xml" />
-    <Xml Include="haarcascades\haarcascade_frontalface_alt.xml" />
-    <Xml Include="haarcascades\haarcascade_frontalface_alt2.xml" />
-    <Xml Include="haarcascades\haarcascade_frontalface_alt_tree.xml" />
-    <Xml Include="haarcascades\haarcascade_frontalface_default.xml" />
-    <Xml Include="haarcascades\haarcascade_fullbody.xml" />
-    <Xml Include="haarcascades\haarcascade_lefteye_2splits.xml" />
-    <Xml Include="haarcascades\haarcascade_licence_plate_rus_16stages.xml" />
-    <Xml Include="haarcascades\haarcascade_lowerbody.xml" />
-    <Xml Include="haarcascades\haarcascade_mcs_eyepair_big.xml" />
-    <Xml Include="haarcascades\haarcascade_mcs_eyepair_small.xml" />
-    <Xml Include="haarcascades\haarcascade_mcs_leftear.xml" />
-    <Xml Include="haarcascades\haarcascade_mcs_lefteye.xml" />
-    <Xml Include="haarcascades\haarcascade_mcs_mouth.xml" />
-    <Xml Include="haarcascades\haarcascade_mcs_nose.xml" />
-    <Xml Include="haarcascades\haarcascade_mcs_rightear.xml" />
-    <Xml Include="haarcascades\haarcascade_mcs_righteye.xml" />
-    <Xml Include="haarcascades\haarcascade_mcs_upperbody.xml" />
-    <Xml Include="haarcascades\haarcascade_profileface.xml" />
-    <Xml Include="haarcascades\haarcascade_righteye_2splits.xml" />
-    <Xml Include="haarcascades\haarcascade_russian_plate_number.xml" />
-    <Xml Include="haarcascades\haarcascade_smile.xml" />
-    <Xml Include="haarcascades\haarcascade_upperbody.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_eye.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_eye_tree_eyeglasses.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalcatface.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalcatface_extended.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalface_alt.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalface_alt2.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalface_alt_tree.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalface_default.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_fullbody.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_lefteye_2splits.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_licence_plate_rus_16stages.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_lowerbody.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_profileface.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_righteye_2splits.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_russian_plate_number.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_smile.xml" />
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_upperbody.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

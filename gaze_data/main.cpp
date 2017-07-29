@@ -2,11 +2,17 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <time.h>
 #include "LandmarkCandidate.h"
 #include "Landmark.h"
 #include "GazeCapture.h"
+#include "Config.h"
+
+#ifdef _MSC_VER
+#	include<direct.h>
+#else
+#	include <unistd.h>
+#endif
 
 using namespace cv;
 
@@ -18,8 +24,6 @@ int CaptureVideo( void )
 		fprintf( stderr, "Unable to open capture device\n" );
 		return EXIT_FAILURE;
 	}
-	
-	chdir( "/home/rainer/Dokumente/deep_learning/gaze_data/" );
 
 	namedWindow( "Window", CV_WINDOW_NORMAL );
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
@@ -77,8 +81,6 @@ int CaptureGaze( void )
 		return EXIT_FAILURE;
 	}
 
-	chdir( "/home/rainer/Dokumente/deep_learning/gaze_data/" );
-
 	namedWindow( "Window", CV_WINDOW_NORMAL );
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 
@@ -105,8 +107,18 @@ int CaptureGaze( void )
 
 int main(int argc, char **argv)
 {
+#ifdef _MSC_VER
+	_chdir( WORKING_DIRECTORY );
+#else
+	chdir( WORKING_DIRECTORY );
+#endif
+
 	//int iReturn = CaptureVideo( );
 	int iReturn = CaptureGaze( );
 	destroyAllWindows( );
+
+#ifdef _MSC_VER
+	system( "PAUSE" );
+#endif
 	return iReturn;
 }

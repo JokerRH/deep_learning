@@ -17,8 +17,8 @@ public:
 
 	}
 
-	CPoint( CBaseBBox &parentBox, float rPositionX, float rPositionY, const char *szName ) :
-		CBaseHighlighter( parentBox, rPositionX, rPositionY, szName )
+	CPoint( CBaseBBox &parentBox, double dPositionX, double dPositionY, const char *szName ) :
+		CBaseHighlighter( parentBox, dPositionX, dPositionY, szName )
 	{
 
 	}

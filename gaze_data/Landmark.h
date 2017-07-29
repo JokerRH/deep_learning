@@ -20,7 +20,7 @@ public:
 	CPoint ptEyeLeft;
 	CPoint ptEyeRight;
 	CPoint ptNose;
-	float rDistance;
+	double dDistance;
 
 protected:
 	CLandmark( void )

@@ -1,5 +1,6 @@
 #include "BBox.h"
 #include "Image.h"
+#include <opencv2/imgproc/imgproc.hpp>
 
 void CBBox::Draw( const cv::Scalar &color, int iThickness, unsigned int uLevel )
 {

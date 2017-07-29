@@ -14,147 +14,123 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="Resource Files\haarcascades">
-      <UniqueIdentifier>{919b6a0c-c7a6-4ddb-97f2-b75b9c327ada}</UniqueIdentifier>
+      <UniqueIdentifier>{d9453dbb-c1fc-4da0-913d-ba3a1b308349}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\BaseBBox.h">
+    <ClInclude Include="BaseBBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\BaseHighlighter.h">
+    <ClInclude Include="BaseHighlighter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\BBox.h">
+    <ClInclude Include="BBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\FrameProcessor.h">
+    <ClInclude Include="Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Gaze.h">
+    <ClInclude Include="Gaze.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\GazeCapture.h">
+    <ClInclude Include="GazeCapture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Image.h">
+    <ClInclude Include="Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Landmark.h">
+    <ClInclude Include="Landmark.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\LandmarkCandidate.h">
+    <ClInclude Include="LandmarkCandidate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Point.h">
+    <ClInclude Include="Point.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\BaseBBox.cpp">
+    <ClCompile Include="BaseBBox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\BaseHighlighter.cpp">
+    <ClCompile Include="BaseHighlighter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\BBox.cpp">
+    <ClCompile Include="BBox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\FrameProcessor.cpp">
+    <ClCompile Include="Gaze.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Gaze.cpp">
+    <ClCompile Include="GazeCapture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\GazeCapture.cpp">
+    <ClCompile Include="Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Image.cpp">
+    <ClCompile Include="Landmark.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Landmark.cpp">
+    <ClCompile Include="LandmarkCandidate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\LandmarkCandidate.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Point.cpp">
+    <ClCompile Include="Point.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="haarcascades\haarcascade_eye.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_eye.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_eye_tree_eyeglasses.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_eye_tree_eyeglasses.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_frontalface_alt.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalcatface.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_frontalface_alt_tree.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalcatface_extended.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_frontalface_alt2.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalface_alt.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_frontalface_default.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalface_alt_tree.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_fullbody.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalface_alt2.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_lefteye_2splits.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalface_default.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_licence_plate_rus_16stages.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_fullbody.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_lowerbody.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_lefteye_2splits.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_mcs_eyepair_big.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_licence_plate_rus_16stages.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_mcs_eyepair_small.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_lowerbody.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_mcs_leftear.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_profileface.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_mcs_lefteye.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_righteye_2splits.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_mcs_mouth.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_russian_plate_number.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_mcs_nose.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_smile.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
-    <Xml Include="haarcascades\haarcascade_mcs_rightear.xml">
-      <Filter>Resource Files\haarcascades</Filter>
-    </Xml>
-    <Xml Include="haarcascades\haarcascade_mcs_righteye.xml">
-      <Filter>Resource Files\haarcascades</Filter>
-    </Xml>
-    <Xml Include="haarcascades\haarcascade_mcs_upperbody.xml">
-      <Filter>Resource Files\haarcascades</Filter>
-    </Xml>
-    <Xml Include="haarcascades\haarcascade_profileface.xml">
-      <Filter>Resource Files\haarcascades</Filter>
-    </Xml>
-    <Xml Include="haarcascades\haarcascade_righteye_2splits.xml">
-      <Filter>Resource Files\haarcascades</Filter>
-    </Xml>
-    <Xml Include="haarcascades\haarcascade_russian_plate_number.xml">
-      <Filter>Resource Files\haarcascades</Filter>
-    </Xml>
-    <Xml Include="haarcascades\haarcascade_smile.xml">
-      <Filter>Resource Files\haarcascades</Filter>
-    </Xml>
-    <Xml Include="haarcascades\haarcascade_upperbody.xml">
+    <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_upperbody.xml">
       <Filter>Resource Files\haarcascades</Filter>
     </Xml>
   </ItemGroup>

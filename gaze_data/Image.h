@@ -41,7 +41,7 @@ public:
 	}
 
 	inline CImage( CImage &parentImage, cv::Mat &matImage, const cv::Point &point, const char *szName ) :
-		CBaseBBox( parentImage, point.x / (float) parentImage.GetWidth( 0 ), point.y / (float) parentImage.GetHeight( 0 ), matImage.cols / (float) parentImage.GetWidth( 0 ), matImage.rows / (float) parentImage.GetHeight( 0 ), szName ),
+		CBaseBBox( parentImage, point.x / (double) parentImage.GetWidth( 0 ), point.y / (double) parentImage.GetHeight( 0 ), matImage.cols / (double) parentImage.GetWidth( 0 ), matImage.rows / (double) parentImage.GetHeight( 0 ), szName ),
 		matImage( matImage )
 	{
 		//printf( "Creating image \"%s\" of dim %ux%u/%4.2fx%4.2f at (%u, %u)/(%4.2f, %4.2f); Parent dim: %ux%u\n", szName, matImage.cols, matImage.rows, m_rWidth, m_rHeight, point.x, point.y, m_rPositionX, m_rPositionY, parentImage.GetWidth( 0 ), parentImage.GetHeight( 0 ) );
@@ -68,7 +68,7 @@ public:
 		if( !m_pParentBox || !uLevel-- )
 			return 0;
 
-		return (unsigned int) ( m_pParentBox->GetPositionX( uLevel ) + m_pParentBox->GetWidth( uLevel ) * m_rPositionX );
+		return (unsigned int) ( m_pParentBox->GetPositionX( uLevel ) + m_pParentBox->GetWidth( uLevel ) * m_dPositionX );
 	}
 	
 	inline unsigned int GetPositionY( unsigned int uLevel = -1 ) const override
@@ -76,7 +76,7 @@ public:
 		if( !m_pParentBox || !uLevel-- )
 			return 0;
 
-		return (unsigned int) ( m_pParentBox->GetPositionY( uLevel ) + m_pParentBox->GetHeight( uLevel ) * m_rPositionY );
+		return (unsigned int) ( m_pParentBox->GetPositionY( uLevel ) + m_pParentBox->GetHeight( uLevel ) * m_dPositionY );
 	}
 	
 	inline unsigned int GetWidth( unsigned int uLevel = -1 ) const override
@@ -84,7 +84,7 @@ public:
 		if( !m_pParentBox || !uLevel-- )
 			return matImage.cols;
 
-		return (unsigned int) ( m_pParentBox->GetWidth( uLevel ) * m_rWidth );
+		return (unsigned int) ( m_pParentBox->GetWidth( uLevel ) * m_dWidth );
 	}
 	
 	inline unsigned int GetHeight( unsigned int uLevel = -1 ) const override
@@ -92,7 +92,7 @@ public:
 		if( !m_pParentBox || !uLevel-- )
 			return matImage.rows;
 
-		return (unsigned int) ( m_pParentBox->GetHeight( uLevel ) * m_rHeight );
+		return (unsigned int) ( m_pParentBox->GetHeight( uLevel ) * m_dHeight );
 	}
 	
 	CImage *GetImage( unsigned int uLevel = -1 ) override

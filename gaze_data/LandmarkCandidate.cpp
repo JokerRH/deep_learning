@@ -1,4 +1,5 @@
 #include "LandmarkCandidate.h"
+#include "Config.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
@@ -46,19 +47,19 @@ std::vector<CLandmarkCandidate> CLandmarkCandidate::GetCandidates( CImage &img )
 
 void CLandmarkCandidate::Init( void )
 {
-	if( !s_FaceCascade.load( "./haarcascades/haarcascade_frontalface_default.xml" ) )
+	if( !s_FaceCascade.load( HAARCASCADE_DIRECTORY "haarcascade_frontalface_default.xml" ) )
 	{
 		fprintf( stderr, "Unable to load face cascade\n" );
 		throw 0;
 	}
 
-	if( !s_EyeCascade.load( "./haarcascades/haarcascade_mcs_lefteye.xml" ) )
+	if( !s_EyeCascade.load( HAARCASCADE_DIRECTORY "haarcascade_mcs_lefteye.xml" ) )
 	{
 		fprintf( stderr, "Unable to load eye cascade\n" );
 		throw 0;
 	}
 	
-	if( !s_NoseCascade.load( "./haarcascades/haarcascade_mcs_nose.xml" ) )
+	if( !s_NoseCascade.load( HAARCASCADE_DIRECTORY "haarcascade_mcs_nose.xml" ) )
 	{
 		fprintf( stderr, "Unable to load nose cascade\n" );
 		throw 0;

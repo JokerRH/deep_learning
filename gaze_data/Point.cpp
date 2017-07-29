@@ -1,5 +1,6 @@
 #include "Point.h"
 #include "Image.h"
+#include <opencv2/imgproc/imgproc.hpp>
 
 void CPoint::Draw( const cv::Scalar &color, int iRadius, int iThickness, unsigned int uLevel )
 {

@@ -42,35 +42,3 @@ public:
 	void Draw( const cv::Scalar &color, int iThickness = 2, unsigned int uLevel = -1 );
 	void Draw( CImage &img, const cv::Scalar &color, int iThickness = 2 );
 };
-
-#if 0
-	CBBox( CPoint &pt, float rWidth, float rHeight, const char *szName ) :
-		CBaseBBox( pt.m_rPositionX - rWidth / 2, pt.m_rPositionY - rHeight / 2, rWidth, rHeight, *pt.m_pParentBox, szName )
-	{
-
-	}
-
-	CBBox( const CBaseBBox &parentBox ) :
-		CBaseBBox( parentBox )
-	{
-
-	}
-
-	inline void Scale( float rScaleX, float rScaleY )
-	{
-		m_rWidth *= rScaleX;
-		m_rHeight *= rScaleY;
-	}
-
-	inline void Shift( float rShiftX, float rShiftY )
-	{
-		m_rPositionX += m_rWidth * rShiftX;
-		m_rPositionY += m_rHeight * rShiftY;
-	}
-
-	inline CBBox &operator=( const CBBox &other )
-	{
-		memcpy( this, &other, sizeof( CBBox ) );
-		return *this;
-	}
-#endif

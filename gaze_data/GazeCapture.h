@@ -8,6 +8,7 @@ class CGazeCapture
 {
 public:
 	static void Init( cv::VideoCapture &cap );
+	static void GetScreenResolution( unsigned int &uWidth, unsigned int &uHeight );
 	CGazeCapture( cv::VideoCapture &cap, const char *szWindow );
 	inline CGazeCapture( const CGazeCapture &other ) :
 		ptGaze( other.ptGaze ),

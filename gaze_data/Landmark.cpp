@@ -70,22 +70,22 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 		}
 
 		//Left eye selected, focus on eyes
-		float rX;
-		float rY;
-		float rStepX = 0.05;
-		float rStepY = 0.05;
+		double dX;
+		double dY;
+		double dStepX = 0.05;
+		double dStepY = 0.05;
 		CPoint pt;
 		for( std::deque<CBBox>::iterator pboxEye = candidate.aEyes.begin( ); pboxEye < candidate.aEyes.end( ); )
 		{
 			//Crop eye and draw
 			imgFocus.Crop( *pboxEye );
-			rX = 0.5;
-			rY = 0.5;
+			dX = 0.5;
+			dY = 0.5;
 			fContinue = true;
 			while( fContinue )
 			{
 				imgDraw = CImage( imgFocus, "Image_Draw" );
-				pt = CPoint( imgDraw, rX, rY, "Point_Eye" );
+				pt = CPoint( imgDraw, dX, dY, "Point_Eye" );
 				pt.Draw( Scalar( 0, 255, 255 ), 1, -1, 0 );
 				imgDraw.Show( szWindow );
 
@@ -123,40 +123,40 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 					break;
 				case 171:	//Numpad +
 				case '+':	//+
-					rStepX *= 0.5;
-					rStepY *= 0.5;
+					dStepX *= 0.5;
+					dStepY *= 0.5;
 					break;
 				case 173:	//Numpad -
 				case '-':	//-
-					rStepX *= 2;
-					rStepY *= 2;
+					dStepX *= 2;
+					dStepY *= 2;
 					break;
 				case '0':	//0
-					rStepX = 0.05;
-					rStepY = 0.05;
+					dStepX = 0.05;
+					dStepY = 0.05;
 					break;
 				case 81:	//Key)_Left
-					rX -= rStepX;
-					if( rX < 0 )
-						rX = 0;
+					dX -= dStepX;
+					if( dX < 0 )
+						dX = 0;
 
 					break;
 				case 82:	//Key_Up
-					rY -= rStepY;
-					if( rY < 0 )
-						rY = 0;
+					dY -= dStepY;
+					if( dY < 0 )
+						dY = 0;
 
 					break;
 				case 83:	//Key_Right
-					rX += rStepX;
-					if( rX > 1 )
-						rX = 1;
+					dX += dStepX;
+					if( dX > 1 )
+						dX = 1;
 
 					break;
 				case 84:	//Key_Down
-					rY += rStepY;
-					if( rY > 1 )
-						rY = 1;
+					dY += dStepY;
+					if( dY > 1 )
+						dY = 1;
 
 					break;
 				case 27:	//Escape
@@ -200,13 +200,13 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 			imgFocus.Crop( candidate.aNose.front( ) );
 		else
 			imgFocus.Crop( candidate.boxFace );
-		rX = 0.5;
-		rY = 0.5;
+		dX = 0.5;
+		dY = 0.5;
 		fContinue = true;
 		while( fContinue )
 		{
 			imgDraw = CImage( imgFocus, "Image_Draw" );
-			pt = CPoint( imgDraw, rX, rY, "Point_Nose" );
+			pt = CPoint( imgDraw, dX, dY, "Point_Nose" );
 			pt.Draw( Scalar( 0, 255, 255 ), 1, -1, 0 );
 			imgDraw.Show( szWindow );
 			cKey = (unsigned char) waitKey( 0 );
@@ -229,40 +229,40 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 				break;
 			case 171:	//Numpad +
 			case '+':	//+
-				rStepX *= 0.5;
-				rStepY *= 0.5;
+				dStepX *= 0.5;
+				dStepY *= 0.5;
 				break;
 			case 173:	//Numpad -
 			case '-':	//-
-				rStepX *= 2;
-				rStepY *= 2;
+				dStepX *= 2;
+				dStepY *= 2;
 				break;
 			case '0':	//0
-				rStepX = 0.05;
-				rStepY = 0.05;
+				dStepX = 0.05;
+				dStepY = 0.05;
 				break;
 			case 81:	//Key_Left
-				rX -= rStepX;
-				if( rX < 0 )
-					rX = 0;
+				dX -= dStepX;
+				if( dX < 0 )
+					dX = 0;
 
 				break;
 			case 82:	//Key_Up
-				rY -= rStepY;
-				if( rY < 0 )
-					rY = 0;
+				dY -= dStepY;
+				if( dY < 0 )
+					dY = 0;
 
 				break;
 			case 83:	//Key_Right
-				rX += rStepX;
-				if( rX > 1 )
-					rX = 1;
+				dX += dStepX;
+				if( dX > 1 )
+					dX = 1;
 
 				break;
 			case 84:	//Key_Down
-				rY += rStepY;
-				if( rY > 1 )
-					rY = 1;
+				dY += dStepY;
+				if( dY > 1 )
+					dY = 1;
 
 				break;
 			case 27:	//Escape
@@ -274,8 +274,8 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 		//tan( a ) = g1 / d <=> d = g1 / tan( a )
 		//g1 / g2 = w / dif <=> g1 = w * g2 / dif
 		//=> d = ( w * g2 ) / ( dif * tan( a ) ) = ( w / dif ) * ( g2 / tan( a ) )
-		rDistance = ( (float) boxFace.GetImage( -1 )->GetWidth( ) / ( ptEyeLeft.GetPositionX( -1 ) - ptEyeRight.GetPositionX( -1 ) ) ) * ( 0.0325 / 0.7535540501 );
-		printf( "Distance: %f\n", rDistance );
+		dDistance = ( (double) boxFace.GetImage( -1 )->GetWidth( ) / ( ptEyeLeft.GetPositionX( -1 ) - ptEyeRight.GetPositionX( -1 ) ) ) * ( 0.0325 / 0.7535540501 );
+		printf( "Distance: %f\n", dDistance );
 
 		//Draw face with features marked
 		imgFocus.Crop( candidate.boxFace );

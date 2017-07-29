@@ -23,7 +23,7 @@ protected:
 	CBaseHighlighter( void );
 	CBaseHighlighter( const char *szName );
 	CBaseHighlighter( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uLevel, const char *szName );
-	CBaseHighlighter( CBaseBBox &parentBox, float rX, float rY, const char *szName );
+	CBaseHighlighter( CBaseBBox &parentBox, double dX, double dY, const char *szName );
 	CBaseHighlighter( const CBaseHighlighter &other );
 
 	void Swap( CBaseHighlighter &other, bool fSwapChildren = true );
@@ -38,6 +38,6 @@ protected:
 	CBaseBBox *m_pParentBox;
 	std::vector<CBaseHighlighter *> m_vecpChildren;
 
-	float m_rPositionX = 0;	//Left X-position in % of parent's width
-	float m_rPositionY = 0;	//Top Y-position in % of parent's height
+	double m_dPositionX = 0;	//Left X-position in % of parent's width
+	double m_dPositionY = 0;	//Top Y-position in % of parent's height
 };
