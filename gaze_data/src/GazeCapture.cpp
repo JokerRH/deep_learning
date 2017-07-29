@@ -1,7 +1,12 @@
 #include "GazeCapture.h"
 #include "Point.h"
-#include <X11/Xlib.h>
 #include <stdlib.h>
+
+#ifdef _MSC_VER
+
+#else
+#include <X11/Xlib.h>
+#endif
 
 using namespace cv;
 
