@@ -201,11 +201,10 @@
     <None Include="doxygen\Doxyfile" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="doxygen\eye.ico" />
-    <Image Include="icon1.ico" />
+    <ResourceCompile Include="gaze_data.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="gaze_data.rc" />
+    <Image Include="eye.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
