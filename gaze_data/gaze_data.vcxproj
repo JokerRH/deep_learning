@@ -163,8 +163,11 @@
     <ClInclude Include="Image.h" />
     <ClInclude Include="Landmark.h" />
     <ClInclude Include="LandmarkCandidate.h" />
+    <ClInclude Include="Line.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Matrix.h" />
+    <ClInclude Include="Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BaseBBox.cpp" />
@@ -175,6 +178,7 @@
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Landmark.cpp" />
     <ClCompile Include="LandmarkCandidate.cpp" />
+    <ClCompile Include="Line.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Point.cpp" />
   </ItemGroup>
