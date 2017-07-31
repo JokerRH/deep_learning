@@ -7,6 +7,7 @@
 #include "Landmark.h"
 #include "GazeCapture.h"
 #include "Config.h"
+#include "Ray.h"
 
 #ifdef _MSC_VER
 #	include<direct.h>
@@ -105,6 +106,17 @@ int CaptureGaze( void )
 	return EXIT_SUCCESS;
 }
 
+int Test( void )
+{
+	CRay ray1( CVector<3>( { -7, 2, -3 } ), CVector<3>( { 0, 1, 2 } ) );
+	CRay ray2( CVector<3>( { -3, -3, 3 } ), CVector<3>( { 1, 2, 1 } ) );
+	
+	CVector<2> vec2Result = ray1.PointOfShortestDistance( ray2 );
+	printf( "Result: %s\n", vec2Result.ToString( ).c_str( ) );
+	
+	return EXIT_SUCCESS;
+}
+
 int main(int argc, char **argv)
 {
 #ifdef _MSC_VER
@@ -113,8 +125,9 @@ int main(int argc, char **argv)
 	chdir( WORKING_DIRECTORY );
 #endif
 
-	//int iReturn = CaptureVideo( );
-	int iReturn = CaptureGaze( );
+	int iReturn = CaptureVideo( );
+	//int iReturn = CaptureGaze( );
+	//int iReturn = Test( );
 	destroyAllWindows( );
 
 #ifdef _MSC_VER

@@ -11,8 +11,8 @@ public:
 	static void GetScreenResolution( unsigned int &uWidth, unsigned int &uHeight );
 	CGazeCapture( cv::VideoCapture &cap, const char *szWindow );
 	inline CGazeCapture( const CGazeCapture &other ) :
-		ptGaze( other.ptGaze ),
-		imgGaze( other.imgGaze )
+		imgGaze( other.imgGaze ),
+		ptGaze( other.ptGaze )
 	{
 		ptGaze.TransferOwnership( imgGaze );
 	}
@@ -27,7 +27,6 @@ public:
 
 	inline CGazeCapture &operator=( const CGazeCapture &other )
 	{
-		printf( "Test1\n" );
 		if( this != &other )
 		{
 			CGazeCapture temp( other );
@@ -36,7 +35,7 @@ public:
 		return *this;
 	}
 
-	CPoint ptGaze;
 	CImage imgGaze;
+	CPoint ptGaze;
 };
 

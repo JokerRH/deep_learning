@@ -35,6 +35,20 @@ unsigned int CBaseHighlighter::GetPositionY( unsigned int uLevel ) const
 	return uPositionY + (unsigned int ) ( uHeight * m_dPositionY );
 }
 
+double CBaseHighlighter::GetRelPositionX( unsigned int uLevel ) const
+{
+	register double dPositionX = m_pParentBox->GetRelPositionX( uLevel );
+	register double dWidth = m_pParentBox->GetRelWidth( uLevel );
+	return dPositionX + dWidth * m_dPositionX;
+}
+
+double CBaseHighlighter::GetRelPositionY( unsigned int uLevel ) const
+{
+	register double dPositionY = m_pParentBox->GetRelPositionY( uLevel );
+	register double dHeight = m_pParentBox->GetRelHeight( uLevel );
+	return dPositionY + dHeight * m_dPositionY;
+}
+
 CImage *CBaseHighlighter::GetImage( unsigned int uLevel )
 {
 	return m_pParentBox->GetImage( uLevel );
@@ -127,9 +141,10 @@ CBaseHighlighter::CBaseHighlighter( const CBaseHighlighter &other ) :
 	m_dPositionX( other.m_dPositionX ),
 	m_dPositionY( other.m_dPositionY )
 {
-	assert( other.szName != nullptr && strlen( other.szName ) );
+	assert( other.szName != nullptr && strlen( other.szName ) && strcmp( other.szName, "Unassigned" ) );
 	strncpy( const_cast<char *>( this->szName ), other.szName, 31 );
-	m_pParentBox->AddChild( this );
+	if( m_pParentBox )
+		m_pParentBox->AddChild( this );
 }
 
 void CBaseHighlighter::Swap( CBaseHighlighter &other, bool fSwapChildren )

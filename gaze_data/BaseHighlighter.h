@@ -11,6 +11,8 @@ public:
 	~CBaseHighlighter( void );
 	virtual unsigned int GetPositionX( unsigned int uLevel = -1 ) const;
 	virtual unsigned int GetPositionY( unsigned int uLevel = -1 ) const;
+	virtual double GetRelPositionX( unsigned int uLevel = -1 ) const;
+	virtual double GetRelPositionY( unsigned int uLevel = -1 ) const;
 	virtual CImage *GetImage( unsigned int uLevel = -1 );
 	virtual CBaseBBox *GetParent( unsigned int uLevel = -1 );
 

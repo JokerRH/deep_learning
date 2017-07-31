@@ -42,7 +42,7 @@ CGazeCapture::CGazeCapture( VideoCapture &cap, const char *szWindow ) :
 		imgGaze.matImage = Mat( uHeight, uWidth, CV_8UC3, Scalar( 127, 0, 0 ) );
 	}
 
-	CPoint ptGaze( imgGaze, rand( ) / (double) RAND_MAX, rand( ) / (double) RAND_MAX, "Point_Gaze" );
+	ptGaze = CPoint( imgGaze, rand( ) / (double) RAND_MAX, rand( ) / (double) RAND_MAX, "Point_Gaze" );
 	ptGaze.Draw( Scalar( 255, 255, 255 ), 5 );
 
 	imgGaze.Show( szWindow );

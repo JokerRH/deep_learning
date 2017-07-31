@@ -1,6 +1,9 @@
 #pragma once
 
 #include <array>
+#include <iomanip>
+#include <sstream>
+#include <string.h>
 
 template<unsigned int uRows>
 class CVector
@@ -89,7 +92,6 @@ template<unsigned int uRows>
 inline CVector<uRows> CVector<uRows>::operator/( const double &other ) const
 {
 	std::array<double, uRows> adValues;
-	std::copy( other.m_adValues, other.m_adValues + uRows, adValues.begin( ) );
 	for( unsigned int u = 0; u < uRows; u++ )
 		adValues[ u ] = m_adValues[ u ] / other;
 
@@ -129,7 +131,7 @@ template<unsigned int uRows>
 inline CVector<uRows> CVector<uRows>::operator-( const CVector<uRows> &other ) const
 {
 	std::array<double, uRows> adValues;
-	std::copy( other.m_adValues, other.m_adValues + uRows, adValues.begin( ) );
+	std::copy( m_adValues, m_adValues + uRows, adValues.begin( ) );
 	for( unsigned int u = 0; u < uRows; u++ )
 		adValues[ u ] -= other.m_adValues[ u ];
 

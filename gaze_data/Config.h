@@ -5,5 +5,5 @@
 #	define	HAARCASCADE_DIRECTORY	"D:\\Users\\Rainer\\Documents\\Visual Studio 2015\\Opencv-3.2.0\\build\\etc\\haarcascades\\"
 #else
 #	define	WORKING_DIRECTORY		"/home/rainer/Dokumente/deep_learning/gaze_data/"
-#	define	HAARCASCADE_DIRECTORY	""
+#	define	HAARCASCADE_DIRECTORY	"/usr/share/opencv/haarcascades/"
 #endif

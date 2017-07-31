@@ -269,13 +269,6 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 				throw( 1 );
 			}
 		}
-		
-		//Calculate distance from camera
-		//tan( a ) = g1 / d <=> d = g1 / tan( a )
-		//g1 / g2 = w / dif <=> g1 = w * g2 / dif
-		//=> d = ( w * g2 ) / ( dif * tan( a ) ) = ( w / dif ) * ( g2 / tan( a ) )
-		dDistance = ( (double) boxFace.GetImage( -1 )->GetWidth( ) / ( ptEyeLeft.GetPositionX( -1 ) - ptEyeRight.GetPositionX( -1 ) ) ) * ( 0.0325 / 0.7535540501 );
-		printf( "Distance: %f\n", dDistance );
 
 		//Draw face with features marked
 		imgFocus.Crop( candidate.boxFace );
