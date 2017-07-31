@@ -2,6 +2,8 @@
 #include "Landmark.h"
 #include "Image.h"
 #include <math.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze, double dEyeDistance, double dFOV, CVector<3> vec3ScreenTL, CVector<2> vec2ScreenDim, const char *szWindow )
 {
@@ -16,6 +18,9 @@ std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze
 			vec3ScreenTL[ 1 ] + pGaze->ptGaze.GetRelPositionY( -1 ) * vec2ScreenDim[ 1 ],
 			vec3ScreenTL[ 2 ]
 		} );
+		
+		pGaze->imgGaze.Show( szWindow );
+		cv::waitKey( 0 );
 
 		std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( pGaze->imgGaze, szWindow );
 		for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )

@@ -18,7 +18,7 @@ std::vector<CLandmarkCandidate> CLandmarkCandidate::GetCandidates( CImage &img )
 
 	std::vector<Rect> vecFaces;
 	s_FaceCascade.detectMultiScale( imgGray.matImage, vecFaces, 1.1, 5, CV_HAAR_SCALE_IMAGE, Size( 30, 30 ) );
-
+	
 	CImage imgFace( "Image_Face" );
 	std::vector<CLandmarkCandidate> vecLandmarks;
 	std::vector<Rect> vecDetected;

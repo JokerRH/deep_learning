@@ -70,8 +70,8 @@ CGazeCapture::CGazeCapture( VideoCapture &cap, const char *szWindow ) :
 	cap.grab( );
 	cap.grab( );
 	cap.retrieve( imgGaze.matImage );
-	imgGaze.Show( szWindow );
-	waitKey( 0 );
+	//imgGaze.Show( szWindow );
+	//waitKey( 0 );
 }
 
 CGazeCapture::~CGazeCapture( )

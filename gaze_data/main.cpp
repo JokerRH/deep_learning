@@ -8,6 +8,7 @@
 #include "GazeCapture.h"
 #include "Config.h"
 #include "Ray.h"
+#include "GazeData.h"
 
 #ifdef _MSC_VER
 #	include<direct.h>
@@ -85,6 +86,7 @@ int CaptureGaze( void )
 	namedWindow( "Window", CV_WINDOW_NORMAL );
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 
+	CLandmarkCandidate::Init( );
 	CGazeCapture::Init(cap );
 	std::vector<CGazeCapture> vecGaze;
 	while( true )
@@ -92,6 +94,7 @@ int CaptureGaze( void )
 		try
 		{
 			vecGaze.emplace_back( cap, "Window" );
+			CGazeData::GetGazeData( { vecGaze.back( ) }, 0.065, 60, CVector<3>( { -0.2375, -0.02 -0.02 } ), CVector<2>( { 0.475, 0.298 } ), "Window" );
 		}
 		catch( int i )
 		{
@@ -125,8 +128,8 @@ int main(int argc, char **argv)
 	chdir( WORKING_DIRECTORY );
 #endif
 
-	int iReturn = CaptureVideo( );
-	//int iReturn = CaptureGaze( );
+	//int iReturn = CaptureVideo( );
+	int iReturn = CaptureGaze( );
 	//int iReturn = Test( );
 	destroyAllWindows( );
 
