@@ -111,7 +111,7 @@ template<unsigned int uRows>
 inline CVector<uRows> CVector<uRows>::operator+( const CVector<uRows> &other ) const
 {
 	std::array<double, uRows> adValues;
-	std::copy( other.m_adValues, other.m_adValues + uRows, adValues.begin( ) );
+	std::copy( m_adValues, m_adValues + uRows, adValues.begin( ) );
 	for( unsigned int u = 0; u < uRows; u++ )
 		adValues[ u ] += other.m_adValues[ u ];
 

@@ -103,7 +103,7 @@ CBaseHighlighter::CBaseHighlighter( const char *szName ) :
 	szName{ 0 },
 	m_pParentBox( nullptr )
 {
-	assert( szName != nullptr && strlen( szName ) );
+	assert( szName != nullptr && strlen( szName ) && strlen( szName ) < 32 );
 	strncpy( const_cast<char *>( this->szName ), szName, 31 );
 }
 
@@ -113,7 +113,7 @@ CBaseHighlighter::CBaseHighlighter( CBaseBBox &parentBox, unsigned int uX, unsig
 	m_dPositionX( uX / (double) parentBox.GetWidth( uLevel ) ),
 	m_dPositionY( uY / (double) parentBox.GetHeight( uLevel ) )
 {
-	assert( szName != nullptr && strlen( szName ) );
+	assert( szName != nullptr && strlen( szName ) && strlen( szName ) < 32 );
 	strncpy( const_cast<char *>( this->szName ), szName, 31 );
 	m_pParentBox->AddChild( this );
 
@@ -127,7 +127,7 @@ CBaseHighlighter::CBaseHighlighter( CBaseBBox &parentBox, double dX, double dY, 
 	m_dPositionX( dX ),
 	m_dPositionY( dY )
 {
-	assert( szName != nullptr && strlen( szName ) );
+	assert( szName != nullptr && strlen( szName ) && strlen( szName ) < 32 );
 	strncpy( const_cast<char *>( this->szName ), szName, 31 );
 	m_pParentBox->AddChild( this );
 
@@ -141,7 +141,7 @@ CBaseHighlighter::CBaseHighlighter( const CBaseHighlighter &other ) :
 	m_dPositionX( other.m_dPositionX ),
 	m_dPositionY( other.m_dPositionY )
 {
-	assert( other.szName != nullptr && strlen( other.szName ) && strcmp( other.szName, "Unassigned" ) );
+	assert( other.szName != nullptr && strlen( other.szName ) && strlen( other.szName ) < 32 && strcmp( other.szName, "Unassigned" ) );
 	strncpy( const_cast<char *>( this->szName ), other.szName, 31 );
 	if( m_pParentBox )
 		m_pParentBox->AddChild( this );

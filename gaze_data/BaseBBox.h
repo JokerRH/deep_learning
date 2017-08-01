@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "BaseHighlighter.h"
 
+class CLine;
 class CBaseBBox : public CBaseHighlighter
 {
 public:
@@ -32,6 +33,7 @@ protected:
 	double m_dHeight = 1;	///Height in % of parent's height
 	
 	friend CBaseHighlighter;
+	friend CLine;
 };
 
 inline unsigned int CBaseBBox::GetWidth( unsigned int uLevel ) const

@@ -21,12 +21,18 @@ public:
 	CVector<uRows> operator*( const CVector<uCols> &other ) const;
 	CMatrix<uRows, uCols> operator*( const double &other ) const;
 	CMatrix<uRows, uCols> &operator*=( const double &other );
+	template<unsigned int uCols2>
+	CMatrix<uRows, uCols2> operator*( const CMatrix<uCols, uCols2> &other ) const;
+	template<unsigned int uCols2>
+	CMatrix<uRows, uCols> &operator*=( const CMatrix<uCols, uRows> &other );
 	CMatrix<uRows, uCols> Inverse( void ) const;
 	CMatrix<uRows, uCols> &Invert( void );
+	void Swap( CMatrix<uRows, uCols> &other );
 
 	std::string ToString( unsigned int uPrecision = 2 ) const;
 
 private:
+	CMatrix( void );
 	double m_adValues[ uCols * uRows ];
 };
 
@@ -100,6 +106,31 @@ inline CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::operator*=( const double & 
 	return *this;
 }
 
+template<unsigned int uRows, unsigned int uCols, unsigned int uCols2>
+CMatrix<uRows, uCols2> CMatrix<uRows, uCols>::operator*( const CMatrix<uCols, uCols2> &other ) const;
+{
+	CMatrix<uRows, uCols2> mat;
+	for( unsigned int uCol2 = 0; uCol2 < uCols2; uCol2++ )
+		for( unsigned int uRow = 0; uRow < uRows, uRow++ )
+			for( unsigned int uCol = 0; uCol < uCols; uCol++ )
+				mat[ uRow ][ uCol2 ] = ( *this )[ uRow ][ uCol ] * other[ uCol ][ uCol2 ];
+
+	return mat;
+}
+
+template<unsigned int uRows, unsigned int uCols, unsigned int uCols2>
+CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::operator*=( const CMatrix<uCols, uRows> &other )
+{
+	CMatrix<uRows, uCols2> mat;
+	for( unsigned int uCol2 = 0; uCol2 < uCols2; uCol2++ )
+		for( unsigned int uRow = 0; uRow < uRows, uRow++ )
+			for( unsigned int uCol = 0; uCol < uCols; uCol++ )
+				mat[ uRow ][ uCol2 ] = ( *this )[ uRow ][ uCol ] * other[ uCol ][ uCol2 ];
+
+	Swap( mat );
+	return *this;
+}
+
 template<>
 inline CMatrix<2, 2> CMatrix<2, 2>::Inverse( void ) const
 {
@@ -139,6 +170,12 @@ inline CMatrix<uRows, uCols>& CMatrix<uRows, uCols>::Invert( void )
 }
 
 template<unsigned int uRows, unsigned int uCols>
+inline void CMatrix<uRows, uCols>::Swap( CMatrix<uRows, uCols> &other )
+{
+	swap_ranges( m_adValues, m_adValues + uRows * uCols, other.m_adValues );
+}
+
+template<unsigned int uRows, unsigned int uCols>
 inline std::string CMatrix<uRows, uCols>::ToString( unsigned int uPrecision ) const
 {
 	std::ostringstream out;
@@ -159,4 +196,10 @@ inline std::string CMatrix<uRows, uCols>::ToString( unsigned int uPrecision ) co
 
 	out << ")";
 	return out.str( );
+}
+
+template<unsigned int uRows, unsigned int uCols>
+inline CMatrix<uRows, uCols>::CMatrix( void )
+{
+
 }

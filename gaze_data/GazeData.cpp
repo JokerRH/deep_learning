@@ -1,13 +1,16 @@
 #include "GazeData.h"
 #include "Landmark.h"
 #include "Image.h"
+#ifndef _USE_MATH_DEFINES
+#	define _USE_MATH_DEFINES
+#endif
 #include <math.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze, double dEyeDistance, double dFOV, CVector<3> vec3ScreenTL, CVector<2> vec2ScreenDim, const char *szWindow )
 {
-	const double dTanFOV = tan( dFOV / 2 );
+	const double dTanFOV = tan( dFOV * M_PI / ( 2 * 180 ) );
 	std::vector<CGazeData> vecData;
 
 	for( std::vector<CGazeCapture>::iterator pGaze = vecGaze.begin( ); pGaze < vecGaze.end( ); pGaze++ )
