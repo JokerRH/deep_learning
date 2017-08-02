@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string.h>
+#include <math.h>
 
 template<unsigned int uRows>
 class CVector
@@ -20,7 +21,7 @@ public:
 	CVector<uRows> operator*( const double &other ) const;
 	CVector<uRows> &operator*=( const double &other );
 	CVector<uRows> operator/( const double &other ) const;
-	CVector<uRows> &operator/( const double &other );
+	CVector<uRows> &operator/=( const double &other );
 	CVector<uRows> operator+( const CVector<uRows> &other ) const;
 	CVector<uRows> &operator+=( const CVector<uRows> &other );
 	CVector<uRows> operator-( const CVector<uRows> &other ) const;
@@ -29,6 +30,10 @@ public:
 	double Abs( void ) const;
 	CVector<uRows> Normalized( void ) const;
 	CVector<uRows> &Normalize( void );
+	CVector<uRows> UnitVector( void ) const;
+	CVector<uRows> &MakeUnitVector( void );
+	CVector<3> CrossProduct( const CVector<3> &other );
+	CVector<3> &MakeCrossProduct( const CVector<3> &other );
 	std::string ToString( unsigned int uPrecision = 2 ) const;
 
 private:
@@ -99,7 +104,7 @@ inline CVector<uRows> CVector<uRows>::operator/( const double &other ) const
 }
 
 template<unsigned int uRows>
-inline CVector<uRows> &CVector<uRows>::operator/( const double &other )
+inline CVector<uRows> &CVector<uRows>::operator/=( const double &other )
 {
 	for( unsigned int u = 0; u < uRows; u++ )
 		m_adValues[ u ] /= other;
@@ -177,13 +182,52 @@ inline CVector<uRows> &CVector<uRows>::Normalize( void )
 }
 
 template<unsigned int uRows>
+CVector<uRows> CVector<uRows>::UnitVector( void ) const
+{
+	return ( *this ) / Abs( );
+}
+
+template<unsigned int uRows>
+CVector<uRows> &CVector<uRows>::MakeUnitVector( void )
+{
+	( *this ) /= Abs( );
+	return *this;
+}
+
+template<>
+inline CVector<3> CVector<3>::CrossProduct( const CVector<3> &other )
+{
+	return CVector<3>(
+	{
+		( *this )[ 1 ] * other[ 2 ] - ( *this )[ 2 ] * other[ 1 ],
+		( *this )[ 2 ] * other[ 0 ] - ( *this )[ 0 ] * other[ 2 ],
+		( *this )[ 0 ] * other[ 1 ] - ( *this )[ 1 ] * other[ 0 ]
+	} );
+}
+
+template<>
+inline CVector<3> &CVector<3>::MakeCrossProduct( const CVector<3> &other )
+{
+	double dX = ( *this )[ 1 ] * other[ 2 ] - ( *this )[ 2 ] * other[ 1 ];
+	double dY = ( *this )[ 2 ] * other[ 0 ] - ( *this )[ 0 ] * other[ 2 ];
+	double dZ = ( *this )[ 0 ] * other[ 1 ] - ( *this )[ 1 ] * other[ 0 ];
+	m_adValues[ 0 ] = dX;
+	m_adValues[ 1 ] = dY;
+	m_adValues[ 2 ] = dZ;
+	return *this;
+}
+
+template<unsigned int uRows>
 inline std::string CVector<uRows>::ToString( unsigned int uPrecision ) const
 {
 	std::ostringstream out;
+	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	out.precision( uPrecision );
+
 	unsigned int u = 0;
-	out << "(" << std::setprecision( uPrecision ) << m_adValues[ u++ ];
+	out << "(" << m_adValues[ u++ ];
 	for( ; u < uRows; u++ )
-		out << ", " << std::setprecision( uPrecision ) << m_adValues[ u ];
+		out << ", " << m_adValues[ u ];
 
 	out << ")";
 	return out.str( );

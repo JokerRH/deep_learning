@@ -35,3 +35,17 @@ CMatrix<3, 3> CRenderHelper::GetRotationMatrix( double dX, double dY, double dZ 
 
 	return matX * matY * matZ;
 }
+
+CMatrix<3, 3> CRenderHelper::GetTransformationMatrix( CVector<3> vec3X, CVector<3> vec3Y, CVector<3> vec3Z )
+{
+	vec3X.MakeUnitVector( );
+	vec3Y.MakeUnitVector( );
+	vec3Z.MakeUnitVector( );
+
+	return CMatrix<3, 3>(
+	{
+		vec3X[ 0 ], vec3Y[ 0 ], vec3Z[ 0 ],
+		vec3X[ 1 ], vec3Y[ 1 ], vec3Z[ 1 ],
+		vec3X[ 2 ], vec3Y[ 2 ], vec3Z[ 2 ]
+	} );
+}

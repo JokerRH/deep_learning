@@ -106,26 +106,28 @@ inline CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::operator*=( const double & 
 	return *this;
 }
 
-template<unsigned int uRows, unsigned int uCols, unsigned int uCols2>
-CMatrix<uRows, uCols2> CMatrix<uRows, uCols>::operator*( const CMatrix<uCols, uCols2> &other ) const;
+template<unsigned int uRows, unsigned int uCols>
+template<unsigned int uCols2>
+CMatrix<uRows, uCols2> CMatrix<uRows, uCols>::operator*( const CMatrix<uCols, uCols2> &other ) const
 {
-	CMatrix<uRows, uCols2> mat;
+	CMatrix<uRows, uCols2> mat( { 0 } );
 	for( unsigned int uCol2 = 0; uCol2 < uCols2; uCol2++ )
-		for( unsigned int uRow = 0; uRow < uRows, uRow++ )
+		for( unsigned int uRow = 0; uRow < uRows; uRow++ )
 			for( unsigned int uCol = 0; uCol < uCols; uCol++ )
-				mat[ uRow ][ uCol2 ] = ( *this )[ uRow ][ uCol ] * other[ uCol ][ uCol2 ];
+				mat[ uRow ][ uCol2 ] += ( *this )[ uRow ][ uCol ] * other[ uCol ][ uCol2 ];
 
 	return mat;
 }
 
-template<unsigned int uRows, unsigned int uCols, unsigned int uCols2>
+template<unsigned int uRows, unsigned int uCols>
+template<unsigned int uCols2>
 CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::operator*=( const CMatrix<uCols, uRows> &other )
 {
-	CMatrix<uRows, uCols2> mat;
+	CMatrix<uRows, uCols2> mat( { 0 } );
 	for( unsigned int uCol2 = 0; uCol2 < uCols2; uCol2++ )
-		for( unsigned int uRow = 0; uRow < uRows, uRow++ )
+		for( unsigned int uRow = 0; uRow < uRows; uRow++ )
 			for( unsigned int uCol = 0; uCol < uCols; uCol++ )
-				mat[ uRow ][ uCol2 ] = ( *this )[ uRow ][ uCol ] * other[ uCol ][ uCol2 ];
+				mat[ uRow ][ uCol2 ] += ( *this )[ uRow ][ uCol ] * other[ uCol ][ uCol2 ];
 
 	Swap( mat );
 	return *this;
@@ -179,17 +181,20 @@ template<unsigned int uRows, unsigned int uCols>
 inline std::string CMatrix<uRows, uCols>::ToString( unsigned int uPrecision ) const
 {
 	std::ostringstream out;
+	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	out.precision( uPrecision );
+
 	unsigned int u = 0;
-	out << "((" << std::setprecision( uPrecision ) << m_adValues[ u++ ];
-	for( ; u < uCols; u++ )
-		out << ", " << std::setprecision( uPrecision ) << m_adValues[ u ];
+	out << "((" << m_adValues[ u++ ];
+	for( ; u < uCols; )
+		out << ", " << m_adValues[ u++ ];
 
 	out << ")";
 	for( unsigned int uCol, uRow = 1; uRow < uRows; uRow++ )
 	{
-		out << ", (" << std::setprecision( uPrecision ) << m_adValues[ u++ ];;
-		for( uCol = 1; uCol < uCols; uCol++, u++ )
-			out << ", " << std::setprecision( uPrecision ) << m_adValues[ u ];
+		out << ", (" << m_adValues[ u++ ];
+		for( uCol = 1; uCol < uCols; uCol++ )
+			out << ", " << m_adValues[ u++ ];
 
 		out << ")";
 	}

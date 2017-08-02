@@ -11,6 +11,7 @@
 #include "Ray.h"
 #include "GazeData.h"
 #include "Scenery.h"
+#include "RenderHelper.h"
 
 #ifdef _MSC_VER
 #	include<direct.h>
@@ -89,14 +90,25 @@ int CaptureGaze( void )
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 
 	CLandmarkCandidate::Init( );
-	CGazeCapture::Init(cap );
+	CGazeCapture::Init( cap );
+	CVector<3> vec3MonitorPos( { -0.2375, -0.02, -0.02 } );
+	CVector<3> vec3MonitorDim( { 0.475, -0.298, -0.03 } );
+	CScenery::SetScenery( vec3MonitorPos, vec3MonitorDim );
+	
 	std::vector<CGazeCapture> vecGaze;
-	while( true )
+	bool fContinue = true;
+	while( fContinue )
 	{
 		try
 		{
 			vecGaze.emplace_back( cap, "Window" );
-			CGazeData::GetGazeData( { vecGaze.back( ) }, 0.065, 60, CVector<3>( { -0.2375, -0.02 -0.02 } ), CVector<2>( { 0.475, 0.298 } ), "Window" );
+			std::vector<CGazeData> vecGazeData = CGazeData::GetGazeData( { vecGaze.back( ) }, 0.065, 60, vec3MonitorPos, vec3MonitorDim, "Window" );
+			for( std::vector<CGazeData>::iterator it = vecGazeData.begin( ); it < vecGazeData.end( ); it++ )
+				if( !it->DrawScenery( "Window" ) )
+				{
+					fContinue = false;
+					break;
+				}
 		}
 		catch( int i )
 		{
@@ -111,14 +123,12 @@ int CaptureGaze( void )
 	return EXIT_SUCCESS;
 }
 
-int Test( void )
+int RenderTest( void )
 {
-	//CVector<3> vec3Monitor( { -0.2375, -0.02, -0.02 } );
-	//CVector<3> vec3MonitorDim( { 0.475, -0.298, -0.03 } );
-	CVector<3> vec3Monitor( { -1, 0, 0 } );
-	CVector<3> vec3MonitorDim( { 1, -0.5, -0.1 } );
+	CVector<3> vec3Monitor( { -0.2375, -0.02, -0.02 } );
+	CVector<3> vec3MonitorDim( { 0.475, -0.298, -0.03 } );
 	
-	CVector<3> vec3EyeLeft( { -0.0325, 0, 0.5 } );
+	CVector<3> vec3EyeLeft( { -0.0325, -0.02, 0.5 } );
 	CVector<3> vec3EyeRight( { 0.0325, 0, 0.5 } );
 	CVector<3> vec3Gaze( { 0, -0.15, -0.02 } );
 	CRay rayEyeLeft( vec3EyeLeft, vec3Gaze - vec3EyeLeft );
@@ -131,19 +141,15 @@ int Test( void )
 	namedWindow( "Window", CV_WINDOW_NORMAL );
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 
-	CMatrix<3, 3> matTransform(
-	{
-		1, 0, 0,
-		0, 1, 0,
-		0, 0, 1
-	} );
 	unsigned char cKey;
 	bool fContinue = true;
+	double dDegX = 0;
+	double dDegY = 0;
 	while( fContinue )
 	{
 		CImage imgDraw( img, "Image_Draw" );
 		
-		scenery.Transform( matTransform ).Fit( ).Draw( imgDraw );
+		scenery.Transform( CRenderHelper::GetRotationMatrix( dDegX, dDegY, 0 ) ).Fit( ).Draw( imgDraw );
 		imgDraw.Show( "Window" );
 
 		cKey = (unsigned char) waitKey( 0 );
@@ -152,16 +158,42 @@ int Test( void )
 		case 27:	//Escape
 			fContinue = false;
 			break;
-		case 10:	//Enter
-			matTransform = CMatrix<3, 3>(
-			{
-				0, 0, 1,
-				0, 1, 0,
-				1, 0, 0
-			} );
+		case 81:	//Key)_Left
+			dDegY -= 1;
+			if( dDegY < 0 )
+				dDegY = 360;
+
+			break;
+		case 82:	//Key_Up
+			dDegX -= 1;
+			if( dDegX < 0 )
+				dDegX = 360;
+
+			break;
+		case 83:	//Key_Right
+			dDegY += 1;
+			if( dDegY > 360 )
+				dDegY = 0;
+
+			break;
+		case 84:	//Key_Down
+			dDegX += 1;
+			if( dDegX > 360 )
+				dDegX = 0;
+
+			break;
 		}
 	}
 	
+	return EXIT_SUCCESS;
+}
+
+int Test( void )
+{
+	CRay ray1( CVector<3>( { -7, 2, -3 } ), CVector<3>( { 0, 1, 2 } ) );
+	CRay ray2( CVector<3>( { -3, -3, 3 } ), CVector<3>( { 1, 2, 1 } ) );
+	CVector<2> vec2Res = ray1.PointOfShortestDistance( ray2 );
+	printf( "Result: %s\n", vec2Res.ToString( ).c_str( ) );
 	return EXIT_SUCCESS;
 }
 
@@ -174,8 +206,9 @@ int main(int argc, char **argv)
 #endif
 
 	//int iReturn = CaptureVideo( );
-	//int iReturn = CaptureGaze( );
-	int iReturn = Test( );
+	int iReturn = CaptureGaze( );
+	//int iReturn = RenderTest( );
+	//int iReturn = Test( );
 	destroyAllWindows( );
 
 #ifdef _MSC_VER

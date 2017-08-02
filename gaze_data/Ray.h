@@ -14,7 +14,7 @@ public:
 	/**
 	 * @brief Calculates the points of shortest distance
 	 * @param other Vector to calculate the distance from
-	 * @return Vector containing the multiplicator for the closest points. First value is index for \e other, second is for \e this
+	 * @return Vector containing the multiplicator for the closest points. First value is index for \e this, second is for \e other
 	 */
 	CVector<2> PointOfShortestDistance( const CRay &other ) const;
 	CRay Transform( const CMatrix<3, 3> &matTransform ) const;
