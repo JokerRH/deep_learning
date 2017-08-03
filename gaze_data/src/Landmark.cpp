@@ -41,7 +41,7 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 		//Crop face and draw; Switch eyes
 		imgFocus.Crop( candidate.boxFace );
 		unsigned char cKey;
-		bool fContinue = true;
+		bool fContinue = ( candidate.aEyes.size( ) );
 		while( fContinue )
 		{
 			imgDraw = CImage( imgFocus, "Image_Draw" );
@@ -84,6 +84,9 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 			fContinue = true;
 			while( fContinue )
 			{
+				while( candidate.aEyes.size( ) < 2 )
+					candidate.aEyes.emplace_back( candidate.boxFace );
+
 				imgDraw = CImage( imgFocus, "Image_Draw" );
 				pt = CPoint( imgDraw, dX, dY, "Point_Eye" );
 				pt.Draw( Scalar( 0, 255, 255 ), 1, -1, 0 );
@@ -299,10 +302,4 @@ void CLandmark::Draw( CImage &img )
 	ptEyeLeft.Draw( img, Scalar( 0, 255, 255 ) );
 	ptEyeRight.Draw( img, Scalar( 0, 255, 255 ) );
 	ptNose.Draw( img, Scalar( 0, 255, 255 ) );
-	
-	unsigned int uLX = ptEyeLeft.GetPositionX( );
-	unsigned int uRX = ptEyeRight.GetPositionX( );
-	unsigned int uLY = ptEyeLeft.GetPositionY( );
-	unsigned int uRY = ptEyeRight.GetPositionY( );
-	printf( "Eye left: (%u, %u); Eye right: (%u, %u); Distance: (%d, %d)\n", uLX, uLY, uRX, uRY, uLX - uRX, uLY - uRY );
 }

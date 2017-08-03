@@ -26,6 +26,7 @@ public:
 	CVector<uRows> &operator+=( const CVector<uRows> &other );
 	CVector<uRows> operator-( const CVector<uRows> &other ) const;
 	CVector<uRows> &operator-=( const CVector<uRows> &other );
+	CVector<uRows> operator-( void ) const;
 	double Abs2( void ) const;
 	double Abs( void ) const;
 	CVector<uRows> Normalized( void ) const;
@@ -150,6 +151,16 @@ inline CVector<uRows> &CVector<uRows>::operator-=( const CVector<uRows> &other )
 		m_adValues[ u ] -= other.m_adValues[ u ];
 
 	return *this;
+}
+
+template<unsigned int uRows>
+inline CVector<uRows> CVector<uRows>::operator-( void ) const
+{
+	CVector<uRows> vec( *this );
+	for( unsigned int u = 0; u < uRows; u++ )
+		vec.m_adValues[ u ] = -vec.m_adValues[ u ];
+
+	return vec;
 }
 
 template<unsigned int uRows>

@@ -2,13 +2,15 @@
 #include "Landmark.h"
 #include "Image.h"
 #include "Scenery.h"
-#include "RenderHelper.h"
+#include "Render/RenderHelper.h"
 #ifndef _USE_MATH_DEFINES
 #	define _USE_MATH_DEFINES
 #endif
 #include <math.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
+using namespace cv;
 
 std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze, double dEyeDistance, double dFOV, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim, const char *szWindow )
 {
@@ -45,8 +47,7 @@ std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze
 			}
 			double dPixelDiagonal = sqrt( dWidth * dWidth + dHeight * dHeight );
 			double dDistance = GetDistance( dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
-			printf( "Distance: %f\n", dDistance );
-			
+
 			CVector<3> vec3EyeLeft(
 			{
 				GetPosition( dDistance, ( 0.5 - it->ptEyeLeft.GetRelPositionX( -1 ) ) * dWidth, dPixelDiagonal, dTanFOV ),
@@ -62,7 +63,6 @@ std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze
 			} );
 
 			vecData.emplace_back( vec3Point, vec3EyeLeft, vec3EyeRight );
-			printf( "Added data: EyeLeft: %s; EyeRight: %s\n", vecData.back( ).m_rayEyeLeft.ToString( ).c_str( ), vecData.back( ).m_rayEyeRight.ToString( ).c_str( ) );
 		}
 	}
 
@@ -103,15 +103,26 @@ bool CGazeData::DrawScenery( const char *szWindow )
 	CImage img( "Image_Scenery" );
 	img.matImage = cv::Mat( 1050, 1050, CV_8UC3, cv::Scalar( 0, 0, 0 ) );
 
+	//Write distance
+	char szDistance[ 8 ];
+	sprintf( szDistance, "%5.1fcm", m_rayEyeLeft.m_vec3Origin[ 2 ] * 100 );
+	int iBaseline = 0;
+	Size textSize = getTextSize( szDistance, FONT_HERSHEY_SIMPLEX, 1, 3, &iBaseline );
+	iBaseline += 3;
+	Point ptText( img.matImage.cols - textSize.width - 5, textSize.height + 5 );
+
 	unsigned char cKey;
 	bool fContinue = true;
-	double dDegX = 0;
-	double dDegY = 0;
+	double dDegX = 211;
+	double dDegY = 42;
+	double dDegZ = 0;
 	while( fContinue )
 	{
 		CImage imgDraw( img, "Image_Draw" );
 		
-		scenery.Transform( CRenderHelper::GetRotationMatrix( dDegX, dDegY, 0 ) ).Fit( ).Draw( imgDraw );
+		//printf( "Rot: (%f, %f, %f)\n", dDegX, dDegY, dDegZ );
+		scenery.Transformed( CRenderHelper::GetRotationMatrix( dDegX, dDegY, dDegZ ) ).Fit( ).Draw( imgDraw );
+		putText( imgDraw.matImage, szDistance, ptText,  FONT_HERSHEY_SIMPLEX, 1, Scalar( 255, 255, 255 ), 3 );
 		imgDraw.Show( szWindow );
 
 		cKey = (unsigned char) cv::waitKey( 0 );
@@ -122,6 +133,11 @@ bool CGazeData::DrawScenery( const char *szWindow )
 			break;
 		case 27:	//Escape
 			return false;
+		case 80:	//Pos1
+			dDegX = 211;
+			dDegY = 42;
+			dDegZ = 0;
+			break;
 		case 81:	//Key)_Left
 			dDegY -= 1;
 			if( dDegY < 0 )
@@ -136,15 +152,57 @@ bool CGazeData::DrawScenery( const char *szWindow )
 			break;
 		case 83:	//Key_Right
 			dDegY += 1;
-			if( dDegY > 360 )
+			if( dDegY >= 360 )
 				dDegY = 0;
 
 			break;
 		case 84:	//Key_Down
 			dDegX += 1;
-			if( dDegX > 360 )
+			if( dDegX >= 360 )
 				dDegX = 0;
 
+			break;
+		case 85:	//Img_Up
+			dDegZ -= 1;
+			if( dDegZ < 0 )
+				dDegZ = 360;
+
+			break;
+		case 86:	//Img_Down
+			dDegZ += 1;
+			if( dDegZ >= 360 )
+				dDegZ = 0;
+
+			break;
+		case 176:	//Numpad_0
+			dDegX = 90;
+			dDegY = 0;
+			dDegZ = 0;
+			break;
+		case 178:	//Numpad_2
+			dDegX = 180;
+			dDegY = 0;
+			dDegZ = 0;
+			break;
+		case 180:	//Numpad_4
+			dDegX = 180;
+			dDegY = 90;
+			dDegZ = 0;
+			break;
+		case 181:	//Numpad_5
+			dDegX = 270;
+			dDegY = 0;
+			dDegZ = 0;
+			break;
+		case 182:	//Numpad_6
+			dDegX = 180;
+			dDegY = 270;
+			dDegZ = 0;
+			break;
+		case 184:	//Numpad_8
+			dDegX = 0;
+			dDegY = 0;
+			dDegZ = 180;
 			break;
 		}
 	}

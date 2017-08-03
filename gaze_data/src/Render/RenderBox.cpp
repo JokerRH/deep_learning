@@ -1,92 +1,42 @@
-#include "Render.h"
+#include "RenderBox.h"
 
-/****************************************\
- * CRenderLine                          *
-\****************************************/
-void CRenderLine::Transform( const CMatrix<3, 3> &mat )
+CVector<3> CRenderBox::GetMin( void ) const
 {
-	m_avec3Points[ 0 ] = mat * m_avec3Points[ 0 ];
-	m_avec3Points[ 1 ] = mat * m_avec3Points[ 1 ];
+	return CVector<3>(
+	{
+		std::min( { m_avec3Points[ 0 ][ 0 ], m_avec3Points[ 1 ][ 0 ], m_avec3Points[ 2 ][ 0 ], m_avec3Points[ 3 ][ 0 ], m_avec3Points[ 4 ][ 0 ], m_avec3Points[ 5 ][ 0 ], m_avec3Points[ 6 ][ 0 ], m_avec3Points[ 7 ][ 0 ] } ),
+		std::min( { m_avec3Points[ 0 ][ 1 ], m_avec3Points[ 1 ][ 1 ], m_avec3Points[ 2 ][ 1 ], m_avec3Points[ 3 ][ 1 ], m_avec3Points[ 4 ][ 1 ], m_avec3Points[ 5 ][ 1 ], m_avec3Points[ 6 ][ 1 ], m_avec3Points[ 7 ][ 1 ] } ),
+		std::min( { m_avec3Points[ 0 ][ 2 ], m_avec3Points[ 1 ][ 2 ], m_avec3Points[ 2 ][ 2 ], m_avec3Points[ 3 ][ 2 ], m_avec3Points[ 4 ][ 2 ], m_avec3Points[ 5 ][ 2 ], m_avec3Points[ 6 ][ 2 ], m_avec3Points[ 7 ][ 2 ] } )
+	} );
 }
 
-void CRenderLine::Shift( const CVector<3> &vec )
+CVector<3> CRenderBox::GetMax( void ) const
 {
-	m_avec3Points[ 0 ] += vec;
-	m_avec3Points[ 1 ] += vec;
+	return CVector<3>(
+	{
+		std::max( { m_avec3Points[ 0 ][ 0 ], m_avec3Points[ 1 ][ 0 ], m_avec3Points[ 2 ][ 0 ], m_avec3Points[ 3 ][ 0 ], m_avec3Points[ 4 ][ 0 ], m_avec3Points[ 5 ][ 0 ], m_avec3Points[ 6 ][ 0 ], m_avec3Points[ 7 ][ 0 ] } ),
+		std::max( { m_avec3Points[ 0 ][ 1 ], m_avec3Points[ 1 ][ 1 ], m_avec3Points[ 2 ][ 1 ], m_avec3Points[ 3 ][ 1 ], m_avec3Points[ 4 ][ 1 ], m_avec3Points[ 5 ][ 1 ], m_avec3Points[ 6 ][ 1 ], m_avec3Points[ 7 ][ 1 ] } ),
+		std::max( { m_avec3Points[ 0 ][ 2 ], m_avec3Points[ 1 ][ 2 ], m_avec3Points[ 2 ][ 2 ], m_avec3Points[ 3 ][ 2 ], m_avec3Points[ 4 ][ 2 ], m_avec3Points[ 5 ][ 2 ], m_avec3Points[ 6 ][ 2 ], m_avec3Points[ 7 ][ 2 ] } )
+	} );
 }
 
-/****************************************\
- * CRenderPlane                         *
-\****************************************/
-void CRenderPlane::RenderContent( CImage &img, const cv::Scalar &color ) const
+CRenderBox::CRenderBox( const CVector<3> &vec3Min, const CVector<3> &vec3Max ) :
+	m_avec3Points{ CVector<3>( { 0 } ), CVector<3>( { 0 } ), CVector<3>( { 0 } ), CVector<3>( { 0 } ), CVector<3>( { 0 } ), CVector<3>( { 0 } ), CVector<3>( { 0 } ), CVector<3>( { 0 } ) }
 {
-	unsigned int uWidth = img.matImage.cols;
-	unsigned int uHeight = img.matImage.rows;
-	cv::Point aPoints[ 4 ] =
-	{
-		cv::Point( m_avec3Points[ 0 ][ 0 ] * uWidth, m_avec3Points[ 0 ][ 1 ] * uHeight ),
-		cv::Point( m_avec3Points[ 1 ][ 0 ] * uWidth, m_avec3Points[ 1 ][ 1 ] * uHeight ),
-		cv::Point( m_avec3Points[ 2 ][ 0 ] * uWidth, m_avec3Points[ 2 ][ 1 ] * uHeight ),
-		cv::Point( m_avec3Points[ 3 ][ 0 ] * uWidth, m_avec3Points[ 3 ][ 1 ] * uHeight ),
-	};
-	fillConvexPoly( img.matImage, aPoints, 4, color );
+	const CVector<3> vec3DimX( { vec3Max[ 0 ] - vec3Min[ 0 ], 0, 0 } );
+	const CVector<3> vec3DimY( { 0, vec3Max[ 1 ] - vec3Min[ 1 ], 0 } );
+	const CVector<3> vec3DimZ( { 0, 0, vec3Max[ 2 ] - vec3Min[ 2 ] } );
+	
+	m_avec3Points[ 0 ] = vec3Max - vec3DimX;
+	m_avec3Points[ 1 ] = vec3Min + vec3DimZ;
+	m_avec3Points[ 2 ] = vec3Max - vec3DimY;
+	m_avec3Points[ 3 ] = vec3Max;
+	m_avec3Points[ 4 ] = vec3Min + vec3DimY;
+	m_avec3Points[ 5 ] = vec3Min;
+	m_avec3Points[ 6 ] = vec3Min + vec3DimX;
+	m_avec3Points[ 6 ] = vec3Max - vec3DimZ;
 }
 
-void CRenderPlane::Transform( const CMatrix<3, 3> &mat )
-{
-	m_avec3Points[ 0 ] = mat * m_avec3Points[ 0 ];
-	m_avec3Points[ 1 ] = mat * m_avec3Points[ 1 ];
-	m_avec3Points[ 2 ] = mat * m_avec3Points[ 2 ];
-	m_avec3Points[ 3 ] = mat * m_avec3Points[ 3 ];
-}
-
-void CRenderPlane::Shift( const CVector<3> &vec )
-{
-	m_avec3Points[ 0 ] += vec;
-	m_avec3Points[ 1 ] += vec;
-	m_avec3Points[ 2 ] += vec;
-	m_avec3Points[ 3 ] += vec;
-}
-
-std::array<unsigned char, 2> CRenderPlane::GetLineIndices( unsigned char &fLine ) const
-{
-	std::array<unsigned char, 2> abIndices;
-	if( fLine & PLANE_LEFT )
-	{
-		abIndices[ 0 ] = 0;
-		abIndices[ 1 ] = 1;
-		fLine &= ~PLANE_LEFT;
-	}
-	else if( fLine & PLANE_BOTTOM )
-	{
-		abIndices[ 0 ] = 1;
-		abIndices[ 1 ] = 2;
-		fLine &= ~PLANE_BOTTOM;
-	}
-	else if( fLine & PLANE_RIGHT )
-	{
-		abIndices[ 0 ] = 2;
-		abIndices[ 1 ] = 3;
-		fLine &= ~PLANE_RIGHT;
-	}
-	else if( fLine & PLANE_TOP )
-	{
-		abIndices[ 0 ] = 3;
-		abIndices[ 1 ] = 0;
-		fLine &= ~PLANE_TOP;
-	}
-	else
-	{
-		fprintf( stderr, "Unknown line in CRenderPlane::GetLineIndices\n" );
-		assert( false );
-	}
-
-	return abIndices;
-}
-
-/****************************************\
- * CRenderBox                           *
-\****************************************/
 void CRenderBox::Transform( const CMatrix<3, 3> &mat )
 {
 	m_avec3Points[ 0 ] = mat * m_avec3Points[ 0 ];
@@ -99,16 +49,16 @@ void CRenderBox::Transform( const CMatrix<3, 3> &mat )
 	m_avec3Points[ 7 ] = mat * m_avec3Points[ 7 ];
 }
 
-void CRenderBox::Shift( const CVector<3> &vec )
+void CRenderBox::Shift( const CVector<3> &vec3 )
 {
-	m_avec3Points[ 0 ] += vec;
-	m_avec3Points[ 1 ] += vec;
-	m_avec3Points[ 2 ] += vec;
-	m_avec3Points[ 3 ] += vec;
-	m_avec3Points[ 4 ] += vec;
-	m_avec3Points[ 5 ] += vec;
-	m_avec3Points[ 6 ] += vec;
-	m_avec3Points[ 7 ] += vec;
+	m_avec3Points[ 0 ] += vec3;
+	m_avec3Points[ 1 ] += vec3;
+	m_avec3Points[ 2 ] += vec3;
+	m_avec3Points[ 3 ] += vec3;
+	m_avec3Points[ 4 ] += vec3;
+	m_avec3Points[ 5 ] += vec3;
+	m_avec3Points[ 6 ] += vec3;
+	m_avec3Points[ 7 ] += vec3;
 }
 
 #define BOX( plane, a, b, c, d )\
@@ -117,7 +67,7 @@ void CRenderBox::Shift( const CVector<3> &vec )
 		if( fLine & CRenderPlane::PLANE_LEFT )\
 		{\
 			abIndices[ 0 ] = a;\
-			abIndices[ 0 ] = b;\
+			abIndices[ 1 ] = b;\
 			fLine &= ~CRenderPlane::PLANE_LEFT;\
 		}\
 		else if( fLine & CRenderPlane::PLANE_BOTTOM )\
@@ -155,7 +105,7 @@ std::array<unsigned char, 2> CRenderBox::GetLineIndices( unsigned char &fPlane, 
 	else BOX( BOX_LEFT, 4, 5, 1, 0 )
 	else BOX( BOX_RIGHT, 3, 2, 6, 7 )
 	else BOX( BOX_TOP, 4, 0, 3, 7 )
-	else BOX( BOX_BOTTOM, 0, 5, 6, 2 )
+	else BOX( BOX_BOTTOM, 1, 5, 6, 2 )
 	else
 	{
 		fprintf( stderr, "Unknown plane in CRenderBox::GetLineIndices\n" );

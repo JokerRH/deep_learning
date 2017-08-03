@@ -11,7 +11,7 @@
 #include "Ray.h"
 #include "GazeData.h"
 #include "Scenery.h"
-#include "RenderHelper.h"
+#include "Render/RenderHelper.h"
 
 #ifdef _MSC_VER
 #	include<direct.h>
@@ -91,8 +91,8 @@ int CaptureGaze( void )
 
 	CLandmarkCandidate::Init( );
 	CGazeCapture::Init( cap );
-	CVector<3> vec3MonitorPos( { -0.2375, -0.02, -0.02 } );
-	CVector<3> vec3MonitorDim( { 0.475, -0.298, -0.03 } );
+	CVector<3> vec3MonitorPos( { 0.2375, -0.02, -0.02 } );
+	CVector<3> vec3MonitorDim( { -0.475, -0.298, -0.03 } );
 	CScenery::SetScenery( vec3MonitorPos, vec3MonitorDim );
 	
 	std::vector<CGazeCapture> vecGaze;
@@ -128,9 +128,9 @@ int RenderTest( void )
 	CVector<3> vec3Monitor( { -0.2375, -0.02, -0.02 } );
 	CVector<3> vec3MonitorDim( { 0.475, -0.298, -0.03 } );
 	
-	CVector<3> vec3EyeLeft( { -0.0325, -0.02, 0.5 } );
-	CVector<3> vec3EyeRight( { 0.0325, 0, 0.5 } );
-	CVector<3> vec3Gaze( { 0, -0.15, -0.02 } );
+	CVector<3> vec3EyeLeft( { 0.0325, -0.02, 0.5 } );
+	CVector<3> vec3EyeRight( { -0.0325, 0, 0.5 } );
+	CVector<3> vec3Gaze( { 0.2, -0.15, -0.02 } );
 	CRay rayEyeLeft( vec3EyeLeft, vec3Gaze - vec3EyeLeft );
 	CRay rayEyeRight( vec3EyeRight, vec3Gaze - vec3EyeRight );
 	
@@ -149,7 +149,7 @@ int RenderTest( void )
 	{
 		CImage imgDraw( img, "Image_Draw" );
 		
-		scenery.Transform( CRenderHelper::GetRotationMatrix( dDegX, dDegY, 0 ) ).Fit( ).Draw( imgDraw );
+		scenery.Transformed( CRenderHelper::GetRotationMatrix( dDegX, dDegY, 0 ) ).Fit( ).Draw( imgDraw );
 		imgDraw.Show( "Window" );
 
 		cKey = (unsigned char) waitKey( 0 );
@@ -182,6 +182,8 @@ int RenderTest( void )
 				dDegX = 0;
 
 			break;
+		default:
+			printf( "Key: %u\n", cKey & 0xFF );
 		}
 	}
 	
