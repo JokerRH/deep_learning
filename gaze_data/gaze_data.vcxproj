@@ -154,35 +154,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BaseBBox.h" />
-    <ClInclude Include="BaseHighlighter.h" />
-    <ClInclude Include="BBox.h" />
-    <ClInclude Include="Config.h" />
-    <ClInclude Include="Gaze.h" />
-    <ClInclude Include="GazeCapture.h" />
-    <ClInclude Include="Image.h" />
-    <ClInclude Include="Landmark.h" />
-    <ClInclude Include="LandmarkCandidate.h" />
-    <ClInclude Include="Line.h" />
-    <ClInclude Include="Point.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="Matrix.h" />
-    <ClInclude Include="Vector.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="BaseBBox.cpp" />
-    <ClCompile Include="BaseHighlighter.cpp" />
-    <ClCompile Include="BBox.cpp" />
-    <ClCompile Include="Gaze.cpp" />
-    <ClCompile Include="GazeCapture.cpp" />
-    <ClCompile Include="Image.cpp" />
-    <ClCompile Include="Landmark.cpp" />
-    <ClCompile Include="LandmarkCandidate.cpp" />
-    <ClCompile Include="Line.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Point.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_eye.xml" />
     <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_eye_tree_eyeglasses.xml" />
     <Xml Include="..\..\..\..\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\haarcascade_frontalcatface.xml" />
@@ -209,6 +180,53 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="eye.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ArrowedLine.h" />
+    <ClInclude Include="src\BaseBBox.h" />
+    <ClInclude Include="src\BaseHighlighter.h" />
+    <ClInclude Include="src\BBox.h" />
+    <ClInclude Include="src\Config.h" />
+    <ClInclude Include="src\DataSet.h" />
+    <ClInclude Include="src\GazeCapture.h" />
+    <ClInclude Include="src\GazeData.h" />
+    <ClInclude Include="src\Image.h" />
+    <ClInclude Include="src\Landmark.h" />
+    <ClInclude Include="src\LandmarkCandidate.h" />
+    <ClInclude Include="src\Line.h" />
+    <ClInclude Include="src\Point.h" />
+    <ClInclude Include="src\Ray.h" />
+    <ClInclude Include="src\Render\Matrix.h" />
+    <ClInclude Include="src\Render\Render.h" />
+    <ClInclude Include="src\Render\RenderBox.h" />
+    <ClInclude Include="src\Render\RenderHelper.h" />
+    <ClInclude Include="src\Render\RenderLine.h" />
+    <ClInclude Include="src\Render\RenderObject.h" />
+    <ClInclude Include="src\Render\RenderPlane.h" />
+    <ClInclude Include="src\Render\RenderPoint.h" />
+    <ClInclude Include="src\Render\Vector.h" />
+    <ClInclude Include="src\Scenery.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\BaseBBox.cpp" />
+    <ClCompile Include="src\BaseHighlighter.cpp" />
+    <ClCompile Include="src\BBox.cpp" />
+    <ClCompile Include="src\DataSet.cpp" />
+    <ClCompile Include="src\GazeCapture.cpp" />
+    <ClCompile Include="src\GazeData.cpp" />
+    <ClCompile Include="src\Image.cpp" />
+    <ClCompile Include="src\Landmark.cpp" />
+    <ClCompile Include="src\LandmarkCandidate.cpp" />
+    <ClCompile Include="src\Line.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Point.cpp" />
+    <ClCompile Include="src\Ray.cpp" />
+    <ClCompile Include="src\Render\RenderBox.cpp" />
+    <ClCompile Include="src\Render\RenderHelper.cpp" />
+    <ClCompile Include="src\Render\RenderLine.cpp" />
+    <ClCompile Include="src\Render\RenderObject.cpp" />
+    <ClCompile Include="src\Render\RenderPlane.cpp" />
+    <ClCompile Include="src\Scenery.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

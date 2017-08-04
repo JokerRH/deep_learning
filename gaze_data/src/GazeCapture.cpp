@@ -5,7 +5,10 @@
 #include <regex>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
+#include <string>
 #ifdef _MSC_VER
+#	define NOMINMAX
 #	include <wtypes.h>
 #	include <direct.h>
 #	include <conio.h>
@@ -43,7 +46,7 @@ void CGazeCapture::GetScreenResolution( unsigned int & uWidth, unsigned int & uH
 {
 #ifdef _MSC_VER
 	RECT desktop;
-	GetWindowRect( GetDesktostatic unsigned int s_uCurrentImage;pWindow( ), &desktop );
+	GetWindowRect( GetDesktopWindow( ), &desktop );
 	uWidth = desktop.right;
 	uHeight = desktop.bottom;
 #else
@@ -148,7 +151,11 @@ bool CGazeCapture::OpenOrCreate( const std::string &sFile )
 		{
 			std::regex_match( sLine, match, regex_line );
 			if( match.size( ) )
-				s_uCurrentImage = std::max( s_uCurrentImage, (unsigned int) std::stoul( match[ 7 ].str( ) ) );
+			{
+				unsigned int u = std::stoul( match[ 7 ].str( ) );
+				s_uCurrentImage = std::max( s_uCurrentImage, u );
+				//s_uCurrentImage = std::max( s_uCurrentImage, (unsigned int) std::stoul( match[ 7 ].str( ) ) );
+			}
 		}
 		s_uCurrentImage++;
 

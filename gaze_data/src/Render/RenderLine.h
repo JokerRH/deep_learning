@@ -39,8 +39,8 @@ inline CRenderLine::~CRenderLine( void )
 
 inline void CRenderLine::RenderFrame( CImage &img, const cv::Scalar &color, int iThickness ) const
 {
-	cv::Point pt1( m_avec3Points[ 0 ][ 0 ] * img.matImage.cols, m_avec3Points[ 0 ][ 1 ] * img.matImage.rows );
-	cv::Point pt2( m_avec3Points[ 1 ][ 0 ] * img.matImage.cols, m_avec3Points[ 1 ][ 1 ] * img.matImage.rows );
+	cv::Point pt1( (int) ( m_avec3Points[ 0 ][ 0 ] * img.matImage.cols ), (int) ( m_avec3Points[ 0 ][ 1 ] * img.matImage.rows ) );
+	cv::Point pt2( (int) ( m_avec3Points[ 1 ][ 0 ] * img.matImage.cols ), (int) ( m_avec3Points[ 1 ][ 1 ] * img.matImage.rows ) );
 	cv::line( img.matImage, pt1, pt2, color, iThickness );
 }
 

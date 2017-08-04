@@ -56,6 +56,9 @@ int EditDataset( const char *szFile )
 	}
 	catch( int i )
 	{
+		if( i != 1 )
+			throw;
+
 		for( unsigned int u = 0; u < uCurrent; u++ )
 		{
 			if( u == uCurrent )
@@ -79,6 +82,9 @@ int EditDataset( const char *szFile )
 	}
 	catch( int i )
 	{
+		if( i != 1 )
+			throw;
+
 		for( unsigned int u = 0; u < 5; u++ )
 		{
 			if( u == uCurrent )
@@ -114,6 +120,7 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 		throw;
 	}
 
+	destroyAllWindows( );
 	return EXIT_SUCCESS;
 }
 
@@ -170,6 +177,7 @@ int CaptureVideo( void )
 		}
 	}
 
+	destroyAllWindows( );
 	return EXIT_SUCCESS;
 }
 
@@ -250,7 +258,8 @@ int RenderTest( void )
 		scenery.Transformed( CRenderHelper::GetRotationMatrix( dDegX, dDegY, 0 ) ).Fit( ).Draw( imgDraw );
 		imgDraw.Show( "Window" );
 
-		cKey = (unsigned char) waitKey( 0 );
+		//cKey = (unsigned char) waitKey( 0 );
+		cKey = CScenery::ProcessEvents( );
 		switch( cKey )
 		{
 		case 27:	//Escape
@@ -284,7 +293,8 @@ int RenderTest( void )
 			printf( "Key: %u\n", cKey & 0xFF );
 		}
 	}
-	
+
+	destroyAllWindows( );
 	return EXIT_SUCCESS;
 }
 
@@ -308,7 +318,7 @@ int main(int argc, char **argv)
 	if( argc == 3 )
 	{
 #ifdef _MSC_VER
-		if( !stricmp( argv[ 1 ], "edit" ) )
+		if( !_stricmp( argv[ 1 ], "edit" ) )
 #else
 		if( !strcasecmp( argv[ 1 ], "edit" ) )
 #endif
@@ -319,7 +329,7 @@ int main(int argc, char **argv)
 	else if( argc == 4 )
 	{
 		#ifdef _MSC_VER
-		if( !stricmp( argv[ 1 ], "proc" ) )
+		if( !_stricmp( argv[ 1 ], "proc" ) )
 #else
 		if( !strcasecmp( argv[ 1 ], "proc" ) )
 #endif
@@ -331,15 +341,4 @@ int main(int argc, char **argv)
 	fprintf( stderr, "Invalid arguments\n" );
 	getchar( );
 	return EXIT_FAILURE;
-
-	//int iReturn = CaptureVideo( );
-	//int iReturn = CaptureGaze( );
-	//int iReturn = RenderTest( );
-	//int iReturn = Test( );
-	destroyAllWindows( );
-
-#ifdef _MSC_VER
-	system( "PAUSE" );
-#endif
-	//return iReturn;
 }

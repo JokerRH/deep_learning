@@ -45,7 +45,7 @@ inline CVector<3> CRenderPoint::GetMax( void ) const
 
 inline void CRenderPoint::RenderPoints( CImage &img, const cv::Scalar &color, int iRadius, int iThickness ) const
 {
-	cv::circle( img.matImage, cv::Point( m_vec3Point[ 0 ] * img.matImage.cols, m_vec3Point[ 1 ] * img.matImage.rows ), iRadius, color, iThickness );
+	cv::circle( img.matImage, cv::Point( (int) ( m_vec3Point[ 0 ] * img.matImage.cols ), (int) ( m_vec3Point[ 1 ] * img.matImage.rows ) ), iRadius, color, iThickness );
 }
 
 inline void CRenderPoint::Transform( const CMatrix<3, 3> &mat )

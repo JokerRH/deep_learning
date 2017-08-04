@@ -26,10 +26,10 @@ void CRenderPlane::RenderContent( CImage &img, const cv::Scalar &color ) const
 	unsigned int uHeight = img.matImage.rows;
 	cv::Point aPoints[ 4 ] =
 	{
-		cv::Point( m_avec3Points[ 0 ][ 0 ] * uWidth, m_avec3Points[ 0 ][ 1 ] * uHeight ),
-		cv::Point( m_avec3Points[ 1 ][ 0 ] * uWidth, m_avec3Points[ 1 ][ 1 ] * uHeight ),
-		cv::Point( m_avec3Points[ 2 ][ 0 ] * uWidth, m_avec3Points[ 2 ][ 1 ] * uHeight ),
-		cv::Point( m_avec3Points[ 3 ][ 0 ] * uWidth, m_avec3Points[ 3 ][ 1 ] * uHeight ),
+		cv::Point( (int) ( m_avec3Points[ 0 ][ 0 ] * uWidth ), (int) ( m_avec3Points[ 0 ][ 1 ] * uHeight ) ),
+		cv::Point( (int) ( m_avec3Points[ 1 ][ 0 ] * uWidth ), (int) ( m_avec3Points[ 1 ][ 1 ] * uHeight ) ),
+		cv::Point( (int) ( m_avec3Points[ 2 ][ 0 ] * uWidth ), (int) ( m_avec3Points[ 2 ][ 1 ] * uHeight ) ),
+		cv::Point( (int) ( m_avec3Points[ 3 ][ 0 ] * uWidth ), (int) ( m_avec3Points[ 3 ][ 1 ] * uHeight ) ),
 	};
 	fillConvexPoly( img.matImage, aPoints, 4, color );
 }

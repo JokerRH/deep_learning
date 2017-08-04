@@ -5,7 +5,8 @@
 #include "Point.h"
 
 #ifdef _MSC_VER
-
+#	define NOMINMAX
+#	include <Windows.h>
 #else
 #	include <sys/stat.h>
 #endif
@@ -53,7 +54,9 @@ private:
 inline bool CGazeCapture::Exists( const std::string &sFile )
 {
 #ifdef _MSC_VER
-
+	LPCWSTR szFile = std::wstring( sFile.begin( ), sFile.end( ) ).c_str( );
+	GetFileAttributes( szFile );
+	return ( INVALID_FILE_ATTRIBUTES == GetFileAttributes( szFile ) && GetLastError( ) == ERROR_FILE_NOT_FOUND );
 #else
 	struct stat buffer;   
 	return ( stat( sFile.c_str( ), &buffer ) == 0 );

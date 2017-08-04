@@ -6,6 +6,11 @@
 #include <algorithm>
 #include <opencv2/core/types.hpp>
 
+#ifdef _MSC_VER
+#	define NOMINMAX
+#	include <Windows.h>
+#endif
+
 using namespace cv;
 
 CVector<3> CScenery::s_vec3MonitorPos( { 0 } );
@@ -15,6 +20,71 @@ void CScenery::SetScenery( const CVector<3> &vec3MonitorPos, const CVector<3> ve
 {
 	s_vec3MonitorPos = vec3MonitorPos;
 	s_vec3MonitorDim = vec3MonitorDim;
+}
+
+unsigned char CScenery::ProcessEvents( void )
+{
+#ifdef _MSC_VER
+	MSG msg;
+	unsigned int uKey;
+	bool fContinue = true;
+	while( fContinue )
+	{
+		if( GetMessage( &msg, NULL, 0, 0 ) == -1 )
+			return 255;	//Error
+
+		switch( msg.message )
+		{
+		case WM_QUIT:
+			PostQuitMessage( 0 );
+			uKey = 0;
+			fContinue = false;
+			break;
+		case WM_KEYDOWN:
+			uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_CHAR );
+			if( !uKey )
+			{
+				switch( MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_VSC ) )
+				{
+				case 71:	//Pos1
+					uKey = 80;
+					break;
+				case 72:	//Arrow_Up
+					uKey = 82;
+					break;
+				case 80:	//Arrow_Down
+					uKey = 84;
+					break;
+				case 75:	//Arrow_Left
+					uKey = 81;
+					break;
+				case 77:	//Arrow_Right
+					uKey = 83;
+					break;
+				case 73:	//Img_Up
+					uKey = 85;
+					break;
+				case 81:	//Img_Down
+					uKey = 86;
+					break;
+				default:
+					printf( "Unhandled key %u\n", MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_VSC ) );
+					break;
+				}
+			}
+			fContinue = false;
+			break;
+		case WM_KEYUP:
+			break;
+		}
+
+		TranslateMessage( &msg );
+		DispatchMessage( &msg );
+	}
+	return uKey;
+#else
+	return waitKey( 0 );
+#endif
 }
 
 CScenery::CScenery( const CRay &rayEyeLeft, const CRay &rayEyeRight ) :

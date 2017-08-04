@@ -122,7 +122,7 @@ bool CGazeData::DrawScenery( const char *szWindow )
 		putText( imgDraw.matImage, szDistance, ptText,  FONT_HERSHEY_SIMPLEX, 1, Scalar( 255, 255, 255 ), 3 );
 		imgDraw.Show( szWindow );
 
-		cKey = (unsigned char) cv::waitKey( 0 );
+		cKey = CScenery::ProcessEvents( );
 		switch( cKey )
 		{
 		case 10:	//Enter
@@ -135,7 +135,7 @@ bool CGazeData::DrawScenery( const char *szWindow )
 			dDegY = 42;
 			dDegZ = 0;
 			break;
-		case 81:	//Key)_Left
+		case 81:	//Key_Left
 			dDegY -= 1;
 			if( dDegY < 0 )
 				dDegY = 360;
