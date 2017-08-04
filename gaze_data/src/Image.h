@@ -10,7 +10,7 @@ class CImage : public CBaseBBox
 public:
 	CImage( void );
 	CImage( const char *szName );
-	CImage( cv::Mat &mat, const char *szName );
+	CImage( const cv::Mat &mat, const char *szName );
 	CImage( const CImage &other );
 	CImage( CImage &img, const char *szName );
 	CImage( CImage &parentImage, cv::Mat &matImage, const cv::Point &point, const char *szName );
@@ -44,9 +44,9 @@ inline CImage::CImage( const char *szName ) :
 
 }
 
-inline CImage::CImage( cv::Mat &mat, const char *szName ) :
+inline CImage::CImage( const cv::Mat &mat, const char *szName ) :
 	CBaseBBox( szName ),
-	matImage( mat )
+	matImage( mat.clone( ) )
 {
 
 }

@@ -12,9 +12,9 @@
 
 using namespace cv;
 
-std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze, double dEyeDistance, double dFOV, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim, const char *szWindow )
+std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim, const char *szWindow )
 {
-	const double dTanFOV = tan( dFOV * M_PI / ( 2 * 180 ) );
+	const double dTanFOV = tan( CGazeCapture::s_dFOV * M_PI / ( 2 * 180 ) );
 	std::vector<CGazeData> vecData;
 
 	for( std::vector<CGazeCapture>::iterator pGaze = vecGaze.begin( ); pGaze < vecGaze.end( ); pGaze++ )
@@ -25,9 +25,6 @@ std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze
 			vec3ScreenTL[ 1 ] + pGaze->ptGaze.GetRelPositionY( -1 ) * vec3ScreenDim[ 1 ],
 			vec3ScreenTL[ 2 ]
 		} );
-		
-		pGaze->imgGaze.Show( szWindow );
-		cv::waitKey( 0 );
 
 		std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( pGaze->imgGaze, szWindow );
 		for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
@@ -46,7 +43,7 @@ std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze
 				dPixelDif = ( vec2EyeRight - vec2EyeLeft ).Abs( );
 			}
 			double dPixelDiagonal = sqrt( dWidth * dWidth + dHeight * dHeight );
-			double dDistance = GetDistance( dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
+			double dDistance = GetDistance( CGazeCapture::s_dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
 
 			CVector<3> vec3EyeLeft(
 			{

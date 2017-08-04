@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <vector>
+#include "Render/Vector.h"
 
 class CImage;
 class CBaseBBox;
@@ -26,6 +27,7 @@ protected:
 	CBaseHighlighter( const char *szName );
 	CBaseHighlighter( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uLevel, const char *szName );
 	CBaseHighlighter( CBaseBBox &parentBox, double dX, double dY, const char *szName );
+	CBaseHighlighter( CBaseBBox &parentBox, const CVector<2> &vec2Pos, const char *szName );
 	CBaseHighlighter( const CBaseHighlighter &other );
 
 	void Swap( CBaseHighlighter &other, bool fSwapChildren = true );

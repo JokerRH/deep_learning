@@ -135,6 +135,20 @@ CBaseHighlighter::CBaseHighlighter( CBaseBBox &parentBox, double dX, double dY, 
 	assert( m_dPositionY >= 0.0 && m_dPositionY <= 1.0 );
 }
 
+CBaseHighlighter::CBaseHighlighter( CBaseBBox &parentBox, const CVector<2> &vec2Pos, const char *szName ) :
+	szName{ 0 },
+	m_pParentBox( &parentBox ),
+	m_dPositionX( vec2Pos[ 0 ] ),
+	m_dPositionY( vec2Pos[ 1 ] )
+{
+	assert( szName != nullptr && strlen( szName ) && strlen( szName ) < 32 );
+	strncpy( const_cast<char *>( this->szName ), szName, 31 );
+	m_pParentBox->AddChild( this );
+
+	assert( m_dPositionX >= 0.0 && m_dPositionX <= 1.0 );
+	assert( m_dPositionY >= 0.0 && m_dPositionY <= 1.0 );
+}
+
 CBaseHighlighter::CBaseHighlighter( const CBaseHighlighter &other ) :
 	szName{ 0 },
 	m_pParentBox( other.m_pParentBox ),

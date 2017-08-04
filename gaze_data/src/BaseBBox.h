@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include "BaseHighlighter.h"
+#include "Render/Vector.h"
 
 class CLine;
 class CBaseBBox : public CBaseHighlighter
@@ -12,6 +13,7 @@ public:
 	virtual double GetRelWidth( unsigned int uLevel = -1 ) const;
 	virtual double GetRelHeight( unsigned int uLevel = -1 ) const;
 	CBaseBBox *GetParent( unsigned int uLevel = -1 ) override;
+	CVector<2> GetCenter( void ) const;
 	
 	virtual void TransferOwnership( unsigned int uLevel = 1 );
 	virtual void TransferOwnership( CBaseBBox &parentBox );
@@ -50,12 +52,18 @@ inline unsigned int CBaseBBox::GetHeight( unsigned int uLevel ) const
 
 inline double CBaseBBox::GetRelWidth( unsigned int uLevel ) const
 {
+	if( !uLevel )
+		return m_dWidth;
+
 	register double dWidth = m_pParentBox->GetRelWidth( uLevel );
 	return dWidth * m_dWidth;
 }
 
 inline double CBaseBBox::GetRelHeight( unsigned int uLevel ) const
 {
+	if( !uLevel )
+		return m_dHeight;
+
 	register double dHeight = m_pParentBox->GetRelHeight( uLevel );
 	return dHeight * m_dHeight;
 }
@@ -66,4 +74,9 @@ inline CBaseBBox *CBaseBBox::GetParent( unsigned int uLevel )
 		return this;
 
 	return m_pParentBox->GetParent( uLevel );
+}
+
+inline CVector<2> CBaseBBox::GetCenter( void ) const
+{
+	return CVector<2>( { m_dPositionX + m_dWidth / 2, m_dPositionY + m_dHeight / 2 } );
 }

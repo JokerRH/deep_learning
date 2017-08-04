@@ -8,7 +8,7 @@
 class CGazeData
 {
 public:
-	static std::vector<CGazeData> GetGazeData( std::vector<CGazeCapture> vecGaze, double dEyeDistance, double dFOV, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim, const char *szWindow );
+	static std::vector<CGazeData> GetGazeData( std::vector<CGazeCapture> vecGaze, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim, const char *szWindow );
 	static double GetDistance( double dMeterDif, double dPixelDif, double dPixelDiagonal, double dTanFOV );
 	static double GetPosition( double dDistance, double dPixelDif, double dPixelDiagonal, double dTanFOV );
 	CGazeData( const CVector<3> &vec3Point, const CVector<3> &vec3EyeLeft, const CVector<3> &vec3EyeRight );

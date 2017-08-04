@@ -22,6 +22,12 @@ public:
 	{
 
 	}
+	
+	CPoint( CBaseBBox &parentBox, const CVector<2> &vec2Pos, const char *szName ) :
+		CBaseHighlighter( parentBox, vec2Pos, szName )
+	{
+
+	}
 
 	CPoint( const CPoint &other ) :
 		CBaseHighlighter( other )

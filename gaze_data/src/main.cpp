@@ -14,12 +14,108 @@
 #include "Render/RenderHelper.h"
 
 #ifdef _MSC_VER
-#	include<direct.h>
+#	include <direct.h>
 #else
 #	include <unistd.h>
+#	include <strings.h>
 #endif
 
 using namespace cv;
+
+int EditDataset( const char *szFile )
+{
+	VideoCapture cap( 0 );
+	if( !cap.isOpened( ) )
+	{
+		fprintf( stderr, "Unable to open capture device\n" );
+		return EXIT_FAILURE;
+	}
+
+	try
+	{
+		if( !CGazeCapture::Init( cap, szFile ) )
+			return EXIT_FAILURE;
+	}
+	catch( int i )
+	{
+		if( i == 1 )
+			return EXIT_SUCCESS;
+
+		throw;
+	}
+
+	namedWindow( "Window", CV_WINDOW_NORMAL );
+	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+	
+	unsigned int uCurrent = 0;
+	CGazeCapture *aCaptures = (CGazeCapture *) malloc( sizeof( CGazeCapture ) * 5 );
+	try
+	{
+		for( uCurrent = 0; uCurrent < 5; uCurrent++ )
+			new( aCaptures + uCurrent ) CGazeCapture( cap, "Window" );
+	}
+	catch( int i )
+	{
+		for( unsigned int u = 0; u < uCurrent; u++ )
+		{
+			if( u == uCurrent )
+				continue;
+
+			aCaptures[ u ].Write( );
+			aCaptures[ u ].~CGazeCapture( );
+		}
+	}
+	
+	try
+	{
+		while( true )
+		{
+			uCurrent = ( uCurrent + 1 ) % 5;
+			aCaptures[ uCurrent ].Write( );
+			aCaptures[ uCurrent ].~CGazeCapture( );
+			
+			new( aCaptures + uCurrent ) CGazeCapture( cap, "Window" );
+		}
+	}
+	catch( int i )
+	{
+		for( unsigned int u = 0; u < 5; u++ )
+		{
+			if( u == uCurrent )
+				continue;
+
+			aCaptures[ u ].Write( );
+			aCaptures[ u ].~CGazeCapture( );
+		}
+	}
+
+	CGazeCapture::Destroy( );
+	return EXIT_SUCCESS;
+}
+
+int ProcessDataset( const char *szSrc, const char *szDst )
+{
+	const CVector<3> vec3MonitorPos( { 0.2375, -0.02, -0.02 } );
+	const CVector<3> vec3MonitorDim( { -0.475, -0.298, -0.03 } );
+	
+	namedWindow( "Window", CV_WINDOW_NORMAL );
+	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+	
+	CLandmarkCandidate::Init( );
+	try
+	{
+		std::vector<CGazeData> vecData = CGazeData::GetGazeData( CGazeCapture::Load( std::string( szSrc ) ), vec3MonitorPos, vec3MonitorDim, "Window" );
+	}
+	catch( int i )
+	{
+		if( i == 1 )
+			return EXIT_SUCCESS;
+
+		throw;
+	}
+
+	return EXIT_SUCCESS;
+}
 
 int CaptureVideo( void )
 {
@@ -77,6 +173,7 @@ int CaptureVideo( void )
 	return EXIT_SUCCESS;
 }
 
+#if 0
 int CaptureGaze( void )
 {
 	VideoCapture cap( 0 );
@@ -90,7 +187,7 @@ int CaptureGaze( void )
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 
 	CLandmarkCandidate::Init( );
-	CGazeCapture::Init( cap );
+	CGazeCapture::Init( cap, "asdf" );
 	CVector<3> vec3MonitorPos( { 0.2375, -0.02, -0.02 } );
 	CVector<3> vec3MonitorDim( { -0.475, -0.298, -0.03 } );
 	CScenery::SetScenery( vec3MonitorPos, vec3MonitorDim );
@@ -122,6 +219,7 @@ int CaptureGaze( void )
 	}
 	return EXIT_SUCCESS;
 }
+#endif
 
 int RenderTest( void )
 {
@@ -207,8 +305,35 @@ int main(int argc, char **argv)
 	chdir( WORKING_DIRECTORY );
 #endif
 
+	if( argc == 3 )
+	{
+#ifdef _MSC_VER
+		if( !stricmp( argv[ 1 ], "edit" ) )
+#else
+		if( !strcasecmp( argv[ 1 ], "edit" ) )
+#endif
+		{
+			return EditDataset( argv[ 2 ] );
+		}
+	}
+	else if( argc == 4 )
+	{
+		#ifdef _MSC_VER
+		if( !stricmp( argv[ 1 ], "proc" ) )
+#else
+		if( !strcasecmp( argv[ 1 ], "proc" ) )
+#endif
+		{
+			return ProcessDataset( argv[ 2 ], argv[ 3 ] );
+		}
+	}
+	
+	fprintf( stderr, "Invalid arguments\n" );
+	getchar( );
+	return EXIT_FAILURE;
+
 	//int iReturn = CaptureVideo( );
-	int iReturn = CaptureGaze( );
+	//int iReturn = CaptureGaze( );
 	//int iReturn = RenderTest( );
 	//int iReturn = Test( );
 	destroyAllWindows( );
@@ -216,5 +341,5 @@ int main(int argc, char **argv)
 #ifdef _MSC_VER
 	system( "PAUSE" );
 #endif
-	return iReturn;
+	//return iReturn;
 }
