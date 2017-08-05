@@ -8,12 +8,9 @@
 #include <algorithm>
 #include <string>
 #ifdef _MSC_VER
-#	define NOMINMAX
-#	include <wtypes.h>
 #	include <direct.h>
 #	include <conio.h>
 #else
-#	include <X11/Xlib.h>
 #	include <unistd.h>
 #	include <termios.h>
 #endif
@@ -42,21 +39,6 @@ void CGazeCapture::Destroy( void )
 	fclose( s_pFile );
 }
 
-void CGazeCapture::GetScreenResolution( unsigned int & uWidth, unsigned int & uHeight )
-{
-#ifdef _MSC_VER
-	RECT desktop;
-	GetWindowRect( GetDesktopWindow( ), &desktop );
-	uWidth = desktop.right;
-	uHeight = desktop.bottom;
-#else
-	Display *d = XOpenDisplay( nullptr );
-	Screen *s = DefaultScreenOfDisplay( d );
-	uWidth = s->width;
-	uHeight = s->height;
-#endif
-}
-
 bool CGazeCapture::OpenOrCreate( const std::string &sFile )
 {
 	s_sDataPath = GetPath( sFile ) + GetFileName( sFile ) + "/";
@@ -76,9 +58,17 @@ bool CGazeCapture::OpenOrCreate( const std::string &sFile )
 		s_dFOV = std::stod( str );
 
 #ifdef _MSC_VER
-		_mkdir( s_sDataPath.c_str( ) );
+		if( _mkdir( s_sDataPath.c_str( ) ) && errno != EEXIST )
+		{
+			perror( "Error creating directory" );
+			return false;
+		}
 #else
-		mkdir( s_sDataPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
+		if( mkdir( s_sDataPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) && errno != EEXIST )
+		{
+			perror( "Error creating directory" );
+			return false;
+		}
 #endif
 
 		s_pFile = fopen( sFile.c_str( ), "w" );
@@ -354,7 +344,7 @@ CGazeCapture::CGazeCapture( VideoCapture &cap, const char *szWindow ) :
 	{
 		unsigned int uWidth;
 		unsigned int uHeight;
-		GetScreenResolution( uWidth, uHeight );
+		CImage::GetScreenResolution( uWidth, uHeight );
 		imgGaze.matImage = Mat( uHeight, uWidth, CV_8UC3, Scalar( 127, 0, 0 ) );
 	}
 

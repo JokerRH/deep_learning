@@ -76,8 +76,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\x64\vc14\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\include;D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK\Header;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK_64\Library;D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\x64\vc14\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -112,7 +112,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opencv_world320d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world320d.lib;EDSDK.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -186,8 +186,9 @@
     <ClInclude Include="src\BaseBBox.h" />
     <ClInclude Include="src\BaseHighlighter.h" />
     <ClInclude Include="src\BBox.h" />
+    <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\Canon.h" />
     <ClInclude Include="src\Config.h" />
-    <ClInclude Include="src\DataSet.h" />
     <ClInclude Include="src\GazeCapture.h" />
     <ClInclude Include="src\GazeData.h" />
     <ClInclude Include="src\Image.h" />
@@ -211,7 +212,8 @@
     <ClCompile Include="src\BaseBBox.cpp" />
     <ClCompile Include="src\BaseHighlighter.cpp" />
     <ClCompile Include="src\BBox.cpp" />
-    <ClCompile Include="src\DataSet.cpp" />
+    <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\Canon.cpp" />
     <ClCompile Include="src\GazeCapture.cpp" />
     <ClCompile Include="src\GazeData.cpp" />
     <ClCompile Include="src\Image.cpp" />

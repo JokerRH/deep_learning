@@ -12,6 +12,8 @@
 #include "GazeData.h"
 #include "Scenery.h"
 #include "Render/RenderHelper.h"
+#include "Canon.h"
+#include <EDSDK.h>
 
 #ifdef _MSC_VER
 #	include <direct.h>
@@ -49,6 +51,12 @@ int EditDataset( const char *szFile )
 	
 	unsigned int uCurrent = 0;
 	CGazeCapture *aCaptures = (CGazeCapture *) malloc( sizeof( CGazeCapture ) * 5 );
+	if( !aCaptures )
+	{
+		fprintf( stderr, "Unable to allocate memory for buffer\n" );
+		return EXIT_FAILURE;
+	}
+
 	try
 	{
 		for( uCurrent = 0; uCurrent < 5; uCurrent++ )
@@ -300,19 +308,26 @@ int RenderTest( void )
 
 int Test( void )
 {
-	CRay ray1( CVector<3>( { -7, 2, -3 } ), CVector<3>( { 0, 1, 2 } ) );
-	CRay ray2( CVector<3>( { -3, -3, 3 } ), CVector<3>( { 1, 2, 1 } ) );
-	CVector<2> vec2Res = ray1.PointOfShortestDistance( ray2 );
-	printf( "Result: %s\n", vec2Res.ToString( ).c_str( ) );
+	(void) CCanon::Init( );
+	(void) getchar( );
+	CCanon::Terminate( );
 	return EXIT_SUCCESS;
 }
 
 int main(int argc, char **argv)
 {
 #ifdef _MSC_VER
-	_chdir( WORKING_DIRECTORY );
+	if( _chdir( WORKING_DIRECTORY ) )
+	{
+		perror( "Error switching working directory" );
+		return EXIT_FAILURE;
+	}
 #else
-	chdir( WORKING_DIRECTORY );
+	if( chdir( WORKING_DIRECTORY ) )
+	{
+		perror( "Error switching working directory" );
+		return EXIT_FAILURE;
+	}
 #endif
 
 	if( argc == 3 )
@@ -339,6 +354,7 @@ int main(int argc, char **argv)
 	}
 	
 	fprintf( stderr, "Invalid arguments\n" );
-	getchar( );
+	Test( );
+	(void) getchar( );
 	return EXIT_FAILURE;
 }

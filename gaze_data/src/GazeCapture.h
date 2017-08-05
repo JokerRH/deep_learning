@@ -16,7 +16,6 @@ class CGazeCapture
 public:
 	static bool Init( cv::VideoCapture &cap, const char *szFile );
 	static void Destroy( void );
-	static void GetScreenResolution( unsigned int &uWidth, unsigned int &uHeight );
 	static bool OpenOrCreate( const std::string &sFile );
 	static bool Exists( const std::string &sFile );
 	static void Cls( void );

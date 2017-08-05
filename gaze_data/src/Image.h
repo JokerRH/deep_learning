@@ -8,6 +8,8 @@ class CBBox;
 class CImage : public CBaseBBox
 {
 public:
+	static void GetScreenResolution( unsigned int &uWidth, unsigned int &uHeight );
+
 	CImage( void );
 	CImage( const char *szName );
 	CImage( const cv::Mat &mat, const char *szName );
@@ -174,9 +176,4 @@ inline void CImage::TransferOwnership( CBaseBBox &parentBox )
 		return;
 
 	CBaseBBox::TransferOwnership( parentBox );
-}
-
-inline void CImage::Show( const char *szWindow )
-{
-	cv::imshow( szWindow, matImage );
 }

@@ -110,9 +110,6 @@
     <ClInclude Include="src\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\DataSet.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\GazeCapture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -167,6 +164,12 @@
     <ClInclude Include="src\Render\Vector.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
+    <ClInclude Include="src\Canon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Scenery.cpp">
@@ -179,9 +182,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\BBox.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\DataSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\GazeCapture.cpp">
@@ -225,6 +225,12 @@
     </ClCompile>
     <ClCompile Include="src\Render\RenderObject.cpp">
       <Filter>Source Files\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Canon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Camera.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
