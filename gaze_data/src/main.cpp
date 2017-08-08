@@ -13,7 +13,7 @@
 #include "Scenery.h"
 #include "Render/RenderHelper.h"
 #include "Canon.h"
-#include <EDSDK.h>
+#include "Camera.h"
 
 #ifdef _MSC_VER
 #	include <direct.h>
@@ -57,10 +57,12 @@ int EditDataset( const char *szFile )
 		return EXIT_FAILURE;
 	}
 
+	CBaseCamera *pCamera = CBaseCamera::SelectCamera( );
+
 	try
 	{
 		for( uCurrent = 0; uCurrent < 5; uCurrent++ )
-			new( aCaptures + uCurrent ) CGazeCapture( cap, "Window" );
+			new( aCaptures + uCurrent ) CGazeCapture( *pCamera, "Window" );
 	}
 	catch( int i )
 	{
@@ -85,7 +87,7 @@ int EditDataset( const char *szFile )
 			aCaptures[ uCurrent ].Write( );
 			aCaptures[ uCurrent ].~CGazeCapture( );
 			
-			new( aCaptures + uCurrent ) CGazeCapture( cap, "Window" );
+			new( aCaptures + uCurrent ) CGazeCapture( *pCamera, "Window" );
 		}
 	}
 	catch( int i )
@@ -104,6 +106,7 @@ int EditDataset( const char *szFile )
 	}
 
 	CGazeCapture::Destroy( );
+	delete pCamera;
 	return EXIT_SUCCESS;
 }
 
@@ -309,8 +312,47 @@ int RenderTest( void )
 int Test( void )
 {
 	(void) CCanon::Init( );
+
+	CBaseCamera *pCamera;
+	try
+	{
+		pCamera = CBaseCamera::SelectCamera( );
+	}
+	catch( int i )
+	{
+		if( i == 1 )
+		{
+			CCanon::Terminate( );
+			return EXIT_SUCCESS;
+		}
+
+		throw;
+	}
+
+	namedWindow( "Window", CV_WINDOW_NORMAL );
+	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+
+	try
+	{
+		CGazeCapture capture( *pCamera, "Window" );
+		printf( "capture image: %ux%u\n", capture.imgGaze.matImage.cols, capture.imgGaze.matImage.rows );
+		capture.imgGaze.Show( "Window" );
+		waitKey( 0 );
+	}
+	catch( int i )
+	{
+		if( i == 1 )
+		{
+			CCanon::Terminate( );
+			return EXIT_SUCCESS;
+		}
+
+		throw;
+	}
+
 	(void) getchar( );
 	CCanon::Terminate( );
+	destroyAllWindows( );
 	return EXIT_SUCCESS;
 }
 

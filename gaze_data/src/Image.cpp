@@ -1,5 +1,6 @@
 #include "Image.h"
 #include "BBox.h"
+#include <opencv2\imgproc\imgproc.hpp>
 
 #ifdef _MSC_VER
 #	define NOMINMAX
@@ -29,11 +30,24 @@ void CImage::Show( const char *szWindow )
 	unsigned int uWidth;
 	unsigned int uHeight;
 	GetScreenResolution( uWidth, uHeight );
-	assert( (unsigned int) matImage.cols <= uWidth && (unsigned int) matImage.rows <= uHeight );
 	cv::Mat mat( uHeight, uWidth, CV_8UC3, cv::Scalar::all( 255 ) );
 
-	cv::Rect rect( ( uWidth - matImage.cols ) / 2, ( uHeight - matImage.rows ) / 2, matImage.cols, matImage.rows );
-	matImage.copyTo( mat( rect ) );
+	if( (unsigned int) matImage.cols > uWidth || (unsigned int) matImage.rows > uHeight )
+	{
+		double dScale = uWidth / (double) matImage.cols;
+		if( matImage.rows * dScale > (double) uHeight )
+			dScale = uHeight / (double) matImage.rows;
+
+		cv::Size size( (int) matImage.cols * dScale, (int) matImage.rows * dScale );
+		cv::Rect rect( ( uWidth - size.width ) / 2, ( uHeight - size.height ) / 2, size.width, size.height );
+		cv::resize( matImage, mat( rect ), size );
+	}
+	else
+	{
+		cv::Rect rect( ( uWidth - matImage.cols ) / 2, ( uHeight - matImage.rows ) / 2, matImage.cols, matImage.rows );
+		matImage.copyTo( mat( rect ) );
+	}
+
 	cv::imshow( szWindow, mat );
 #else
 	cv::imshow( szWindow, matImage );

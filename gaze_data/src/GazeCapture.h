@@ -3,6 +3,7 @@
 #include <opencv2/core/core.hpp>
 #include "Image.h"
 #include "Point.h"
+#include "Camera.h"
 
 #ifdef _MSC_VER
 #	define NOMINMAX
@@ -26,7 +27,7 @@ public:
 	static std::string GetFile( const std::string &sFile );
 	static std::string GetFileName( const std::string &sFile );
 	
-	CGazeCapture( cv::VideoCapture &cap, const char *szWindow );
+	CGazeCapture( CBaseCamera &camera, const char *szWindow );
 	CGazeCapture( const cv::Mat &mat, double dX, double dY, time_t timeCapture );
 	CGazeCapture( const CGazeCapture &other );
 	~CGazeCapture( void );

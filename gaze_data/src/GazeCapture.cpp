@@ -1,5 +1,6 @@
 #include "GazeCapture.h"
 #include "Point.h"
+#include "Scenery.h"
 #include <stdlib.h>
 #include <time.h>
 #include <regex>
@@ -7,12 +8,21 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
+
 #ifdef _MSC_VER
 #	include <direct.h>
 #	include <conio.h>
 #else
 #	include <unistd.h>
 #	include <termios.h>
+#endif
+
+#ifdef max
+#	undef max
+#endif
+
+#ifdef min
+#	undef min
 #endif
 
 using namespace cv;
@@ -199,7 +209,21 @@ void CGazeCapture::Cls( void )
 unsigned char CGazeCapture::GetChar( void )
 {
 #ifdef _MSC_VER
-	return _getch( );
+	int iKey = _getch( );
+	switch( iKey )
+	{
+	case 13:
+		iKey = 10;
+		break;
+	case 224:
+		iKey = _getch( );
+		if( iKey == 72 )
+			iKey = 82;		//Arrow_Up
+		else if( iKey == 80 )
+			iKey = 84;		//Arrow_Down
+		break;
+	}
+	return (unsigned char) iKey;
 #else
 	unsigned char buf = 0;
 	struct termios old = { 0 };
@@ -338,7 +362,7 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile )
 	return vecCaptures;
 }
 
-CGazeCapture::CGazeCapture( VideoCapture &cap, const char *szWindow ) :
+CGazeCapture::CGazeCapture( CBaseCamera &camera, const char *szWindow ) :
 	imgGaze( "Image_Gaze" )
 {
 	{
@@ -356,7 +380,7 @@ CGazeCapture::CGazeCapture( VideoCapture &cap, const char *szWindow ) :
 	bool fContinue = true;
 	while( fContinue )
 	{
-		cKey = (unsigned char) waitKey( 0 );
+		cKey = CScenery::ProcessEvents( );
 		switch( cKey )
 		{
 		case 8:		//Backspace
@@ -370,12 +394,7 @@ CGazeCapture::CGazeCapture( VideoCapture &cap, const char *szWindow ) :
 		}
 	}
 
-	cap.grab( );
-	cap.grab( );
-	cap.grab( );
-	cap.grab( );
-	cap.grab( );
-	cap.retrieve( imgGaze.matImage );
+	camera.TakePicture( imgGaze );
 	timeCapture = time( nullptr );
 	//imgGaze.Show( szWindow );
 	//waitKey( 0 );

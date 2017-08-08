@@ -42,8 +42,9 @@ unsigned char CScenery::ProcessEvents( void )
 			break;
 		case WM_KEYDOWN:
 			uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_CHAR );
-			if( !uKey )
+			switch( uKey )
 			{
+			case 0:
 				switch( MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_VSC ) )
 				{
 				case 71:	//Pos1
@@ -71,6 +72,10 @@ unsigned char CScenery::ProcessEvents( void )
 					printf( "Unhandled key %u\n", MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_VSC ) );
 					break;
 				}
+				break;
+			case 13:	//Enter
+				uKey = 10;
+				break;
 			}
 			fContinue = false;
 			break;
