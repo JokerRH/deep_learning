@@ -123,6 +123,7 @@ END:
 	CGazeCapture::Destroy( );
 	delete pCamera;
 	free( aCaptures );
+	CBaseCamera::Terminate( );
 	return EXIT_SUCCESS;
 }
 
@@ -202,6 +203,60 @@ int CaptureVideo( void )
 	}
 
 	destroyAllWindows( );
+	return EXIT_SUCCESS;
+}
+
+int TestImage( void )
+{
+	(void) CCamera::Init( );
+	CBaseCamera *pCamera;
+	try
+	{
+		pCamera = CBaseCamera::SelectCamera( );
+	}
+	catch( int i )
+	{
+		if( i == 1 )
+		{
+			CCanon::Terminate( );
+			return EXIT_SUCCESS;
+		}
+
+		throw;
+	}
+
+	namedWindow( "Window", CV_WINDOW_NORMAL );
+	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+
+	unsigned char cKey;
+	CImage imgTest( "Image_Test" );
+	bool fContinue = true;
+	bool fContinueKey;
+	while( fContinue )
+	{
+		pCamera->TakePicture( imgTest );
+		imgTest.Show( "Window" );
+
+		fContinueKey = true;
+		while( fContinueKey )
+		{
+			cKey = CUtility::WaitKey( 0 );
+			switch( cKey )
+			{
+			case 27:	//Escape
+				fContinue = false;
+				fContinueKey = false;
+				break;
+			case 10:	//Enter
+				fContinueKey = false;
+				break;
+			}
+		}
+	}
+
+	destroyAllWindows( );
+	CBaseCamera::Terminate( );
+	delete pCamera;
 	return EXIT_SUCCESS;
 }
 
@@ -322,11 +377,6 @@ int RenderTest( void )
 	return EXIT_SUCCESS;
 }
 
-unsigned long _stdcall TestTakePictures( void *pParam )
-{
-	return 0;
-}
-
 int Test( void )
 {
 	(void) CCamera::Init( );
@@ -375,6 +425,7 @@ int Test( void )
 
 int main(int argc, char **argv)
 {
+/*
 #ifdef _MSC_VER
 	if( _chdir( WORKING_DIRECTORY ) )
 	{
@@ -388,8 +439,20 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 #endif
+*/
 
-	if( argc == 3 )
+	if( argc == 2 )
+	{
+#ifdef _MSC_VER
+		if( !_stricmp( argv[ 1 ], "test" ) )
+#else
+		if( !strcasecmp( argv[ 1 ], "test" ) )
+#endif
+		{
+			return TestImage( );
+		}
+	}
+	else if( argc == 3 )
 	{
 #ifdef _MSC_VER
 		if( !_stricmp( argv[ 1 ], "edit" ) )

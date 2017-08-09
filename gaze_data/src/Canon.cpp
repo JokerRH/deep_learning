@@ -661,9 +661,8 @@ EdsError CCanon::DownloadImage( EdsDirectoryItemRef directoryItem )
 	}
 
 	double d = 43.3 / ( 2 * ratVal.numerator / (double) ratVal.denominator );
-	printf( "Test: %f\n", d );
 	m_img = CImage( cv::Mat( imageInfo.height, imageInfo.width, CV_8UC3, pbData ), 2 * 180 / M_PI * atan( CANON_SENSOR_DIAG / ( 2 * ratVal.numerator / (double) ratVal.denominator ) ), time( nullptr ), "Image_Canon" );
-	printf( "AoV: %f\n", m_img.dFOV );
+	printf( "FoV: %f\n", m_img.dFOV );
 	cv::cvtColor( m_img.matImage, m_img.matImage, CV_BGR2RGB );
 	m_fHasImage = true;
 

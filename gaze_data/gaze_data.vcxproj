@@ -84,6 +84,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK\Header;D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\x64\vc14\lib;D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK_64\Library;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -150,7 +152,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opencv_world320.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world320.lib;EDSDK.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
