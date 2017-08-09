@@ -3,6 +3,7 @@
 #include "Image.h"
 #include "Scenery.h"
 #include "Render/RenderHelper.h"
+#include "Utility.h"
 #ifndef _USE_MATH_DEFINES
 #	define _USE_MATH_DEFINES
 #endif
@@ -12,20 +13,13 @@
 
 using namespace cv;
 
-std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim, const char *szWindow )
+std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze, const char *szWindow )
 {
-	const double dTanFOV = tan( CGazeCapture::s_dFOV * M_PI / ( 2 * 180 ) );
 	std::vector<CGazeData> vecData;
 
 	for( std::vector<CGazeCapture>::iterator pGaze = vecGaze.begin( ); pGaze < vecGaze.end( ); pGaze++ )
 	{
-		CVector<3> vec3Point( 
-		{
-			-( vec3ScreenTL[ 0 ] + pGaze->ptGaze.GetRelPositionX( -1 ) * vec3ScreenDim[ 0 ] ),
-			vec3ScreenTL[ 1 ] + pGaze->ptGaze.GetRelPositionY( -1 ) * vec3ScreenDim[ 1 ],
-			vec3ScreenTL[ 2 ]
-		} );
-
+		double dTanFOV = tan( pGaze->imgGaze.dFOV * M_PI / ( 2 * 180 ) );
 		std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( pGaze->imgGaze, szWindow );
 		for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
 		{
@@ -59,7 +53,7 @@ std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze
 				dDistance
 			} );
 
-			vecData.emplace_back( vec3Point, vec3EyeLeft, vec3EyeRight );
+			vecData.emplace_back( pGaze->vec3Point, vec3EyeLeft, vec3EyeRight );
 		}
 	}
 
@@ -122,7 +116,7 @@ bool CGazeData::DrawScenery( const char *szWindow )
 		putText( imgDraw.matImage, szDistance, ptText,  FONT_HERSHEY_SIMPLEX, 1, Scalar( 255, 255, 255 ), 3 );
 		imgDraw.Show( szWindow );
 
-		cKey = CScenery::ProcessEvents( );
+		cKey = CUtility::WaitKey( 0 );
 		switch( cKey )
 		{
 		case 10:	//Enter

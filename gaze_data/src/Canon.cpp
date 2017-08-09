@@ -1,11 +1,16 @@
 #ifdef _MSC_VER
 #include "Canon.h"
 #include "GazeCapture.h"
+#include "Utility.h"
 #include <stdio.h>
 #include <EDSDK.h>
 #include <EDSDKErrors.h>
 #include <EDSDKTypes.h>
 #include <opencv2\imgproc\imgproc.hpp>
+#ifndef _USE_MATH_DEFINES
+#	define _USE_MATH_DEFINES
+#endif
+#include <math.h>
 
 bool CCanon::s_fInitialized = false;
 
@@ -25,10 +30,21 @@ bool CCanon::Init( void )
 	return true;
 }
 
+bool CCanon::ThreadInit( void )
+{
+	CoInitializeEx( NULL, COINIT_APARTMENTTHREADED );
+	return true;
+}
+
 void CCanon::Terminate( void )
 {
 	if( s_fInitialized )
 		EdsTerminateSDK( );
+}
+
+void CCanon::ThreadTerminate( void )
+{
+	CoUninitialize( );
 }
 
 CCanon *CCanon::SelectCamera( void )
@@ -79,7 +95,7 @@ CCanon *CCanon::SelectCamera( void )
 	bool fContinue = true;
 	while( fContinue )
 	{
-		CGazeCapture::Cls( );
+		CUtility::Cls( );
 		printf( "Please select a camera:\n" );
 		if( !uSelected )
 			printf( "[0] Default\n" );
@@ -94,7 +110,7 @@ CCanon *CCanon::SelectCamera( void )
 				printf( " %u  %s\n", u + 1, vecCameras[ u ].c_str( ) );
 		}
 
-		cKey = CGazeCapture::GetChar( );
+		cKey = CUtility::GetChar( );
 		switch( cKey )
 		{
 		case 141:	//Numpad enter
@@ -160,16 +176,7 @@ CCanon::~CCanon( void )
 
 bool CCanon::TakePicture( CImage &img )
 {
-	EdsDeviceInfo deviceInfo;
-	EdsError err = EdsGetDeviceInfo( m_Camera, &deviceInfo );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Warning: Failed to get information about camera: %s\n", GetErrorMacro( err ) );
-		return false;
-	}
-
-	printf( "Camera %s taking picture\n", deviceInfo.szDeviceDescription );
-	err = EdsSendCommand( m_Camera, kEdsCameraCommand_PressShutterButton, kEdsCameraCommand_ShutterButton_Completely );
+	EdsError err = EdsSendCommand( m_Camera, kEdsCameraCommand_PressShutterButton, kEdsCameraCommand_ShutterButton_Completely );
 	if( err != EDS_ERR_OK )
 	{
 		fprintf( stderr, "Failed to take picture: %s\n", GetErrorMacro( err ) );
@@ -183,33 +190,43 @@ bool CCanon::TakePicture( CImage &img )
 		return false;
 	}
 
-	printf( "Waiting for image\n" );
-	MSG msg;
 	m_fHasImage = false;
+	BOOL fReturn;
+	MSG msg;
 	while( !m_fHasImage )
 	{
-		if( GetMessage( &msg, NULL, 0, 0 ) == -1 )
-			return false;	//Error
+		if( ( fReturn = GetMessage( &msg, NULL, 0, 0 ) ) == -1 )
+			return EXIT_FAILURE;	//Error
 
-		TranslateMessage( &msg );
-		DispatchMessage( &msg );
+		switch( msg.message )
+		{
+		case WM_QUIT:
+			PostQuitMessage( 0 );
+			break;
+		case WM_KEYDOWN:
+			break;
+		case WM_KEYUP:
+			break;
+		}
+
+		if( fReturn > 0 )
+		{
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
+		}
 	}
 
-	printf( "Copying image\n" );
-	img.matImage = m_matImage.clone( );
+	img = m_img;
+
+	while( fReturn )
+		while( ( fReturn = PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) > 0 )
+		{
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
+		}
+
 	return true;
 }
-
-/*
-Camera Canon EOS 1300D taking picture
-Waiting for image
-Received object event
-Image: 5184x3456
-Copying image
-capture image: 0x0
-Received object event
-Failed to get image from stream: EDS_ERR_FILE_FORMAT_UNRECOGNIZED
-*/
 
 const char *CCanon::GetErrorMacro( EdsError err )
 {
@@ -533,7 +550,6 @@ const char *CCanon::GetErrorMacro( EdsError err )
 
 EdsError EDSCALLBACK CCanon::HandleObjectEvent( EdsObjectEvent event, EdsBaseRef object, EdsVoid *context )
 {
-	printf( "Received object event\n" );
 	switch( event )
 	{
 	case kEdsObjectEvent_DirItemRequestTransfer:
@@ -556,10 +572,9 @@ EdsError CCanon::DownloadImage( EdsDirectoryItemRef directoryItem )
 		return err;
 	}
 
-	printf( "DirItem: \"%s\", %X\n", dirItemInfo.szFileName, dirItemInfo.format );
 	if( ( dirItemInfo.format & 0xFF ) != kEdsTargetImageType_Jpeg )
 	{
-		printf( "Returning\n" );
+		EdsDownloadCancel( directoryItem );
 		return EDS_ERR_OK;
 	}
 
@@ -597,6 +612,17 @@ EdsError CCanon::DownloadImage( EdsDirectoryItemRef directoryItem )
 		return err;
 	}
 
+	EdsRational ratVal;
+	err = EdsGetPropertyData( image, kEdsPropID_FocalLength, 0, sizeof( EdsRational ), &ratVal );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to get focal length: %s\n", GetErrorMacro( err ) );
+		EdsRelease( stream );
+		EdsRelease( image );
+		return err;
+	}
+	printf( "Focal length: %f\n", ratVal.numerator / (double) ratVal.denominator );
+
 	EdsRelease( stream );
 	EdsImageInfo imageInfo;
 	err = EdsGetImageInfo( image, kEdsImageSrc_FullView, &imageInfo );
@@ -607,8 +633,6 @@ EdsError CCanon::DownloadImage( EdsDirectoryItemRef directoryItem )
 		EdsRelease( stream );
 		return err;
 	}
-
-	printf( "Image: %ux%u\n", imageInfo.width, imageInfo.height );
 
 	err = EdsCreateMemoryStream( 0, &stream );
 	if( err != EDS_ERR_OK )
@@ -636,11 +660,12 @@ EdsError CCanon::DownloadImage( EdsDirectoryItemRef directoryItem )
 		return err;
 	}
 
-	m_matImage = cv::Mat( imageInfo.height, imageInfo.width, CV_8UC3, pbData ).clone( );
-	cv::cvtColor( m_matImage, m_matImage, CV_BGR2RGB );
+	double d = 43.3 / ( 2 * ratVal.numerator / (double) ratVal.denominator );
+	printf( "Test: %f\n", d );
+	m_img = CImage( cv::Mat( imageInfo.height, imageInfo.width, CV_8UC3, pbData ), 2 * 180 / M_PI * atan( CANON_SENSOR_DIAG / ( 2 * ratVal.numerator / (double) ratVal.denominator ) ), time( nullptr ), "Image_Canon" );
+	printf( "AoV: %f\n", m_img.dFOV );
+	cv::cvtColor( m_img.matImage, m_img.matImage, CV_BGR2RGB );
 	m_fHasImage = true;
-
-	printf( "Mat: %ux%u\n", m_matImage.cols, m_matImage.rows );
 
 	EdsRelease( stream );
 	return EDS_ERR_OK;

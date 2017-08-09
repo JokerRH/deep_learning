@@ -6,6 +6,8 @@
 class CBaseCamera
 {
 public:
+	static bool Init( void );
+	static void Terminate( void );
 	static CBaseCamera *SelectCamera( void );
 	virtual bool TakePicture( CImage &img ) = 0;
 };

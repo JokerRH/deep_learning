@@ -8,11 +8,15 @@
 #include <Windows.h>
 #include <opencv2\core\core.hpp>
 
+#define CANON_SENSOR_DIAG 26.81976883
+
 class CCanon : public CBaseCamera
 {
 public:
 	static bool Init( void );
+	static bool ThreadInit( void );
 	static void Terminate( void );
+	static void ThreadTerminate( void );
 	static bool IsInitialized( void );
 	static CCanon *SelectCamera( void );
 
@@ -29,8 +33,8 @@ private:
 
 	EdsCameraRef m_Camera;
 
-	cv::Mat m_matImage;
-	bool m_fHasImage = false;
+	CImage m_img;
+	bool m_fHasImage;
 };
 
 inline bool CCanon::IsInitialized( void )

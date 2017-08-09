@@ -15,20 +15,18 @@
 class CGazeCapture
 {
 public:
-	static bool Init( cv::VideoCapture &cap, const char *szFile );
+	static bool Init( CBaseCamera &camera, const char *szFile );
 	static void Destroy( void );
 	static bool OpenOrCreate( const std::string &sFile );
 	static bool Exists( const std::string &sFile );
-	static void Cls( void );
-	static unsigned char GetChar( void );
-	static std::vector<CGazeCapture> Load( const std::string &sFile );
+	static std::vector<CGazeCapture> Load( const std::string &sFile, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim );
 	
 	static std::string GetPath( const std::string &sFile );
 	static std::string GetFile( const std::string &sFile );
 	static std::string GetFileName( const std::string &sFile );
 	
-	CGazeCapture( CBaseCamera &camera, const char *szWindow );
-	CGazeCapture( const cv::Mat &mat, double dX, double dY, time_t timeCapture );
+	CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim );
+	CGazeCapture( CImage &img, CVector<3> vec3Point, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim );
 	CGazeCapture( const CGazeCapture &other );
 	~CGazeCapture( void );
 	
@@ -38,11 +36,9 @@ public:
 	bool Write( void );
 
 	CImage imgGaze;
-	CPoint ptGaze;
-	time_t timeCapture;
+	CVector<3> vec3Point;
 
 	static double s_dEyeDistance;
-	static double s_dFOV;
 
 private:
 	static FILE *s_pFile;
@@ -53,14 +49,8 @@ private:
 
 inline bool CGazeCapture::Exists( const std::string &sFile )
 {
-#ifdef _MSC_VER
-	LPCWSTR szFile = std::wstring( sFile.begin( ), sFile.end( ) ).c_str( );
-	GetFileAttributes( szFile );
-	return ( INVALID_FILE_ATTRIBUTES == GetFileAttributes( szFile ) && GetLastError( ) == ERROR_FILE_NOT_FOUND );
-#else
 	struct stat buffer;   
 	return ( stat( sFile.c_str( ), &buffer ) == 0 );
-#endif
 }
 
 inline std::string CGazeCapture::GetPath( const std::string &sFile )
@@ -87,16 +77,15 @@ inline std::string CGazeCapture::GetFileName( const std::string &sFile )
 
 inline CGazeCapture::CGazeCapture( const CGazeCapture &other ) :
 	imgGaze( other.imgGaze ),
-	ptGaze( other.ptGaze )
+	vec3Point( other.vec3Point )
 {
-	ptGaze.TransferOwnership( imgGaze );
+
 }
 
 inline void CGazeCapture::Swap( CGazeCapture &other, bool fSwapChildren )
 {
-	ptGaze.Swap( other.ptGaze, fSwapChildren );
+	vec3Point.Swap( other.vec3Point );
 	imgGaze.Swap( other.imgGaze, fSwapChildren );
-	ptGaze.TransferOwnership( imgGaze );
 }
 
 inline CGazeCapture &CGazeCapture::operator=( const CGazeCapture &other )

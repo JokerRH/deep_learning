@@ -36,6 +36,7 @@ public:
 	CVector<3> CrossProduct( const CVector<3> &other );
 	CVector<3> &MakeCrossProduct( const CVector<3> &other );
 	std::string ToString( unsigned int uPrecision = 2 ) const;
+	void Swap( CVector<uRows> &other );
 
 private:
 	double m_adValues[ uRows ];
@@ -242,4 +243,11 @@ inline std::string CVector<uRows>::ToString( unsigned int uPrecision ) const
 
 	out << ")";
 	return out.str( );
+}
+
+template<unsigned int uRows>
+inline void CVector<uRows>::Swap( CVector<uRows> &other )
+{
+	for( unsigned int u = 0; u < uRows; u++ )
+		std::swap( m_adValues[ u ], other.m_adValues[ u ] );
 }

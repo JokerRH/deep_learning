@@ -2,6 +2,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <time.h>
 #include "BaseBBox.h"
 
 class CBBox;
@@ -13,6 +14,7 @@ public:
 	CImage( void );
 	CImage( const char *szName );
 	CImage( const cv::Mat &mat, const char *szName );
+	CImage( const cv::Mat &mat, double dFOV, time_t timestamp, const char *szName );
 	CImage( const CImage &other );
 	CImage( CImage &img, const char *szName );
 	CImage( CImage &parentImage, cv::Mat &matImage, const cv::Point &point, const char *szName );
@@ -33,43 +35,66 @@ public:
 	void Crop( CBBox &box, unsigned int uLevel = 0 );
 
 	cv::Mat matImage;
+	double dFOV;
+	time_t timestamp;
 };
 
-inline CImage::CImage( void )
+inline CImage::CImage( void ) :
+	dFOV( 0 ),
+	timestamp( 0 )
 {
 
 }
 
 inline CImage::CImage( const char *szName ) :
-	CBaseBBox( szName )
+	CBaseBBox( szName ),
+	dFOV( 0 ),
+	timestamp( 0 )
 {
 
 }
 
 inline CImage::CImage( const cv::Mat &mat, const char *szName ) :
 	CBaseBBox( szName ),
-	matImage( mat.clone( ) )
+	matImage( mat.clone( ) ),
+	dFOV( 0 ),
+	timestamp( 0 )
+{
+
+}
+
+inline CImage::CImage( const cv::Mat &mat, double dFOV, time_t timestamp, const char *szName ) :
+	CBaseBBox( szName ),
+	matImage( mat.clone( ) ),
+	dFOV( dFOV ),
+	timestamp( timestamp )
 {
 
 }
 
 inline CImage::CImage( const CImage &other ) :
 	CBaseBBox( other ),
-	matImage( other.matImage )
+	matImage( other.matImage ),
+	dFOV( other.dFOV ),
+	timestamp( other.timestamp )
 {
 
 }
 
 inline CImage::CImage( CImage &img, const char *szName ) :
 	CBaseBBox( img, 0, 0, 1, 1, szName ),
-	matImage( img.matImage.clone( ) )
+	matImage( img.matImage.clone( ) ),
+	dFOV( img.dFOV ),
+	timestamp( img.timestamp )
 {
 
 }
 
 inline CImage::CImage( CImage &parentImage, cv::Mat &matImage, const cv::Point &point, const char *szName ) :
 	CBaseBBox( parentImage, point.x / (double) parentImage.GetWidth( 0 ), point.y / (double) parentImage.GetHeight( 0 ), matImage.cols / (double) parentImage.GetWidth( 0 ), matImage.rows / (double) parentImage.GetHeight( 0 ), szName ),
-	matImage( matImage )
+	matImage( matImage ),
+	dFOV( 0 ),
+	timestamp( 0 )
 {
 	//printf( "Creating image \"%s\" of dim %ux%u/%4.2fx%4.2f at (%u, %u)/(%4.2f, %4.2f); Parent dim: %ux%u\n", szName, matImage.cols, matImage.rows, m_rWidth, m_rHeight, point.x, point.y, m_rPositionX, m_rPositionY, parentImage.GetWidth( 0 ), parentImage.GetHeight( 0 ) );
 }
@@ -78,6 +103,8 @@ inline void CImage::Swap( CImage &other, bool fSwapChildren )
 {
 	CBaseBBox::Swap( other, fSwapChildren );
 	cv::swap( matImage, other.matImage );
+	std::swap( dFOV, other.dFOV );
+	std::swap( timestamp, other.timestamp );
 }
 
 inline CImage &CImage::operator=( const CImage &other )

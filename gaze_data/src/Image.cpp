@@ -1,5 +1,6 @@
 #include "Image.h"
 #include "BBox.h"
+#include "Utility.h"
 #include <opencv2\imgproc\imgproc.hpp>
 
 #ifdef _MSC_VER
@@ -38,7 +39,7 @@ void CImage::Show( const char *szWindow )
 		if( matImage.rows * dScale > (double) uHeight )
 			dScale = uHeight / (double) matImage.rows;
 
-		cv::Size size( (int) matImage.cols * dScale, (int) matImage.rows * dScale );
+		cv::Size size( (int) ( matImage.cols * dScale ), (int) ( matImage.rows * dScale ) );
 		cv::Rect rect( ( uWidth - size.width ) / 2, ( uHeight - size.height ) / 2, size.width, size.height );
 		cv::resize( matImage, mat( rect ), size );
 	}

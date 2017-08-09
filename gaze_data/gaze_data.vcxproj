@@ -207,6 +207,7 @@
     <ClInclude Include="src\Render\RenderPoint.h" />
     <ClInclude Include="src\Render\Vector.h" />
     <ClInclude Include="src\Scenery.h" />
+    <ClInclude Include="src\Utility.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BaseBBox.cpp" />
@@ -229,6 +230,8 @@
     <ClCompile Include="src\Render\RenderObject.cpp" />
     <ClCompile Include="src\Render\RenderPlane.cpp" />
     <ClCompile Include="src\Scenery.cpp" />
+    <ClCompile Include="src\Utility_Linux.cpp" />
+    <ClCompile Include="src\Utility_Windows.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

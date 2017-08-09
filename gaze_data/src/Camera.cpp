@@ -3,6 +3,22 @@
 
 using namespace cv;
 
+bool CBaseCamera::Init( void )
+{
+#ifdef _MSC_VER
+	return CCanon::Init( );
+#else
+	return true;
+#endif
+}
+
+void CBaseCamera::Terminate( void )
+{
+#ifdef _MSC_VER
+	CCanon::Terminate( );
+#endif
+}
+
 CBaseCamera *CBaseCamera::SelectCamera( void )
 {
 #ifdef _MSC_VER
@@ -24,6 +40,8 @@ CCamera::CCamera( unsigned int uIndex ) :
 		fprintf( stderr, "Unable to open capture device\n" );
 		throw( 0 );
 	}
+
+	m_Cap.grab( );
 }
 
 bool CCamera::TakePicture( CImage &img )

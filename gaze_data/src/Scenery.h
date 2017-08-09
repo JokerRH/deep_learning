@@ -10,7 +10,6 @@ class CScenery
 {
 public:
 	static void SetScenery( const CVector<3> &vec3MonitorPos, const CVector<3> vec3MonitorDim );
-	static unsigned char ProcessEvents( void );
 
 	CScenery( const CRay &rayEyeLeft, const CRay &rayEyeRight );
 	CScenery( const CVector<3> &vec3MonitorPos, const CVector<3> &vec3MonitorDim, const CRay &rayEyeLeft, const CRay &rayEyeRight );
