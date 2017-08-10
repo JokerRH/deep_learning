@@ -9,6 +9,7 @@ class CRay
 {
 public:
 	CRay( const CVector<3> &vec3Origin, const CVector<3> &vec3Dir );
+	CRay( const CVector<3> &vec3Origin, const CVector<3> &vec3Fwd, CVector<2> vec2Amp );
 	CRay( const CRay &other );
 
 	CVector<3> operator()( const double &other ) const;
@@ -23,6 +24,7 @@ public:
 	CRay &Transform( const CMatrix<3, 3> &matTransform );
 	CRay Shifted( const CVector<3> &vec3 ) const;
 	CRay &Shift( const CVector<3> &vec3 );
+	CVector<2> AmplitudeRepresentation( void );
 	
 	void Render( CImage &img, const cv::Scalar &colorPoint, const cv::Scalar &colorLine, double dLength = 1, int iRadius = 3, int iPointThickness = -1, int iLineThickness = 1 ) const;
 

@@ -44,4 +44,6 @@ protected:
 
 	double m_dPositionX = 0;	//Left X-position in % of parent's width
 	double m_dPositionY = 0;	//Top Y-position in % of parent's height
+	
+	friend CImage;
 };

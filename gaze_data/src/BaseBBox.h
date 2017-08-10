@@ -4,6 +4,7 @@
 #include "BaseHighlighter.h"
 #include "Render/Vector.h"
 
+class CImage;
 class CLine;
 class CBaseBBox : public CBaseHighlighter
 {
@@ -36,6 +37,7 @@ protected:
 	
 	friend CBaseHighlighter;
 	friend CLine;
+	friend CImage;
 };
 
 inline unsigned int CBaseBBox::GetWidth( unsigned int uLevel ) const

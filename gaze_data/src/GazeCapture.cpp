@@ -4,7 +4,6 @@
 #include "Utility.h"
 #include <stdlib.h>
 #include <time.h>
-#include <regex>
 #include <fstream>
 #include <iostream>
 #include <algorithm>
@@ -30,7 +29,12 @@ std::string CGazeCapture::s_sName;
 std::string CGazeCapture::s_sDataPath;
 unsigned int CGazeCapture::s_uCurrentImage;
 
-bool CGazeCapture::Init( CBaseCamera &camera, const char *szFile )
+const std::regex CGazeCapture::s_regex_name( R"a(name=([\s\S]*))a" );
+const std::regex CGazeCapture::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm)a" );
+const std::regex CGazeCapture::s_regex_data( R"a(data:)a" );
+const std::regex CGazeCapture::s_regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\))a" );
+
+bool CGazeCapture::Init( const char *szFile )
 {
 	if( !OpenOrCreate( std::string( szFile ) ) )
 		return false;
@@ -46,9 +50,9 @@ void CGazeCapture::Destroy( void )
 
 bool CGazeCapture::OpenOrCreate( const std::string &sFile )
 {
-	s_sDataPath = GetPath( sFile ) + GetFileName( sFile ) + "/";
+	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
 	s_uCurrentImage = 0;
-	if( !Exists( sFile ) )
+	if( !CUtility::Exists( sFile ) )
 	{
 		CUtility::Cls( );
 		printf( "Creating new profile\n" );
@@ -89,15 +93,12 @@ bool CGazeCapture::OpenOrCreate( const std::string &sFile )
 	{
 		//File exists, open
 		std::ifstream file( sFile );
-		const std::regex regex_name( R"a(name=([\s\S]*))a" );
-		const std::regex regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm)a" );
-		const std::regex regex_data( R"a(data:)a" );
 		std::smatch match;
 		unsigned char fFound = 0;
 		std::string sLine;
 		while( std::getline( file, sLine ) )
 		{
-			std::regex_match( sLine, match, regex_name );
+			std::regex_match( sLine, match, s_regex_name );
 			if( match.size( ) )
 			{
 				s_sName = match[ 1 ].str( );
@@ -105,7 +106,7 @@ bool CGazeCapture::OpenOrCreate( const std::string &sFile )
 				continue;
 			}
 
-			std::regex_match( sLine, match, regex_dist );
+			std::regex_match( sLine, match, s_regex_dist );
 			if( match.size( ) )
 			{
 				s_dEyeDistance = std::stod( match[ 1 ].str( ) ) / 100;
@@ -113,7 +114,7 @@ bool CGazeCapture::OpenOrCreate( const std::string &sFile )
 				continue;
 			}
 			
-			std::regex_match( sLine, match, regex_data );
+			std::regex_match( sLine, match, s_regex_data );
 			if( match.size( ) )
 			{
 				fFound |= 4;
@@ -127,10 +128,9 @@ bool CGazeCapture::OpenOrCreate( const std::string &sFile )
 			return false;
 		}
 
-		const std::regex regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\))a" );
 		while( std::getline( file, sLine ) )
 		{
-			std::regex_match( sLine, match, regex_line );
+			std::regex_match( sLine, match, s_regex_line );
 			if( match.size( ) )
 			{
 				unsigned int u = std::stoul( match[ 7 ].str( ) );
@@ -167,25 +167,22 @@ bool CGazeCapture::OpenOrCreate( const std::string &sFile )
 	}
 }
 
-std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim )
+std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile )
 {
 	std::vector<CGazeCapture> vecCaptures;
-	if( !Exists( sFile ) )
+	if( !CUtility::Exists( sFile ) )
 		return vecCaptures;
 
-	s_sDataPath = GetPath( sFile ) + GetFileName( sFile ) + "/";
+	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
 	s_uCurrentImage = 0;
 	
 	std::ifstream file( sFile );
-	const std::regex regex_name( R"a(name=([\s\S]*))a" );
-	const std::regex regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm)a" );
-	const std::regex regex_data( R"a(data:)a" );
 	std::smatch match;
 	unsigned char fFound = 0;
 	std::string sLine;
 	while( std::getline( file, sLine ) )
 	{
-		std::regex_match( sLine, match, regex_name );
+		std::regex_match( sLine, match, s_regex_name );
 		if( match.size( ) )
 		{
 			s_sName = match[ 1 ].str( );
@@ -193,7 +190,7 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile, CVector<
 			continue;
 		}
 
-		std::regex_match( sLine, match, regex_dist );
+		std::regex_match( sLine, match, s_regex_dist );
 		if( match.size( ) )
 		{
 			s_dEyeDistance = std::stod( match[ 1 ].str( ) ) / 100;
@@ -201,7 +198,7 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile, CVector<
 			continue;
 		}
 
-		std::regex_match( sLine, match, regex_data );
+		std::regex_match( sLine, match, s_regex_data );
 		if( match.size( ) )
 		{
 			fFound |= 4;
@@ -215,7 +212,6 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile, CVector<
 		return vecCaptures;
 	}
 
-	const std::regex regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\))a" );
 	struct tm timeinfo = { 0 };
 	cv::Mat matImage;
 	double dFOV;
@@ -224,10 +220,10 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile, CVector<
 	std::string str;
 	while( std::getline( file, sLine ) )
 	{
-		std::regex_match( sLine, match, regex_line );
+		std::regex_match( sLine, match, s_regex_line );
 		if( match.size( ) )
 		{
-			vec3Point[ 2 ] = std::stod( match[ 10 ].str( ) );
+			vec3Point[ 2 ] = std::stod( match[ 11 ].str( ) );
 			vec3Point[ 1 ] = std::stod( match[ 10 ].str( ) );
 			vec3Point[ 0 ] = std::stod( match[ 9 ].str( ) );
 			dFOV = std::stod( match[ 8 ].str( ) );
@@ -246,7 +242,9 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile, CVector<
 				fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
 				continue;
 			}
-			vecCaptures.emplace_back( CImage( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" ), vec3Point, vec3ScreenTL, vec3ScreenDim );
+			CImage img( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" );
+			img.TransferOwnership( );
+			vecCaptures.emplace_back( img, vec3Point );
 		}
 	}
 
@@ -314,11 +312,11 @@ CGazeCapture::CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3
 	} );
 }
 
-CGazeCapture::CGazeCapture( CImage &img, CVector<3> vec3Point, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim ) :
+CGazeCapture::CGazeCapture( CImage &img, CVector<3> vec3Point ) :
 	imgGaze( img, "Image_Gaze" ),
 	vec3Point( vec3Point )
 {
-
+	imgGaze.TransferOwnership( -1 );	//Make top level image
 }
 
 CGazeCapture::~CGazeCapture( )

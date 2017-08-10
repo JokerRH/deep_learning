@@ -1,7 +1,7 @@
 #include "Image.h"
 #include "BBox.h"
 #include "Utility.h"
-#include <opencv2\imgproc\imgproc.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #ifdef _MSC_VER
 #	define NOMINMAX
@@ -23,6 +23,27 @@ void CImage::GetScreenResolution( unsigned int &uWidth, unsigned int &uHeight )
 	uWidth = s->width;
 	uHeight = s->height;
 #endif
+}
+
+void CImage::TransferOwnership( unsigned int uLevel )
+{
+	if( !m_pParentBox || !uLevel )
+		return;
+
+	m_pParentBox->RemoveChild( this );
+	while( uLevel-- )
+	{
+		if( !m_pParentBox )
+			break;	//Image is now top level image
+
+		m_dPositionX = m_pParentBox->m_dPositionX + m_pParentBox->m_dWidth * m_dPositionX;
+		m_dPositionY = m_pParentBox->m_dPositionY + m_pParentBox->m_dHeight * m_dPositionY;
+		m_dWidth *= m_pParentBox->m_dWidth;
+		m_dHeight *= m_pParentBox->m_dHeight;
+		m_pParentBox = m_pParentBox->m_pParentBox;
+	}
+	if( m_pParentBox )
+		m_pParentBox->AddChild( this );
 }
 
 void CImage::Show( const char *szWindow )

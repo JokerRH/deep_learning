@@ -37,6 +37,9 @@ unsigned int CBaseHighlighter::GetPositionY( unsigned int uLevel ) const
 
 double CBaseHighlighter::GetRelPositionX( unsigned int uLevel ) const
 {
+	if( !uLevel-- )
+		return m_dPositionX;
+
 	register double dPositionX = m_pParentBox->GetRelPositionX( uLevel );
 	register double dWidth = m_pParentBox->GetRelWidth( uLevel );
 	return dPositionX + dWidth * m_dPositionX;
@@ -44,6 +47,9 @@ double CBaseHighlighter::GetRelPositionX( unsigned int uLevel ) const
 
 double CBaseHighlighter::GetRelPositionY( unsigned int uLevel ) const
 {
+	if( !uLevel-- )
+		return m_dPositionY;
+
 	register double dPositionY = m_pParentBox->GetRelPositionY( uLevel );
 	register double dHeight = m_pParentBox->GetRelHeight( uLevel );
 	return dPositionY + dHeight * m_dPositionY;

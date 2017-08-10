@@ -2,12 +2,8 @@
 #include "Utility.h"
 #include <unistd.h>
 #include <termios.h>
-#include <opencv2\highgui.hpp>
-
-int CUtility::Run( runfunc_t pfnRun, void *pParam )
-{
-	return (int) pfnRun( pParam );
-}
+#include <opencv2/highgui.hpp>
+#include <iostream>
 
 unsigned char CUtility::WaitKey( unsigned int uMilliseconds )
 {

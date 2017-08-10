@@ -4,29 +4,22 @@
 #include "Image.h"
 #include "Point.h"
 #include "Camera.h"
-
+#include <regex>
 #ifdef _MSC_VER
 #	define NOMINMAX
 #	include <Windows.h>
-#else
-#	include <sys/stat.h>
 #endif
 
 class CGazeCapture
 {
 public:
-	static bool Init( CBaseCamera &camera, const char *szFile );
+	static bool Init( const char *szFile );
 	static void Destroy( void );
 	static bool OpenOrCreate( const std::string &sFile );
-	static bool Exists( const std::string &sFile );
-	static std::vector<CGazeCapture> Load( const std::string &sFile, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim );
-	
-	static std::string GetPath( const std::string &sFile );
-	static std::string GetFile( const std::string &sFile );
-	static std::string GetFileName( const std::string &sFile );
+	static std::vector<CGazeCapture> Load( const std::string &sFile );
 	
 	CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim );
-	CGazeCapture( CImage &img, CVector<3> vec3Point, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim );
+	CGazeCapture( CImage &img, CVector<3> vec3Point );
 	CGazeCapture( const CGazeCapture &other );
 	~CGazeCapture( void );
 	
@@ -38,42 +31,19 @@ public:
 	CImage imgGaze;
 	CVector<3> vec3Point;
 
+	static std::string s_sName;
 	static double s_dEyeDistance;
+	static std::string s_sDataPath;
 
 private:
 	static FILE *s_pFile;
-	static std::string s_sName;
-	static std::string s_sDataPath;
 	static unsigned int s_uCurrentImage;
+	
+	static const std::regex s_regex_name;
+	static const std::regex s_regex_dist;
+	static const std::regex s_regex_data;
+	static const std::regex s_regex_line;
 };
-
-inline bool CGazeCapture::Exists( const std::string &sFile )
-{
-	struct stat buffer;   
-	return ( stat( sFile.c_str( ), &buffer ) == 0 );
-}
-
-inline std::string CGazeCapture::GetPath( const std::string &sFile )
-{
-	size_t uLastDir = sFile.find_last_of( "/\\" );
-	return sFile.substr( 0, uLastDir + 1 );
-}
-
-inline std::string CGazeCapture::GetFile( const std::string &sFile )
-{
-	size_t uLastDir = sFile.find_last_of( "/\\" );
-	return sFile.substr( uLastDir + 1 );
-}
-
-inline std::string CGazeCapture::GetFileName( const std::string &sFile )
-{
-	std::string str = GetFile( sFile );
-	size_t uLastDot = str.find_last_of( "." );
-	if( uLastDot )
-		return str.substr( 0, uLastDot );
-	else
-		return str;
-}
 
 inline CGazeCapture::CGazeCapture( const CGazeCapture &other ) :
 	imgGaze( other.imgGaze ),

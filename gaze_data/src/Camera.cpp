@@ -52,5 +52,8 @@ bool CCamera::TakePicture( CImage &img )
 	m_Cap.grab( );
 	m_Cap.grab( );
 	m_Cap.retrieve( img.matImage );
+	
+	img.timestamp = time( nullptr );
+	img.dFOV = 60;
 	return true;
 }

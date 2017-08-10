@@ -18,6 +18,12 @@ public:
 
 	}
 	
+	inline CBBox( CBaseBBox &parentBox, double dX, double dY, double dWidth, double dHeight, const char *szName ) :
+		CBaseBBox( parentBox, dX, dY, dWidth, dHeight, szName )
+	{
+
+	}
+	
 	inline CBBox( const CBBox &other ) :
 		CBaseBBox( other )
 	{

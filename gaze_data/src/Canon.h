@@ -20,7 +20,7 @@ public:
 	static bool IsInitialized( void );
 	static CCanon *SelectCamera( void );
 
-	~CCanon( void );
+	~CCanon( void ) override;
 	bool TakePicture( CImage &img ) override;
 	static const char *GetErrorMacro( EdsError err );
 

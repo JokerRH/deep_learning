@@ -189,14 +189,6 @@ inline CImage *CImage::GetImage( unsigned int uLevel )
 	return m_pParentBox->GetImage( uLevel );
 }
 
-inline void CImage::TransferOwnership( unsigned int uLevel )
-{
-	if( !m_pParentBox )
-		return;
-
-	CBaseBBox::TransferOwnership( uLevel );
-}
-
 inline void CImage::TransferOwnership( CBaseBBox &parentBox )
 {
 	if( !m_pParentBox )

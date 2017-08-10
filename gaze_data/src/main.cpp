@@ -40,7 +40,7 @@ int EditDataset( const char *szFile )
 	{
 		if( i == 1 )
 		{
-			CCanon::Terminate( );
+			CBaseCamera::Terminate( );
 			return EXIT_SUCCESS;
 		}
 
@@ -49,7 +49,7 @@ int EditDataset( const char *szFile )
 
 	try
 	{
-		if( !CGazeCapture::Init( *pCamera, szFile ) )
+		if( !CGazeCapture::Init( szFile ) )
 			return EXIT_FAILURE;
 	}
 	catch( int i )
@@ -133,9 +133,14 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 	
 	CLandmarkCandidate::Init( );
+	CScenery::SetScenery( vec3MonitorPos, vec3MonitorDim );
+	
+	std::vector<CGazeCapture> vecCapture = CGazeCapture::Load( std::string( szSrc ) );
+	CGazeData::Init( szDst );
+	std::vector<CGazeData> vecData;
 	try
 	{
-		std::vector<CGazeData> vecData = CGazeData::GetGazeData( CGazeCapture::Load( std::string( szSrc ), vec3MonitorPos, vec3MonitorDim ), "Window" );
+		vecData = CGazeData::GetGazeData( vecCapture, "Window" );
 	}
 	catch( int i )
 	{
@@ -145,6 +150,30 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 		throw;
 	}
 
+	for( std::vector<CGazeData>::iterator it = vecData.begin( ); it < vecData.end( ); it++ )
+	{
+		it->DrawScenery( "Window" );
+		it->Write( );
+	}
+	CGazeData::Destroy( );
+
+	destroyAllWindows( );
+	return EXIT_SUCCESS;
+}
+
+int ShowDataset( const char *szFile )
+{
+	std::vector<CGazeData> vecData = CGazeData::Load( szFile );
+	
+	namedWindow( "Window", CV_WINDOW_NORMAL );
+	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+
+	CScenery::SetScenery( vec3MonitorPos, vec3MonitorDim );
+	for( std::vector<CGazeData>::iterator it = vecData.begin( ); it < vecData.end( ); it++ )
+	{
+		it->DrawScenery( "Window" );
+	}
+	
 	destroyAllWindows( );
 	return EXIT_SUCCESS;
 }
@@ -208,7 +237,7 @@ int CaptureVideo( void )
 
 int TestImage( void )
 {
-	(void) CCamera::Init( );
+	(void) CBaseCamera::Init( );
 	CBaseCamera *pCamera;
 	try
 	{
@@ -218,7 +247,7 @@ int TestImage( void )
 	{
 		if( i == 1 )
 		{
-			CCanon::Terminate( );
+			CBaseCamera::Terminate( );
 			return EXIT_SUCCESS;
 		}
 
@@ -377,52 +406,6 @@ int RenderTest( void )
 	return EXIT_SUCCESS;
 }
 
-int Test( void )
-{
-	(void) CCamera::Init( );
-	CBaseCamera *pCamera;
-	try
-	{
-		pCamera = CBaseCamera::SelectCamera( );
-	}
-	catch( int i )
-	{
-		if( i == 1 )
-		{
-			CCanon::Terminate( );
-			return EXIT_SUCCESS;
-		}
-
-		throw;
-	}
-
-	namedWindow( "Window", CV_WINDOW_NORMAL );
-	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
-
-	try
-	{
-		CGazeCapture capture( *pCamera, "Window", vec3MonitorPos, vec3MonitorDim );
-		printf( "capture image: %ux%u\n", capture.imgGaze.matImage.cols, capture.imgGaze.matImage.rows );
-		capture.imgGaze.Show( "Window" );
-		waitKey( 0 );
-	}
-	catch( int i )
-	{
-		if( i == 1 )
-		{
-			CCamera::Terminate( );
-			return EXIT_SUCCESS;
-		}
-
-		throw;
-	}
-
-	(void) getchar( );
-	CCamera::Terminate( );
-	destroyAllWindows( );
-	return EXIT_SUCCESS;
-}
-
 int main(int argc, char **argv)
 {
 /*
@@ -461,6 +444,14 @@ int main(int argc, char **argv)
 #endif
 		{
 			return EditDataset( argv[ 2 ] );
+		}
+#ifdef _MSC_VER
+		else if( !_stricmp( argv[ 1 ], "show" ) )
+#else
+		else if( !strcasecmp( argv[ 1 ], "show" ) )
+#endif
+		{
+			return ShowDataset( argv[ 2 ] );
 		}
 	}
 	else if( argc == 4 )

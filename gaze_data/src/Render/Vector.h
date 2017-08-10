@@ -37,6 +37,7 @@ public:
 	CVector<3> &MakeCrossProduct( const CVector<3> &other );
 	std::string ToString( unsigned int uPrecision = 2 ) const;
 	void Swap( CVector<uRows> &other );
+	double Angle( const CVector<3> &other ) const;
 
 private:
 	double m_adValues[ uRows ];
@@ -250,4 +251,10 @@ inline void CVector<uRows>::Swap( CVector<uRows> &other )
 {
 	for( unsigned int u = 0; u < uRows; u++ )
 		std::swap( m_adValues[ u ], other.m_adValues[ u ] );
+}
+
+template<unsigned int uRows>
+inline double CVector<uRows>::Angle( const CVector<3> &other ) const
+{
+	return acos( this->Normalized( ) * other.Normalized( ) );
 }

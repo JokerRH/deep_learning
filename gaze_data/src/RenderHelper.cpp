@@ -6,14 +6,8 @@
 
 CMatrix<3, 3> CRenderHelper::GetRotationMatrix( double dX, double dY, double dZ )
 {
-	return GetRotationMatrixRad( dX * M_PI / 180, dY * M_PI / 180, dZ * M_PI / 180 );
-}
-
-CMatrix<3, 3> CRenderHelper::GetRotationMatrixRad( double dX, double dY, double dZ )
-{
-	//Roll
-	double dCos = cos( dX );
-	double dSin = sin( dX );
+	double dCos = cos( dX * M_PI / 180 );
+	double dSin = sin( dX * M_PI / 180 );
 	CMatrix<3, 3> matX(
 	{
 		1, 0, 0,
@@ -21,9 +15,8 @@ CMatrix<3, 3> CRenderHelper::GetRotationMatrixRad( double dX, double dY, double 
 		0, dSin, dCos
 	} );
 
-	//Pitch
-	dCos = cos( dY );
-	dSin = sin( dY );
+	dCos = cos( dY * M_PI / 180 );
+	dSin = sin( dY * M_PI / 180 );
 	CMatrix<3, 3> matY(
 	{
 		dCos, 0, dSin,
@@ -31,9 +24,8 @@ CMatrix<3, 3> CRenderHelper::GetRotationMatrixRad( double dX, double dY, double 
 		-dSin, 0, dCos
 	} );
 
-	//Yaw
-	dCos = cos( dZ );
-	dSin = sin( dZ );
+	dCos = cos( dZ * M_PI / 180 );
+	dSin = sin( dZ * M_PI / 180 );
 	CMatrix<3, 3> matZ(
 	{
 		dCos, -dSin, 0,
