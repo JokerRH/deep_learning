@@ -16,6 +16,7 @@ public:
 	virtual double GetRelPositionY( unsigned int uLevel = -1 ) const;
 	virtual CImage *GetImage( unsigned int uLevel = -1 );
 	virtual CBaseBBox *GetParent( unsigned int uLevel = -1 );
+	void Shift( const CVector<2> &vec2Offset );
 
 	virtual void TransferOwnership( unsigned int uLevel = 1 );
 	virtual void TransferOwnership( CBaseBBox &parentBox );
@@ -44,6 +45,6 @@ protected:
 
 	double m_dPositionX = 0;	//Left X-position in % of parent's width
 	double m_dPositionY = 0;	//Top Y-position in % of parent's height
-	
+
 	friend CImage;
 };

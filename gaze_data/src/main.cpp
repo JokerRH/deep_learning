@@ -152,7 +152,6 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 
 	for( std::vector<CGazeData>::iterator it = vecData.begin( ); it < vecData.end( ); it++ )
 	{
-		it->DrawScenery( "Window" );
 		it->Write( );
 	}
 	CGazeData::Destroy( );

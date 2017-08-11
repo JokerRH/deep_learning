@@ -71,6 +71,22 @@ CBaseBBox *CBaseHighlighter::GetParent( unsigned int uLevel )
 	return m_pParentBox->GetParent( uLevel );
 }
 
+void CBaseHighlighter::Shift( const CVector<2> &vec2Offset )
+{
+	m_dPositionX += vec2Offset[ 0 ];
+	m_dPositionY += vec2Offset[ 1 ];
+	
+	if( m_dPositionX < 0 )
+		m_dPositionX = 0;
+	else if( m_dPositionX > 1 )
+		m_dPositionX = 1;
+		
+	if( m_dPositionY < 0 )
+		m_dPositionY = 0;
+	else if( m_dPositionY > 1 )
+		m_dPositionY = 1;
+}
+
 void CBaseHighlighter::TransferOwnership( unsigned int uLevel )
 {
 	if( !uLevel || !m_pParentBox->m_pParentBox )

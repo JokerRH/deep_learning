@@ -3,6 +3,7 @@
 #include "Image.h"
 #include "Scenery.h"
 #include "Render/RenderHelper.h"
+#include "Render/Vector.h"
 #include "Utility.h"
 #ifndef _USE_MATH_DEFINES
 #	define _USE_MATH_DEFINES
@@ -45,7 +46,7 @@ bool CGazeData::OpenOrCreate( const std::string &sFile )
 {
 	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
 	s_uCurrentImage = 0;
-	if( !CUtility::Exists( sFile ) )
+	if( 1 || !CUtility::Exists( sFile ) )
 	{
 		s_dEyeDistance = CGazeCapture::s_dEyeDistance;
 		s_sName = CGazeCapture::s_sName;
@@ -219,39 +220,11 @@ std::vector<CGazeData> CGazeData::Load( const std::string &sFile )
 		return vecCaptures;
 	}
 
-	struct tm timeinfo = { 0 };
 	while( std::getline( file, sLine ) )
 	{
-		std::regex_match( sLine, match, s_regex_line );
-		if( match.size( ) )
-		{
-			unsigned int uCurrent = std::stoul( match[ 7 ].str( ) );
-			s_uCurrentImage = std::max( s_uCurrentImage, uCurrent );
-
-			double dFOV = std::stod( match[ 8 ].str( ) );
-			timeinfo.tm_sec = std::stoi( match[ 6 ].str( ) );
-			timeinfo.tm_min = std::stoi( match[ 5 ].str( ) );
-			timeinfo.tm_hour = std::stoi( match[ 4 ].str( ) );
-			timeinfo.tm_mday = std::stoi( match[ 3 ].str( ) );
-			timeinfo.tm_mon = std::stoi( match[ 2 ].str( ) ) - 1;
-			timeinfo.tm_year = std::stoi( match[ 1 ].str( ) ) - 1900;
-			std::string str = s_sRawPath + "img_" + std::to_string( uCurrent ) + ".jpg";
-			cv::Mat matImage = imread( str, CV_LOAD_IMAGE_COLOR );
-			if( !matImage.data )
-			{
-				fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
-				continue;
-			}
-			CImage img( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" );
-
-			CVector<2> vec2PYRight( { std::stod( match[ 15 ].str( ) ), std::stod( match[ 16 ].str( ) ) } );
-			CPoint ptEyeRight( img, std::stod( match[ 13 ].str( ) ), std::stod( match[ 14 ].str( ) ), "Point_EyeLeft" );
-			CVector<2> vec2PYLeft( { std::stod( match[ 11 ].str( ) ), std::stod( match[ 12 ].str( ) ) } );
-			CPoint ptEyeLeft( img, std::stod( match[ 9 ].str( ) ), std::stod( match[ 10 ].str( ) ), "Point_EyeRight" );
-
-			vecCaptures.emplace_back( img, ptEyeLeft, ptEyeRight, vec2PYLeft, vec2PYRight, tan( dFOV * M_PI / ( 2 * 180 ) ) );
-		}
+		Load( vecCaptures, sLine );
 	}
+	s_uCurrentImage++;
 
 	CUtility::Cls( );
 	printf( "Name        : %s\n", s_sName.c_str( ) );
@@ -361,17 +334,18 @@ CGazeData::CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double d
 	m_rayEyeRight = CRay( vec3EyeRight, vec3Point - vec3EyeRight );
 }
 
-CGazeData::CGazeData( const CImage &img, const CPoint &ptEyeLeft, const CPoint &ptEyeRight, const CVector<2> &vec2PYLeft, const CVector<2> &vec2PYRight, double dTanFOV ) :
+CGazeData::CGazeData( const CImage &img, const CBBox &boxFace, const CPoint &ptEyeLeft, const CPoint &ptEyeRight, const CVector<2> &vec2PYLeft, const CVector<2> &vec2PYRight, double dTanFOV ) :
 	m_rayEyeLeft( CVector<3>( { 0 } ), CVector<3>( { 0 } ) ),
 	m_rayEyeRight( CVector<3>( { 0 } ), CVector<3>( { 0 } ) ),
 	m_imgGaze( img ),
-	m_boxFace( m_imgGaze, 0, 0, 1, 1, "Box_Face" ),
+	m_boxFace( boxFace ),
 	m_ptEyeLeft( ptEyeLeft ),
 	m_ptEyeRight( ptEyeRight )
 {
+	m_boxFace.TransferOwnership( m_imgGaze );
 	m_ptEyeLeft.TransferOwnership( m_boxFace );
 	m_ptEyeRight.TransferOwnership( m_boxFace );
-	
+
 	double dWidth = m_imgGaze.GetWidth( );
 	double dHeight = m_imgGaze.GetHeight( );
 
@@ -400,6 +374,9 @@ CGazeData::CGazeData( const CImage &img, const CPoint &ptEyeLeft, const CPoint &
 
 	m_rayEyeLeft = CRay( vec3EyeLeft, CVector<3>( { 0, 0, -1 } ), vec2PYLeft );
 	m_rayEyeRight = CRay( vec3EyeRight, CVector<3>( { 0, 0, -1 } ), vec2PYRight );
+	CVector<2> vec2Scale = m_rayEyeLeft.PointOfShortestDistance( m_rayEyeRight );
+	m_rayEyeLeft *= vec2Scale[ 0 ];
+	m_rayEyeRight *= vec2Scale[ 1 ];
 }
 
 bool CGazeData::DrawScenery( const char *szWindow )
@@ -517,18 +494,106 @@ bool CGazeData::DrawScenery( const char *szWindow )
 
 bool CGazeData::Write( void )
 {
+	CBBox boxRand( m_boxFace );
+	boxRand.Scale( CVector<2>( 
+	{
+		1 + ( rand( ) / (double) RAND_MAX ) * 0.1,
+		1 + ( rand( ) / (double) RAND_MAX ) * 0.1
+	} ) );
+	boxRand.Shift( CVector<2>(
+	{
+		( rand( ) / (double) RAND_MAX ) * 0.1 - 0.05,
+		( rand( ) / (double) RAND_MAX ) * 0.1 - 0.05
+	} ) );
+	
+	CPoint ptEyeLeft( m_ptEyeLeft );
+	CPoint ptEyeRight( m_ptEyeRight );
+	ptEyeLeft.TransferOwnership( boxRand );
+	ptEyeRight.TransferOwnership( boxRand );
+
 	struct tm *timeinfo = localtime( &m_imgGaze.timestamp );
 	char szDate[ 20 ];
 	strftime( szDate, 20, "%F %T", timeinfo ); //YYYY-MM-DD HH:MM:SS
 	fputs( szDate, s_pFile );
 	fprintf( s_pFile, " %u %f", s_uCurrentImage, m_imgGaze.dFOV );
 	CVector<2> vec2Amp = m_rayEyeLeft.AmplitudeRepresentation( );
-	fprintf( s_pFile, " (%f, %f)@(%f, %f)", m_ptEyeLeft.GetRelPositionX( 0 ), m_ptEyeLeft.GetRelPositionY( 0 ), vec2Amp[ 0 ], vec2Amp[ 1 ] );;
+	fprintf( s_pFile, " (%f, %f)@(%f, %f)", ptEyeLeft.GetRelPositionX( 0 ), ptEyeLeft.GetRelPositionY( 0 ), vec2Amp[ 0 ], vec2Amp[ 1 ] );;
 	vec2Amp = m_rayEyeRight.AmplitudeRepresentation( );
-	fprintf( s_pFile, " (%f, %f)@(%f, %f)\n", m_ptEyeRight.GetRelPositionX( 0 ), m_ptEyeRight.GetRelPositionY( 0 ), vec2Amp[ 0 ], vec2Amp[ 1 ] );;
+	fprintf( s_pFile, " (%f, %f)@(%f, %f)\n", ptEyeRight.GetRelPositionX( 0 ), ptEyeRight.GetRelPositionY( 0 ), vec2Amp[ 0 ], vec2Amp[ 1 ] );;
 
 	CImage img( m_imgGaze, "Image_Face" );
-	img.Crop( m_boxFace );
+	img.Crop( boxRand );
 	imwrite( s_sDataPath + "img_" + std::to_string( s_uCurrentImage++ ) + ".jpg", img.matImage );
 	return true;
+}
+
+bool CGazeData::Load( std::vector<CGazeData> &vecData, const std::string &sLine )
+{
+	std::smatch match;
+	std::regex_match( sLine, match, s_regex_line );
+	if( !match.size( ) )
+		return false;
+
+	unsigned int uCurrent = std::stoul( match[ 7 ].str( ) );
+	s_uCurrentImage = std::max( s_uCurrentImage, uCurrent );
+
+	double dFOV = std::stod( match[ 8 ].str( ) );
+	struct tm timeinfo = { 0 };
+	timeinfo.tm_sec = std::stoi( match[ 6 ].str( ) );
+	timeinfo.tm_min = std::stoi( match[ 5 ].str( ) );
+	timeinfo.tm_hour = std::stoi( match[ 4 ].str( ) );
+	timeinfo.tm_mday = std::stoi( match[ 3 ].str( ) );
+	timeinfo.tm_mon = std::stoi( match[ 2 ].str( ) ) - 1;
+	timeinfo.tm_year = std::stoi( match[ 1 ].str( ) ) - 1900;
+
+	//Load raw image
+	std::string str = s_sRawPath + "img_" + std::to_string( uCurrent ) + ".jpg";
+	cv::Mat matImage = imread( str, CV_LOAD_IMAGE_COLOR );
+	if( !matImage.data )
+	{
+		fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
+		return false;
+	}
+	CImage img( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" );
+
+	//Load face image
+	str = s_sDataPath + "img_" + std::to_string( uCurrent ) + ".jpg";
+	matImage = imread( str, CV_LOAD_IMAGE_COLOR );
+	if( !matImage.data )
+	{
+		fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
+		return false;
+	}
+	CImage imgFace( matImage, dFOV, mktime( &timeinfo ), "Image_Face" );
+	CBBox boxFace = FindTemplate( img, imgFace );
+
+	CVector<2> vec2PYRight( { std::stod( match[ 15 ].str( ) ), std::stod( match[ 16 ].str( ) ) } );
+	CPoint ptEyeRight( boxFace, std::stod( match[ 13 ].str( ) ), std::stod( match[ 14 ].str( ) ), "Point_EyeLeft" );
+	CVector<2> vec2PYLeft( { std::stod( match[ 11 ].str( ) ), std::stod( match[ 12 ].str( ) ) } );
+	CPoint ptEyeLeft( boxFace, std::stod( match[ 9 ].str( ) ), std::stod( match[ 10 ].str( ) ), "Point_EyeRight" );
+
+	vecData.emplace_back( img, boxFace, ptEyeLeft, ptEyeRight, vec2PYLeft, vec2PYRight, tan( dFOV * M_PI / ( 2 * 180 ) ) );
+	return true;
+}
+
+CBBox CGazeData::FindTemplate( CImage &imgSrc, const CImage &imgTemplate )
+{
+	//Create the result matrix
+	int iResultCols =  imgSrc.matImage.cols - imgTemplate.matImage.cols + 1;
+	int iResultRows = imgSrc.matImage.rows - imgTemplate.matImage.rows + 1;
+	cv::Mat matResult( iResultCols, iResultRows, CV_32FC1 );
+
+	//Do the Matching and Normalize
+	cv::matchTemplate( imgSrc.matImage, imgTemplate.matImage, matResult, CV_TM_SQDIFF );
+	cv::normalize( matResult, matResult, 0, 1, NORM_MINMAX, -1, cv::Mat( ) );
+
+	//Localizing the best match with minMaxLoc
+	double dMinVal;
+	double dMaxVal;
+	cv::Point ptMinLoc;
+	cv::Point ptMaxLoc;
+	cv::minMaxLoc( matResult, &dMinVal, &dMaxVal, &ptMinLoc, &ptMaxLoc, cv::Mat( ) );	
+	
+	return CBBox( imgSrc, cv::Rect( ptMinLoc, cv::Point( ptMinLoc.x + imgTemplate.matImage.cols , ptMinLoc.y + imgTemplate.matImage.rows ) ), -1, "Box_Face" );	//CV_TM_SQDIFF and CV_TM_SQDIFF_NORMED
+	//return CBBox( imgSrc, cv::Rect( ptMinLoc, cv::Point( ptMaxLoc.x + imgTemplate.matImage.cols , ptMaxLoc.y + imgTemplate.matImage.rows ) ), -1, "Box_Face" );
 }

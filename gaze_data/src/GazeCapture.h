@@ -36,6 +36,8 @@ public:
 	static std::string s_sDataPath;
 
 private:
+	static bool Load( std::vector<CGazeCapture> &vecData, const std::string &sLine );
+
 	static FILE *s_pFile;
 	static unsigned int s_uCurrentImage;
 	

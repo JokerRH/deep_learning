@@ -15,6 +15,7 @@ public:
 	virtual double GetRelHeight( unsigned int uLevel = -1 ) const;
 	CBaseBBox *GetParent( unsigned int uLevel = -1 ) override;
 	CVector<2> GetCenter( void ) const;
+	void Scale( const CVector<2> &vec2Scale );
 	
 	virtual void TransferOwnership( unsigned int uLevel = 1 );
 	virtual void TransferOwnership( CBaseBBox &parentBox );
@@ -81,4 +82,10 @@ inline CBaseBBox *CBaseBBox::GetParent( unsigned int uLevel )
 inline CVector<2> CBaseBBox::GetCenter( void ) const
 {
 	return CVector<2>( { m_dPositionX + m_dWidth / 2, m_dPositionY + m_dHeight / 2 } );
+}
+
+inline void CBaseBBox::Scale( const CVector<2> &vec2Scale )
+{
+	m_dWidth *= vec2Scale[ 0 ];
+	m_dHeight *= vec2Scale[ 1 ];
 }

@@ -212,41 +212,11 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile )
 		return vecCaptures;
 	}
 
-	struct tm timeinfo = { 0 };
-	cv::Mat matImage;
-	double dFOV;
-	CVector<3> vec3Point( { 0 } );
-	unsigned int uCurrent;
-	std::string str;
 	while( std::getline( file, sLine ) )
 	{
-		std::regex_match( sLine, match, s_regex_line );
-		if( match.size( ) )
-		{
-			vec3Point[ 2 ] = std::stod( match[ 11 ].str( ) );
-			vec3Point[ 1 ] = std::stod( match[ 10 ].str( ) );
-			vec3Point[ 0 ] = std::stod( match[ 9 ].str( ) );
-			dFOV = std::stod( match[ 8 ].str( ) );
-			uCurrent = std::stoul( match[ 7 ].str( ) );
-			s_uCurrentImage = std::max( s_uCurrentImage, uCurrent );
-			timeinfo.tm_sec = std::stoi( match[ 6 ].str( ) );
-			timeinfo.tm_min = std::stoi( match[ 5 ].str( ) );
-			timeinfo.tm_hour = std::stoi( match[ 4 ].str( ) );
-			timeinfo.tm_mday = std::stoi( match[ 3 ].str( ) );
-			timeinfo.tm_mon = std::stoi( match[ 2 ].str( ) ) - 1;
-			timeinfo.tm_year = std::stoi( match[ 1 ].str( ) ) - 1900;
-			str = s_sDataPath + "img_" + std::to_string( uCurrent ) + ".jpg";
-			matImage = imread( str, CV_LOAD_IMAGE_COLOR );
-			if( !matImage.data )
-			{
-				fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
-				continue;
-			}
-			CImage img( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" );
-			img.TransferOwnership( );
-			vecCaptures.emplace_back( img, vec3Point );
-		}
+		Load( vecCaptures, sLine );
 	}
+	s_uCurrentImage++;
 
 	CUtility::Cls( );
 	printf( "Name        : %s\n", s_sName.c_str( ) );
@@ -333,5 +303,40 @@ bool CGazeCapture::Write( void )
 	fprintf( s_pFile, " %u %f (%f, %f, %f)\n", s_uCurrentImage, imgGaze.dFOV, vec3Point[ 0 ], vec3Point[ 1 ], vec3Point[ 2 ] );
 
 	imwrite( s_sDataPath + "img_" + std::to_string( s_uCurrentImage++ ) + ".jpg", imgGaze.matImage );
+	return true;
+}
+
+bool CGazeCapture::Load( std::vector<CGazeCapture> &vecData, const std::string &sLine )
+{
+	std::smatch match;
+	std::regex_match( sLine, match, s_regex_line );
+	if( !match.size( ) )
+		return false;
+
+	CVector<3> vec3Point( { std::stod( match[ 9 ].str( ) ), std::stod( match[ 10 ].str( ) ), std::stod( match[ 11 ].str( ) ) } );
+	double dFOV = std::stod( match[ 8 ].str( ) );
+	
+	unsigned int uCurrent = std::stoul( match[ 7 ].str( ) );
+	s_uCurrentImage = std::max( s_uCurrentImage, uCurrent );
+	
+	struct tm timeinfo = { 0 };
+	timeinfo.tm_sec = std::stoi( match[ 6 ].str( ) );
+	timeinfo.tm_min = std::stoi( match[ 5 ].str( ) );
+	timeinfo.tm_hour = std::stoi( match[ 4 ].str( ) );
+	timeinfo.tm_mday = std::stoi( match[ 3 ].str( ) );
+	timeinfo.tm_mon = std::stoi( match[ 2 ].str( ) ) - 1;
+	timeinfo.tm_year = std::stoi( match[ 1 ].str( ) ) - 1900;
+	
+	//Load image
+	std::string str = s_sDataPath + "img_" + std::to_string( uCurrent ) + ".jpg";
+	cv::Mat matImage = imread( str, CV_LOAD_IMAGE_COLOR );
+	if( !matImage.data )
+	{
+		fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
+		return false;
+	}
+	CImage img( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" );
+	
+	vecData.emplace_back( img, vec3Point );
 	return true;
 }

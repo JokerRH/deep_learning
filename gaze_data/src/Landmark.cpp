@@ -89,8 +89,8 @@ CPoint CLandmark::GetPointManual( CBBox &box, const char *szWindow )
 {
 	double dX = 0.5;
 	double dY = 0.5;
-	double dStepX = 0.05;
-	double dStepY = 0.05;
+	double dStepX = 1.0 / box.GetWidth( -1 );
+	double dStepY = 1.0 / box.GetHeight( -1 );
 	unsigned char cKey;
 	CImage imgFocus;
 	CImage imgDraw;
@@ -195,34 +195,42 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 
 	CBBox boxEyeLeft = GetEyeBox( candidate.aEyes, CVector<2>( { 0.67, 0.398 } ) );
 	CBBox boxEyeRight = GetEyeBox( candidate.aEyes, CVector<2>( { 0.3, 0.398 } ) );
-	
+
 	boxEyeLeft.TransferOwnership( boxFace );
 	boxEyeRight.TransferOwnership( boxFace );
-	
+
 	GetPoint( boxEyeLeft );
 	GetPoint( boxEyeRight );
-	ptEyeLeft = GetPointManual( boxEyeLeft, szWindow );
-	ptEyeRight = GetPointManual( boxEyeRight, szWindow );
-	ptEyeLeft.TransferOwnership( 1 );
-	ptEyeRight.TransferOwnership( 1 );
-	
-	CImage imgDraw;
-	imgDraw.Crop( candidate.boxFace );
-	Draw( imgDraw );
-	imgDraw.Show( szWindow );
-	unsigned char cKey;
+
 	while( true )
 	{
-		cKey = waitKey( 0 );
-		switch( cKey )
+		ptEyeLeft = GetPointManual( boxEyeLeft, szWindow );
+		ptEyeRight = GetPointManual( boxEyeRight, szWindow );
+		ptEyeLeft.TransferOwnership( 1 );
+		ptEyeRight.TransferOwnership( 1 );
+	
+		CImage imgDraw;
+		imgDraw.Crop( candidate.boxFace );
+		Draw( imgDraw );
+		imgDraw.Show( szWindow );
+		unsigned char cKey;
+		bool fContinue = true;
+		while( fContinue )
 		{
-		case 8:		//Backspace
-			throw( 0 );
-		case 141:	//Numpad enter
-		case 10:	//Enter
-			return;
-		case 27:	//Escape
-			throw( 1 );
+			cKey = waitKey( 0 );
+			switch( cKey )
+			{
+			case 8:		//Backspace
+				throw( 0 );
+			case 141:	//Numpad enter
+			case 10:	//Enter
+				return;
+			case 27:	//Escape
+				throw( 1 );
+			case 'e':
+				fContinue = false;
+				break;
+			}
 		}
 	}
 }

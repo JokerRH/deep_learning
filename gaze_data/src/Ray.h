@@ -24,7 +24,9 @@ public:
 	CRay &Transform( const CMatrix<3, 3> &matTransform );
 	CRay Shifted( const CVector<3> &vec3 ) const;
 	CRay &Shift( const CVector<3> &vec3 );
-	CVector<2> AmplitudeRepresentation( void );
+	CRay &operator*=( const double &other );
+	CRay &operator/=( const double &other );
+	CVector<2> AmplitudeRepresentation( void );	
 	
 	void Render( CImage &img, const cv::Scalar &colorPoint, const cv::Scalar &colorLine, double dLength = 1, int iRadius = 3, int iPointThickness = -1, int iLineThickness = 1 ) const;
 
@@ -73,6 +75,18 @@ inline CRay CRay::Shifted( const CVector<3> &vec3 ) const
 inline CRay &CRay::Shift( const CVector<3> &vec3 )
 {
 	m_vec3Origin += vec3;
+	return *this;
+}
+
+inline CRay &CRay::operator*=( const double &other )
+{
+	m_vec3Dir *= other;
+	return *this;
+}
+
+inline CRay &CRay::operator/=( const double &other )
+{
+	m_vec3Dir /= other;
 	return *this;
 }
 
