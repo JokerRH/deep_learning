@@ -12,6 +12,9 @@
 #include <fstream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#ifdef _MSC_VER
+#	include <direct.h>
+#endif
 
 using namespace cv;
 
