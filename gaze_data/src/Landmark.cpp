@@ -1,44 +1,13 @@
 #include "Landmark.h"
 #include "Image.h"
 #include <deque>
+#include <vector>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 using namespace cv;
-
-/*
-cv::threshold( input_frame, output_frame, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-
-------
-
-dilate(input_frame,  output_frame, Mat(), Point(-1, -1), 5, 1, 1);
-erode(input_frame,  output_frame, Mat(), Point(-1, -1), 5, 1, 1);
-----
-
- vector<vector<Point> > contours;
-    vector<Vec4i> hierarchy;
-    findContours( input_frame, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-
-
-    int largest_area=0;
-
-    Rect bounding_rect;
-    double a;
-    for( int i = 0; i< contours.size(); i++ ) // iterate through each contour.
-       {
-        a=contourArea( contours[i],false);  //  Find the area of contour
-        if(a>largest_area){
-        largest_area=a;
-
-        bounding_rect=boundingRect(contours[i]); // Find the bounding rectangle for biggest contour
-        }
-
-       }
-------
-
-rectangle( input_frame,bounding_rect.tl(), bounding_rect.br(), 255, 2, 8, 0 );
-*/
+using namespace std;
 
 /*
 Eye Left: (0.664407, 0.396610), 0.203390x0.135593
@@ -68,6 +37,14 @@ CBBox CLandmark::GetEyeBox( const std::deque<CBBox> &vecEyes, const CVector<2> &
 	return *itClosest;
 }
 
+struct greater_than_key
+{
+    inline bool operator()( const vector<Point> &vec1, const vector<Point> &vec2 )
+    {
+        return ( contourArea( vec1, false ) > contourArea( vec2, false ) );
+    }
+};
+
 CPoint CLandmark::GetPoint( CBBox &box )
 {
 	CImage imgFocus( "Image_Focus" );
@@ -76,25 +53,42 @@ CPoint CLandmark::GetPoint( CBBox &box )
 	cvtColor( imgFocus.matImage, imgFocus.matImage, CV_BGR2GRAY );
 	equalizeHist( imgFocus.matImage, imgFocus.matImage );
 
-	threshold( imgFocus.matImage, imgFocus.matImage, 3, 255, CV_THRESH_BINARY );
-	//dilate( imgFocus.matImage, imgFocus.matImage, Mat( ), Point( -1, -1 ), 5, 1, 1);
-	//erode( imgFocus.matImage, imgFocus.matImage, Mat( ), Point( -1, -1 ), 5, 1, 1);
-	imgFocus.Show( "Window" );
-	waitKey( 0 );
+	threshold( imgFocus.matImage, imgFocus.matImage, 5, 255, CV_THRESH_BINARY );
+	dilate( imgFocus.matImage, imgFocus.matImage, Mat( ), Point( -1, -1 ), 2 );
+	erode( imgFocus.matImage, imgFocus.matImage, Mat( ), Point( -1, -1 ), 2 );
+	
+	vector<vector<Point>> contours;
+	vector<Vec4i> hierarchy;
+	findContours( imgFocus.matImage, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point( 0, 0 ) );
 
-	return CPoint( box, 0.5, 0.5, "Point_Eye" );
+	std::sort( contours.begin( ), contours.end( ), greater_than_key() );
+	
+	CPoint pt;
+	if( contours.size( ) >= 2 )
+	{
+		Point2f ptCenter;
+		float rRadius;
+		minEnclosingCircle( contours[ 1 ], ptCenter, rRadius );
+		pt = CPoint( box, ptCenter, 0, "Point_Eye" );
+	}
+	else
+	{
+		pt = CPoint( box, 0.5, 0.5, "Point_Eye" );
+	}
+
+	return pt;
 }
 
-CPoint CLandmark::GetPointManual( CBBox &box, const char *szWindow )
+CPoint CLandmark::GetPointManual( CBBox &box, CPoint pt, const char *szWindow )
 {
-	double dX = 0.5;
-	double dY = 0.5;
+	pt.TransferOwnership( box );
+	double dX = pt.GetRelPositionX( 0 );
+	double dY = pt.GetRelPositionY( 0 );
 	double dStepX = 1.0 / box.GetWidth( -1 );
 	double dStepY = 1.0 / box.GetHeight( -1 );
 	unsigned char cKey;
 	CImage imgFocus;
 	CImage imgDraw;
-	CPoint pt;
 	
 	imgFocus.Crop( box );
 	while( true )
@@ -199,16 +193,13 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 	boxEyeLeft.TransferOwnership( boxFace );
 	boxEyeRight.TransferOwnership( boxFace );
 
-	GetPoint( boxEyeLeft );
-	GetPoint( boxEyeRight );
+	ptEyeLeft = GetPoint( boxEyeLeft );
+	ptEyeRight = GetPoint( boxEyeRight );
+	ptEyeLeft.TransferOwnership( 1 );
+	ptEyeRight.TransferOwnership( 1 );
 
 	while( true )
 	{
-		ptEyeLeft = GetPointManual( boxEyeLeft, szWindow );
-		ptEyeRight = GetPointManual( boxEyeRight, szWindow );
-		ptEyeLeft.TransferOwnership( 1 );
-		ptEyeRight.TransferOwnership( 1 );
-	
 		CImage imgDraw;
 		imgDraw.Crop( candidate.boxFace );
 		Draw( imgDraw );
@@ -232,6 +223,11 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 				break;
 			}
 		}
+		
+		ptEyeLeft = GetPointManual( boxEyeLeft, ptEyeLeft, szWindow );
+		ptEyeRight = GetPointManual( boxEyeRight, ptEyeRight, szWindow );
+		ptEyeLeft.TransferOwnership( 1 );
+		ptEyeRight.TransferOwnership( 1 );
 	}
 }
 

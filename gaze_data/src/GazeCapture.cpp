@@ -29,10 +29,10 @@ std::string CGazeCapture::s_sName;
 std::string CGazeCapture::s_sDataPath;
 unsigned int CGazeCapture::s_uCurrentImage;
 
-const std::regex CGazeCapture::s_regex_name( R"a(name=([\s\S]*))a" );
-const std::regex CGazeCapture::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm)a" );
-const std::regex CGazeCapture::s_regex_data( R"a(data:)a" );
-const std::regex CGazeCapture::s_regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\))a" );
+const std::regex CGazeCapture::s_regex_name( R"a(name=([\s\S]*).*)a" );
+const std::regex CGazeCapture::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm.*)a" );
+const std::regex CGazeCapture::s_regex_data( R"a(data:.*)a" );
+const std::regex CGazeCapture::s_regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\).*)a" );
 
 bool CGazeCapture::Init( const char *szFile )
 {
@@ -171,7 +171,12 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile )
 {
 	std::vector<CGazeCapture> vecCaptures;
 	if( !CUtility::Exists( sFile ) )
+	{
+		CUtility::Cls( );
+		printf( "File \"%s\" does not exist.\n", sFile.c_str( ) );
+		CUtility::GetChar( );
 		return vecCaptures;
+	}
 
 	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
 	s_uCurrentImage = 0;
@@ -182,6 +187,7 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile )
 	std::string sLine;
 	while( std::getline( file, sLine ) )
 	{
+		std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
 		std::regex_match( sLine, match, s_regex_name );
 		if( match.size( ) )
 		{
@@ -208,17 +214,27 @@ std::vector<CGazeCapture> CGazeCapture::Load( const std::string &sFile )
 
 	if( fFound != 7 )
 	{
+		CUtility::Cls( );
 		fprintf( stderr, "File \"%s\" is missing fields\n", sFile.c_str( ) );
+		printf( "File \"%s\" is missing fields\n", sFile.c_str( ) );
+		if( !( fFound & 1 ) )
+			printf( "Missing Name field\n" );
+		if( !( fFound & 2 ) )
+			printf( "Missing Distance field\n" );
+		if( !( fFound & 4 ) )
+			printf( "Missing Data field\n" );
+		CUtility::GetChar( );
 		return vecCaptures;
 	}
 
 	while( std::getline( file, sLine ) )
 	{
+		std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
 		Load( vecCaptures, sLine );
 	}
 	s_uCurrentImage++;
 
-	CUtility::Cls( );
+	//CUtility::Cls( );
 	printf( "Name        : %s\n", s_sName.c_str( ) );
 	printf( "Eye distance: %4.2fcm\n", s_dEyeDistance * 100 );
 	printf( "Data path   : %s\n", s_sDataPath.c_str( ) );

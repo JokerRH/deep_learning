@@ -10,7 +10,7 @@ class CLandmark
 public:
 	static CBBox GetEyeBox( const std::deque<CBBox> &vecEyes, const CVector<2> &vec2Pos );
 	static CPoint GetPoint( CBBox &box );
-	static CPoint GetPointManual( CBBox &box, const char *szWindow );
+	static CPoint GetPointManual( CBBox &box, CPoint pt, const char *szWindow );
 	inline static std::vector<CLandmark> GetLandmarks( CImage &img, const char *szWindow )
 	{
 		return GetLandmarks( CLandmarkCandidate::GetCandidates( img ), szWindow );
