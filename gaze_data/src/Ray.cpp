@@ -24,7 +24,7 @@ CVector<2> CRay::PointOfShortestDistance( const CRay &other ) const
 	return mat.Invert( ) * vec2Const;
 }
 
-CVector<2> CRay::AmplitudeRepresentation( void )
+CVector<2> CRay::AmplitudeRepresentation( void ) const
 {
 	CVector<2> vec2Angles( { 0 } );
 	

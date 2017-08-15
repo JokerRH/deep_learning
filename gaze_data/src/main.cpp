@@ -47,82 +47,31 @@ int EditDataset( const char *szFile )
 		throw;
 	}
 
-	try
-	{
-		if( !CGazeCapture::Init( szFile ) )
-			return EXIT_FAILURE;
-	}
-	catch( int i )
-	{
-		if( i == 1 )
-			return EXIT_SUCCESS;
-
-		throw;
-	}
+	srand( (unsigned int) time( nullptr ) );
+	if( !CGazeCapture::OpenWrite( szFile ) )
+		return EXIT_SUCCESS;
 
 	namedWindow( "Window", CV_WINDOW_NORMAL );
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 	
-	unsigned int uCurrent = 0;
-	CGazeCapture *aCaptures = (CGazeCapture *) malloc( sizeof( CGazeCapture ) * 5 );
-	if( !aCaptures )
+	while( true )
 	{
-		fprintf( stderr, "Unable to allocate memory for buffer\n" );
-		return EXIT_FAILURE;
-	}
-
-	try
-	{
-		for( uCurrent = 0; uCurrent < 5; uCurrent++ )
-			new( aCaptures + uCurrent ) CGazeCapture( *pCamera, "Window", vec3MonitorPos, vec3MonitorDim );
-	}
-	catch( int i )
-	{
-		if( i != 1 )
-			throw;
-
-		for( unsigned int u = 0; u < uCurrent; u++ )
+		try
 		{
-			if( u == uCurrent )
-				continue;
-
-			aCaptures[ u ].Write( );
-			aCaptures[ u ].~CGazeCapture( );
+			CGazeCapture capture( *pCamera, "Window", vec3MonitorPos, vec3MonitorDim );
+			capture.WriteAsync( );
 		}
-
-		goto END;
-	}
-
-	try
-	{
-		while( true )
+		catch( int i )
 		{
-			uCurrent = ( uCurrent + 1 ) % 5;
-			aCaptures[ uCurrent ].Write( );
-			aCaptures[ uCurrent ].~CGazeCapture( );
+			if( i != 1 )
+				throw;
 			
-			new( aCaptures + uCurrent ) CGazeCapture( *pCamera, "Window", vec3MonitorPos, vec3MonitorDim );
-		}
-	}
-	catch( int i )
-	{
-		if( i != 1 )
-			throw;
-
-		for( unsigned int u = 0; u < 5; u++ )
-		{
-			if( u == uCurrent )
-				continue;
-
-			aCaptures[ u ].Write( );
-			aCaptures[ u ].~CGazeCapture( );
+			break;
 		}
 	}
 
-END:
-	CGazeCapture::Destroy( );
+	CGazeCapture::CloseWrite( );
 	delete pCamera;
-	free( aCaptures );
 	CBaseCamera::Terminate( );
 	return EXIT_SUCCESS;
 }
@@ -135,26 +84,22 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 	CLandmarkCandidate::Init( );
 	CScenery::SetScenery( vec3MonitorPos, vec3MonitorDim );
 	
-	std::vector<CGazeCapture> vecCapture = CGazeCapture::Load( std::string( szSrc ) );
-	CGazeData::Init( szDst );
-	std::vector<CGazeData> vecData;
-	try
-	{
-		vecData = CGazeData::GetGazeData( vecCapture, "Window" );
-	}
-	catch( int i )
-	{
-		if( i == 1 )
-			return EXIT_SUCCESS;
+	srand( (unsigned int) time( nullptr ) );
+	if( !CGazeCapture::OpenRead( std::string( szSrc ) ) )
+		return EXIT_SUCCESS;
+	
+	if( !CGazeData::OpenWrite( std::string( szDst ) ) )
+		return EXIT_SUCCESS;
 
-		throw;
-	}
-
-	for( std::vector<CGazeData>::iterator it = vecData.begin( ); it < vecData.end( ); it++ )
+	CGazeCapture capture;
+	while( CGazeCapture::ReadAsync( capture ) )
 	{
-		it->Write( );
+		std::vector<CGazeData> vecData = CGazeData::GetGazeData( capture, "Window" );
+		for( std::vector<CGazeData>::iterator it = vecData.begin( ); it < vecData.end( ); it++ )
+			it->WriteAsync( );
 	}
-	CGazeData::Destroy( );
+	
+	CGazeData::CloseWrite( );
 
 	destroyAllWindows( );
 	return EXIT_SUCCESS;
@@ -162,17 +107,18 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 
 int ShowDataset( const char *szFile )
 {
-	std::vector<CGazeData> vecData = CGazeData::Load( szFile );
-	
+	if( !CGazeData::OpenRead( std::string( szFile ) ) )
+		return EXIT_SUCCESS;
+
 	namedWindow( "Window", CV_WINDOW_NORMAL );
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 
 	CScenery::SetScenery( vec3MonitorPos, vec3MonitorDim );
-	for( std::vector<CGazeData>::iterator it = vecData.begin( ); it < vecData.end( ); it++ )
-	{
-		it->DrawScenery( "Window" );
-	}
-	
+
+	CGazeData data;
+	while( CGazeData::ReadAsync( data ) )
+		data.DrawScenery( "Window" );
+
 	destroyAllWindows( );
 	return EXIT_SUCCESS;
 }

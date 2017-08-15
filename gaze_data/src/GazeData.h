@@ -5,29 +5,41 @@
 #include "Render/Vector.h"
 #include "Landmark.h"
 #include "BBox.h"
+#include "Queue.h"
 #include <vector>
+#include <fstream>
 
+class CGazeResult;
 class CGazeData
 {
 public:
-	static bool Init( const char *szFile );
-	static void Destroy( void );
-	static bool OpenOrCreate( const std::string &sFile );
-	static std::vector<CGazeData> Load( const std::string &sFile );
+	static bool OpenWrite( const std::string &sFile );
+	static void CloseWrite( void );
+	static bool OpenRead( const std::string &sFile );
+	static bool ReadAsync( CGazeData &val );
+	void WriteAsync( void );
 
-	static std::vector<CGazeData> GetGazeData( std::vector<CGazeCapture> vecGaze, const char *szWindow );
+	static std::vector<CGazeData> GetGazeData( CGazeCapture &capture, const char *szWindow );
 	static double GetDistance( double dMeterDif, double dPixelDif, double dPixelDiagonal, double dTanFOV );
 	static double GetPosition( double dDistance, double dPixelDif, double dPixelDiagonal, double dTanFOV );
 
 	CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double dTanFOV );
-	CGazeData( const CImage &img, const CBBox &boxFace, const CPoint &ptEyeLeft, const CPoint &ptEyeRight, const CVector<2> &vec2PYLeft, const CVector<2> &vec2PYRight, double dTanFOV );
 	CGazeData( const CGazeData &other );
-	bool DrawScenery( const char *szWindow );
+	CGazeData( void );
 	
-	bool Write( void );
+	void Swap( CGazeData &other, bool fSwapChildren = true );
+	CGazeData &operator=( const CGazeData &other );
+	
+	bool DrawScenery( const char *szWindow );
+	void RandomizeFace( double dMaxScale );
 
-//private:
-	static bool Load( std::vector<CGazeData> &vecData, const std::string &sLine );
+	std::string ToString( unsigned int uPrecision = std::numeric_limits< double >::max_digits10 ) const;
+	void WriteImage( void ) const;
+
+private:
+	CGazeData( std::string sLine );
+	static void *ReadThread( void *pArgs );
+	static void *WriteThread( void *pArgs );
 	static CBBox FindTemplate( CImage &imgSrc, const CImage &imgTemplate );
 
 	CRay m_rayEyeLeft;
@@ -36,6 +48,11 @@ public:
 	CBBox m_boxFace;
 	CPoint m_ptEyeLeft;
 	CPoint m_ptEyeRight;
+	unsigned int m_uImage;
+
+	static std::fstream s_File;
+	static CQueue<CGazeData> s_Queue;
+	static pthread_t s_Thread;
 
 	static double s_dEyeDistance;
 	static FILE *s_pFile;
@@ -49,6 +66,8 @@ public:
 	static const std::regex s_regex_raw;
 	static const std::regex s_regex_data;
 	static const std::regex s_regex_line;
+	
+	friend CQueue<CGazeData>;
 };
 
 inline CGazeData::CGazeData( const CGazeData &other ) :
@@ -62,4 +81,20 @@ inline CGazeData::CGazeData( const CGazeData &other ) :
 	m_boxFace.TransferOwnership( m_imgGaze );
 	m_ptEyeLeft.TransferOwnership( m_boxFace );
 	m_ptEyeRight.TransferOwnership( m_boxFace );
+}
+
+inline CGazeData::CGazeData( void ) :
+	m_uImage( -1 )
+{
+
+}
+
+inline CGazeData &CGazeData::operator=( const CGazeData &other )
+{
+	if( this != &other )
+	{
+		CGazeData temp( other );
+		Swap( temp, false );
+	}
+	return *this;
 }

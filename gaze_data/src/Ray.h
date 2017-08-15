@@ -10,6 +10,7 @@ class CRay
 public:
 	CRay( const CVector<3> &vec3Origin, const CVector<3> &vec3Dir );
 	CRay( const CVector<3> &vec3Origin, const CVector<3> &vec3Fwd, CVector<2> vec2Amp );
+	CRay( void );
 	CRay( const CRay &other );
 
 	CVector<3> operator()( const double &other ) const;
@@ -26,8 +27,9 @@ public:
 	CRay &Shift( const CVector<3> &vec3 );
 	CRay &operator*=( const double &other );
 	CRay &operator/=( const double &other );
-	CVector<2> AmplitudeRepresentation( void );	
+	CVector<2> AmplitudeRepresentation( void ) const;	
 	
+	void Swap( CRay &other );
 	void Render( CImage &img, const cv::Scalar &colorPoint, const cv::Scalar &colorLine, double dLength = 1, int iRadius = 3, int iPointThickness = -1, int iLineThickness = 1 ) const;
 
 	std::string ToString( unsigned int uPrecision = 2 ) const;
@@ -39,6 +41,13 @@ public:
 inline CRay::CRay( const CVector<3> &vec3Origin, const CVector<3> &vec3Dir ) :
 	m_vec3Origin( vec3Origin ),
 	m_vec3Dir( vec3Dir )
+{
+
+}
+
+inline CRay::CRay( void ) :
+	m_vec3Origin( { 0 } ),
+	m_vec3Dir( { 0 } )
 {
 
 }
@@ -88,6 +97,12 @@ inline CRay &CRay::operator/=( const double &other )
 {
 	m_vec3Dir /= other;
 	return *this;
+}
+
+inline void CRay::Swap( CRay &other )
+{
+	m_vec3Origin.Swap( other.m_vec3Origin );
+	m_vec3Dir.Swap( other.m_vec3Dir );
 }
 
 inline std::string CRay::ToString( unsigned int uPrecision ) const

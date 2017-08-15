@@ -9,14 +9,19 @@
 #	define _USE_MATH_DEFINES
 #endif
 #include <math.h>
-#include <fstream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #ifdef _MSC_VER
 #	include <direct.h>
+#else
+#	include <pthread.h>
 #endif
 
 using namespace cv;
+
+std::fstream CGazeData::s_File;
+CQueue<CGazeData> CGazeData::s_Queue( 10 );
+pthread_t CGazeData::s_Thread;
 
 double CGazeData::s_dEyeDistance;
 FILE *CGazeData::s_pFile;
@@ -25,72 +30,84 @@ std::string CGazeData::s_sDataPath;
 std::string CGazeData::s_sRawPath;
 unsigned int CGazeData::s_uCurrentImage;
 
-const std::regex CGazeData::s_regex_name( R"a(name=([\s\S]*))a" );
-const std::regex CGazeData::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm)a" );
-const std::regex CGazeData::s_regex_raw( R"a(raw=([\s\S]*))a" );
-const std::regex CGazeData::s_regex_data( R"a(data:)a" );
-const std::regex CGazeData::s_regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)@\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)@\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\))a" );
+const std::regex CGazeData::s_regex_name( R"a(name=([\s\S]*).*)a" );
+const std::regex CGazeData::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm.*)a" );
+const std::regex CGazeData::s_regex_raw( R"a(raw=([\s\S]*).*)a" );
+const std::regex CGazeData::s_regex_data( R"a(data:.*)a" );
+const std::regex CGazeData::s_regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)@\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)@\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\).*)a" );
 
-bool CGazeData::Init( const char *szFile )
-{
-	if( !OpenOrCreate( std::string( szFile ) ) )
-		return false;
-
-	srand( (unsigned int) time( nullptr ) );
-	return true;
-}
-
-void CGazeData::Destroy( void )
-{
-	fclose( s_pFile );
-}
-
-bool CGazeData::OpenOrCreate( const std::string &sFile )
+bool CGazeData::OpenWrite( const std::string &sFile )
 {
 	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
 	s_uCurrentImage = 0;
-	if( 1 || !CUtility::Exists( sFile ) )
-	{
-		s_dEyeDistance = CGazeCapture::s_dEyeDistance;
-		s_sName = CGazeCapture::s_sName;
-		s_sRawPath = CGazeCapture::s_sDataPath;
+	s_dEyeDistance = CGazeCapture::s_dEyeDistance;
+	s_sName = CGazeCapture::s_sName;
+	s_sRawPath = CGazeCapture::s_sDataPath;
 
 #ifdef _MSC_VER
-		if( _mkdir( s_sDataPath.c_str( ) ) && errno != EEXIST )
-		{
-			perror( "Error creating directory" );
-			return false;
-		}
+	if( _mkdir( s_sDataPath.c_str( ) ) && errno != EEXIST )
+	{
+		perror( "Error creating directory" );
+		return false;
+	}
 #else
-		if( mkdir( s_sDataPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) && errno != EEXIST )
-		{
-			perror( "Error creating directory" );
-			return false;
-		}
+	if( mkdir( s_sDataPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) && errno != EEXIST )
+	{
+		perror( "Error creating directory" );
+		return false;
+	}
 #endif
 
-		s_pFile = fopen( sFile.c_str( ), "w" );
-		if( !s_pFile )
+	s_File.open( sFile, std::fstream::out );
+	s_File << "name=" << s_sName << "\n";
+	s_File << "dist=" << std::to_string( s_dEyeDistance * 100 ) << "cm\n";
+	s_File << "raw=" << s_sRawPath << "\n";
+	s_File << "\ndata:\n";
+
+	CUtility::Cls( );
+	printf( "Name        : %s\n", s_sName.c_str( ) );
+	printf( "Eye distance: %4.2fcm\n", s_dEyeDistance * 100 );
+	printf( "Data path   : %s\n", s_sDataPath.c_str( ) );
+	printf( "Raw path    : %s\n", s_sRawPath.c_str( ) );
+	printf( "Next image  : %u\n", s_uCurrentImage );
+	unsigned char cKey;
+	while( true )
+	{
+		cKey = CUtility::GetChar( );
+		switch( cKey )
 		{
-			fprintf( stderr, "Unable to open file \"%s\"\n", sFile.c_str( ) );
+		case 141:	//Numpad enter
+		case 10:	//Enter
+			pthread_create( &s_Thread, nullptr, WriteThread, nullptr );
+			return true;
+		case 27:	//Escape
 			return false;
 		}
-		fputs( "name=", s_pFile );
-		fputs( s_sName.c_str( ), s_pFile );
-		fputs( "\ndist=", s_pFile );
-		fputs( std::to_string( s_dEyeDistance * 100 ).c_str( ), s_pFile );
-		fputs( "cm\nraw=", s_pFile );
-		fputs( s_sRawPath.c_str( ), s_pFile );
-		fputs( "\n\ndata:\n", s_pFile );
 	}
-	else
+}
+
+void CGazeData::CloseWrite( void )
+{
+	s_Queue.Emplace_Back( );
+	pthread_join( s_Thread, nullptr );
+	s_File.close( );
+}
+
+bool CGazeData::OpenRead( const std::string &sFile )
+{
+	if( !CUtility::Exists( sFile ) )
+		return false;
+
+	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
+	s_uCurrentImage = (unsigned int) -1;
+	
+	s_File.open( sFile, std::fstream::in );
+	
 	{
-		//File exists, open
-		std::ifstream file( sFile );
 		std::smatch match;
 		unsigned char fFound = 0;
 		std::string sLine;
-		while( std::getline( file, sLine ) )
+		while( std::getline( s_File, sLine ) )
 		{
 			std::regex_match( sLine, match, s_regex_name );
 			if( match.size( ) )
@@ -107,7 +124,7 @@ bool CGazeData::OpenOrCreate( const std::string &sFile )
 				fFound |= 2;
 				continue;
 			}
-			
+
 			std::regex_match( sLine, match, s_regex_raw );
 			if( match.size( ) )
 			{
@@ -115,7 +132,7 @@ bool CGazeData::OpenOrCreate( const std::string &sFile )
 				fFound |= 4;
 				continue;
 			}
-			
+
 			std::regex_match( sLine, match, s_regex_data );
 			if( match.size( ) )
 			{
@@ -127,107 +144,26 @@ bool CGazeData::OpenOrCreate( const std::string &sFile )
 		if( fFound != 15 )
 		{
 			fprintf( stderr, "File \"%s\" is missing fields\n", sFile.c_str( ) );
+			s_File.close( );
 			return false;
 		}
-
-		while( std::getline( file, sLine ) )
+		
+		std::streampos posData = s_File.tellg( );
+		while( std::getline( s_File, sLine ) )
 		{
+			std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
 			std::regex_match( sLine, match, s_regex_line );
-			if( match.size( ) )
-			{
-				unsigned int u = std::stoul( match[ 7 ].str( ) );
-				s_uCurrentImage = std::max( s_uCurrentImage, u );
-			}
+			if( !match.size( ) )
+				continue;
+
+			s_uCurrentImage = std::max( (int) s_uCurrentImage, (int) std::stoul( match[ 7 ].str( ) ) );
 		}
 		s_uCurrentImage++;
-
-		s_pFile = fopen( sFile.c_str( ), "a" );
-		if( !s_pFile )
-		{
-			fprintf( stderr, "Unable to open file \"%s\"\n", sFile.c_str( ) );
-			return false;
-		}
+		s_File.clear();
+		s_File.seekg( posData );
 	}
-
-	CUtility::Cls( );
-	printf( "Name        : %s\n", s_sName.c_str( ) );
-	printf( "Eye distance: %4.2fcm\n", s_dEyeDistance * 100 );
-	printf( "Data path   : %s\n", s_sDataPath.c_str( ) );
-	printf( "Raw path    : %s\n", s_sRawPath.c_str( ) );
-	printf( "Next image  : %u\n", s_uCurrentImage );
-	unsigned char cKey;
-	while( true )
-	{
-		cKey = CUtility::GetChar( );
-		switch( cKey )
-		{
-		case 141:	//Numpad enter
-		case 10:	//Enter
-			return true;
-		case 27:	//Escape
-			throw( 1 );
-		}
-	}
-}
-
-std::vector<CGazeData> CGazeData::Load( const std::string &sFile )
-{
-	std::vector<CGazeData> vecCaptures;
-	if( !CUtility::Exists( sFile ) )
-		return vecCaptures;
-
-	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
-	s_uCurrentImage = 0;
 	
-	std::ifstream file( sFile );
-	std::smatch match;
-	unsigned char fFound = 0;
-	std::string sLine;
-	while( std::getline( file, sLine ) )
-	{
-		std::regex_match( sLine, match, s_regex_name );
-		if( match.size( ) )
-		{
-			s_sName = match[ 1 ].str( );
-			fFound |= 1;
-			continue;
-		}
-
-		std::regex_match( sLine, match, s_regex_dist );
-		if( match.size( ) )
-		{
-			s_dEyeDistance = std::stod( match[ 1 ].str( ) ) / 100;
-			fFound |= 2;
-			continue;
-		}
-
-		std::regex_match( sLine, match, s_regex_raw );
-		if( match.size( ) )
-		{
-			s_sRawPath = match[ 1 ].str( );
-			fFound |= 4;
-			continue;
-		}
-
-		std::regex_match( sLine, match, s_regex_data );
-		if( match.size( ) )
-		{
-			fFound |= 8;
-			break;	//Start of data
-		}
-	}
-
-	if( fFound != 15 )
-	{
-		fprintf( stderr, "File \"%s\" is missing fields\n", sFile.c_str( ) );
-		return vecCaptures;
-	}
-
-	while( std::getline( file, sLine ) )
-	{
-		Load( vecCaptures, sLine );
-	}
-	s_uCurrentImage++;
+	pthread_create( &s_Thread, nullptr, ReadThread, nullptr );
 
 	CUtility::Cls( );
 	printf( "Name        : %s\n", s_sName.c_str( ) );
@@ -243,26 +179,38 @@ std::vector<CGazeData> CGazeData::Load( const std::string &sFile )
 		{
 		case 141:	//Numpad enter
 		case 10:	//Enter
-			return vecCaptures;
+			return true;
 		case 27:	//Escape
-			throw( 1 );
+			s_File.close( );
+			return false;
 		}
 	}
-
-	return vecCaptures;
 }
 
-std::vector<CGazeData> CGazeData::GetGazeData( std::vector<CGazeCapture> vecGaze, const char *szWindow )
+bool CGazeData::ReadAsync( CGazeData &val )
+{
+	val = s_Queue.Pop_Front( );
+	if( val.m_uImage != (unsigned int) -1 )
+		return true;
+
+	pthread_join( s_Thread, nullptr );
+	s_File.close( );
+	return false;
+}
+
+void CGazeData::WriteAsync( void )
+{
+	s_Queue.Push_Back( *this );
+}
+
+std::vector<CGazeData> CGazeData::GetGazeData( CGazeCapture &capture, const char *szWindow )
 {
 	std::vector<CGazeData> vecData;
 
-	for( std::vector<CGazeCapture>::iterator pGaze = vecGaze.begin( ); pGaze < vecGaze.end( ); pGaze++ )
-	{
-		double dTanFOV = tan( pGaze->imgGaze.dFOV * M_PI / ( 2 * 180 ) );
-		std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( pGaze->imgGaze, szWindow );
-		for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
-			vecData.emplace_back( *it, pGaze->vec3Point, dTanFOV );
-	}
+	double dTanFOV = tan( capture.m_imgGaze.dFOV * M_PI / ( 2 * 180 ) );
+	std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( capture.m_imgGaze, szWindow );
+	for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
+		vecData.emplace_back( *it, capture.m_vec3Point, dTanFOV );
 
 	return vecData;
 }
@@ -337,49 +285,22 @@ CGazeData::CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double d
 	m_rayEyeRight = CRay( vec3EyeRight, vec3Point - vec3EyeRight );
 }
 
-CGazeData::CGazeData( const CImage &img, const CBBox &boxFace, const CPoint &ptEyeLeft, const CPoint &ptEyeRight, const CVector<2> &vec2PYLeft, const CVector<2> &vec2PYRight, double dTanFOV ) :
-	m_rayEyeLeft( CVector<3>( { 0 } ), CVector<3>( { 0 } ) ),
-	m_rayEyeRight( CVector<3>( { 0 } ), CVector<3>( { 0 } ) ),
-	m_imgGaze( img ),
-	m_boxFace( boxFace ),
-	m_ptEyeLeft( ptEyeLeft ),
-	m_ptEyeRight( ptEyeRight )
+void CGazeData::Swap( CGazeData &other, bool fSwapChildren )
 {
+	m_rayEyeLeft.Swap( other.m_rayEyeLeft );
+	m_rayEyeRight.Swap( other.m_rayEyeRight );
+	m_imgGaze.Swap( other.m_imgGaze, fSwapChildren );
+	m_boxFace.Swap( other.m_boxFace, fSwapChildren );
+	m_ptEyeLeft.Swap( other.m_ptEyeLeft, fSwapChildren );
+	m_ptEyeRight.Swap( other.m_ptEyeRight, fSwapChildren );
+	
 	m_boxFace.TransferOwnership( m_imgGaze );
 	m_ptEyeLeft.TransferOwnership( m_boxFace );
 	m_ptEyeRight.TransferOwnership( m_boxFace );
-
-	double dWidth = m_imgGaze.GetWidth( );
-	double dHeight = m_imgGaze.GetHeight( );
-
-	double dPixelDif;
-	{
-		CVector<2> vec2EyeLeft( { (double) ( m_ptEyeLeft.GetPositionX( -1 ) ), (double) ( m_ptEyeLeft.GetPositionY( -1 ) ) } );
-		CVector<2> vec2EyeRight( { (double) ( m_ptEyeRight.GetPositionX( -1 ) ), (double) ( m_ptEyeRight.GetPositionY( -1 ) ) } );
-		dPixelDif = ( vec2EyeRight - vec2EyeLeft ).Abs( );
-	}
-	double dPixelDiagonal = sqrt( dWidth * dWidth + dHeight * dHeight );
-	double dDistance = GetDistance( s_dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
-
-	CVector<3> vec3EyeLeft(
-	{
-		GetPosition( dDistance, ( 0.5 - m_ptEyeLeft.GetRelPositionX( -1 ) ) * dWidth, dPixelDiagonal, dTanFOV ),
-		GetPosition( dDistance, ( 0.5 - m_ptEyeLeft.GetRelPositionY( -1 ) ) * dHeight, dPixelDiagonal, dTanFOV ),
-		dDistance
-	} );
-
-	CVector<3> vec3EyeRight(
-	{
-		GetPosition( dDistance, ( 0.5 - m_ptEyeRight.GetRelPositionX( -1 ) ) * dWidth, dPixelDiagonal, dTanFOV ),
-		GetPosition( dDistance, ( 0.5 - m_ptEyeRight.GetRelPositionY( -1 ) ) * dHeight, dPixelDiagonal, dTanFOV ),
-		dDistance
-	} );
-
-	m_rayEyeLeft = CRay( vec3EyeLeft, CVector<3>( { 0, 0, -1 } ), vec2PYLeft );
-	m_rayEyeRight = CRay( vec3EyeRight, CVector<3>( { 0, 0, -1 } ), vec2PYRight );
-	CVector<2> vec2Scale = m_rayEyeLeft.PointOfShortestDistance( m_rayEyeRight );
-	m_rayEyeLeft *= vec2Scale[ 0 ];
-	m_rayEyeRight *= vec2Scale[ 1 ];
+	
+	other.m_boxFace.TransferOwnership( other.m_imgGaze );
+	other.m_ptEyeLeft.TransferOwnership( other.m_boxFace );
+	other.m_ptEyeRight.TransferOwnership( other.m_boxFace );
 }
 
 bool CGazeData::DrawScenery( const char *szWindow )
@@ -495,50 +416,61 @@ bool CGazeData::DrawScenery( const char *szWindow )
 	return true;
 }
 
-bool CGazeData::Write( void )
+void CGazeData::RandomizeFace( double dMaxScale )
 {
-	CBBox boxRand( m_boxFace );
-	boxRand.Scale( CVector<2>( 
+	m_boxFace.Scale( CVector<2>( 
 	{
-		1 + ( rand( ) / (double) RAND_MAX ) * 0.1,
-		1 + ( rand( ) / (double) RAND_MAX ) * 0.1
+		1 + ( rand( ) / (double) RAND_MAX ) * dMaxScale,
+		1 + ( rand( ) / (double) RAND_MAX ) * dMaxScale
 	} ) );
-	boxRand.Shift( CVector<2>(
+
+	m_boxFace.Shift( CVector<2>(
 	{
-		( rand( ) / (double) RAND_MAX ) * 0.1 - 0.05,
-		( rand( ) / (double) RAND_MAX ) * 0.1 - 0.05
+		( rand( ) / (double) RAND_MAX ) * dMaxScale - dMaxScale / 2,
+		( rand( ) / (double) RAND_MAX ) * dMaxScale - dMaxScale / 2
 	} ) );
-	
-	CPoint ptEyeLeft( m_ptEyeLeft );
-	CPoint ptEyeRight( m_ptEyeRight );
-	ptEyeLeft.TransferOwnership( boxRand );
-	ptEyeRight.TransferOwnership( boxRand );
-
-	struct tm *timeinfo = localtime( &m_imgGaze.timestamp );
-	char szDate[ 20 ];
-	strftime( szDate, 20, "%F %T", timeinfo ); //YYYY-MM-DD HH:MM:SS
-	fputs( szDate, s_pFile );
-	fprintf( s_pFile, " %u %f", s_uCurrentImage, m_imgGaze.dFOV );
-	CVector<2> vec2Amp = m_rayEyeLeft.AmplitudeRepresentation( );
-	fprintf( s_pFile, " (%f, %f)@(%f, %f)", ptEyeLeft.GetRelPositionX( 0 ), ptEyeLeft.GetRelPositionY( 0 ), vec2Amp[ 0 ], vec2Amp[ 1 ] );;
-	vec2Amp = m_rayEyeRight.AmplitudeRepresentation( );
-	fprintf( s_pFile, " (%f, %f)@(%f, %f)\n", ptEyeRight.GetRelPositionX( 0 ), ptEyeRight.GetRelPositionY( 0 ), vec2Amp[ 0 ], vec2Amp[ 1 ] );;
-
-	CImage img( m_imgGaze, "Image_Face" );
-	img.Crop( boxRand );
-	imwrite( s_sDataPath + "img_" + std::to_string( s_uCurrentImage++ ) + ".jpg", img.matImage );
-	return true;
 }
 
-bool CGazeData::Load( std::vector<CGazeData> &vecData, const std::string &sLine )
+std::string CGazeData::ToString( unsigned int uPrecision ) const
+{
+	std::ostringstream out;
+	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	out.precision( uPrecision );
+
+	//Write date
+	{
+		struct tm *timeinfo = localtime( &m_imgGaze.timestamp );
+		char szDate[ 20 ];
+		strftime( szDate, 20, "%F %T", timeinfo ); //YYYY-MM-DD HH:MM:SS
+		out << szDate;
+	}
+
+	out << " " << s_uCurrentImage << " " << m_imgGaze.dFOV;
+	CVector<2> vec2Amp = m_rayEyeLeft.AmplitudeRepresentation( );
+	out << " (" << m_ptEyeLeft.GetRelPositionX( 0 ) << ", " << m_ptEyeLeft.GetRelPositionY( 0 ) << ")@(" << vec2Amp[ 0 ] << ", " << vec2Amp[ 1 ] << ")";
+	vec2Amp = m_rayEyeRight.AmplitudeRepresentation( );
+	out << " (" << m_ptEyeRight.GetRelPositionX( 0 ) << ", " << m_ptEyeRight.GetRelPositionY( 0 ) << ")@(" << vec2Amp[ 0 ] << ", " << vec2Amp[ 1 ] << ")";
+
+	return out.str( );
+}
+
+void CGazeData::WriteImage( void ) const
+{
+	CImage img( m_imgGaze );
+	CBBox boxFace( m_boxFace );
+	img.Crop( boxFace );
+	imwrite( s_sDataPath + "img_" + std::to_string( m_uImage ) + ".jpg", img.matImage );
+}
+
+CGazeData::CGazeData( std::string sLine )
 {
 	std::smatch match;
+	std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
 	std::regex_match( sLine, match, s_regex_line );
 	if( !match.size( ) )
-		return false;
+		throw 0;
 
-	unsigned int uCurrent = std::stoul( match[ 7 ].str( ) );
-	s_uCurrentImage = std::max( s_uCurrentImage, uCurrent );
+	m_uImage = std::stoul( match[ 7 ].str( ) );
 
 	double dFOV = std::stod( match[ 8 ].str( ) );
 	struct tm timeinfo = { 0 };
@@ -550,33 +482,99 @@ bool CGazeData::Load( std::vector<CGazeData> &vecData, const std::string &sLine 
 	timeinfo.tm_year = std::stoi( match[ 1 ].str( ) ) - 1900;
 
 	//Load raw image
-	std::string str = s_sRawPath + "img_" + std::to_string( uCurrent ) + ".jpg";
-	cv::Mat matImage = imread( str, CV_LOAD_IMAGE_COLOR );
+	std::string str = s_sRawPath + "img_" + std::to_string( m_uImage ) + ".jpg";
+	cv::Mat matImage = cv::imread( str, CV_LOAD_IMAGE_COLOR );
 	if( !matImage.data )
 	{
 		fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
-		return false;
+		throw 1;
 	}
-	CImage img( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" );
+	m_imgGaze = CImage( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" );
 
 	//Load face image
-	str = s_sDataPath + "img_" + std::to_string( uCurrent ) + ".jpg";
-	matImage = imread( str, CV_LOAD_IMAGE_COLOR );
+	str = s_sDataPath + "img_" + std::to_string( m_uImage ) + ".jpg";
+	matImage = cv::imread( str, CV_LOAD_IMAGE_COLOR );
 	if( !matImage.data )
 	{
 		fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
-		return false;
+		throw 2;
 	}
 	CImage imgFace( matImage, dFOV, mktime( &timeinfo ), "Image_Face" );
-	CBBox boxFace = FindTemplate( img, imgFace );
+	m_boxFace = FindTemplate( m_imgGaze, imgFace );
 
 	CVector<2> vec2PYRight( { std::stod( match[ 15 ].str( ) ), std::stod( match[ 16 ].str( ) ) } );
-	CPoint ptEyeRight( boxFace, std::stod( match[ 13 ].str( ) ), std::stod( match[ 14 ].str( ) ), "Point_EyeLeft" );
+	m_ptEyeRight = CPoint( m_boxFace, std::stod( match[ 13 ].str( ) ), std::stod( match[ 14 ].str( ) ), "Point_EyeLeft" );
 	CVector<2> vec2PYLeft( { std::stod( match[ 11 ].str( ) ), std::stod( match[ 12 ].str( ) ) } );
-	CPoint ptEyeLeft( boxFace, std::stod( match[ 9 ].str( ) ), std::stod( match[ 10 ].str( ) ), "Point_EyeRight" );
+	m_ptEyeLeft = CPoint( m_boxFace, std::stod( match[ 9 ].str( ) ), std::stod( match[ 10 ].str( ) ), "Point_EyeRight" );
+	
+	double dWidth = m_imgGaze.GetWidth( );
+	double dHeight = m_imgGaze.GetHeight( );
+	double dTanFOV = tan( m_imgGaze.dFOV * M_PI / ( 2 * 180 ) );
 
-	vecData.emplace_back( img, boxFace, ptEyeLeft, ptEyeRight, vec2PYLeft, vec2PYRight, tan( dFOV * M_PI / ( 2 * 180 ) ) );
-	return true;
+	double dPixelDif;
+	{
+		CVector<2> vec2EyeLeft( { (double) ( m_ptEyeLeft.GetPositionX( -1 ) ), (double) ( m_ptEyeLeft.GetPositionY( -1 ) ) } );
+		CVector<2> vec2EyeRight( { (double) ( m_ptEyeRight.GetPositionX( -1 ) ), (double) ( m_ptEyeRight.GetPositionY( -1 ) ) } );
+		dPixelDif = ( vec2EyeRight - vec2EyeLeft ).Abs( );
+	}
+	double dPixelDiagonal = sqrt( dWidth * dWidth + dHeight * dHeight );
+	double dDistance = GetDistance( s_dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
+
+	CVector<3> vec3EyeLeft(
+	{
+		GetPosition( dDistance, ( 0.5 - m_ptEyeLeft.GetRelPositionX( -1 ) ) * dWidth, dPixelDiagonal, dTanFOV ),
+		GetPosition( dDistance, ( 0.5 - m_ptEyeLeft.GetRelPositionY( -1 ) ) * dHeight, dPixelDiagonal, dTanFOV ),
+		dDistance
+	} );
+
+	CVector<3> vec3EyeRight(
+	{
+		GetPosition( dDistance, ( 0.5 - m_ptEyeRight.GetRelPositionX( -1 ) ) * dWidth, dPixelDiagonal, dTanFOV ),
+		GetPosition( dDistance, ( 0.5 - m_ptEyeRight.GetRelPositionY( -1 ) ) * dHeight, dPixelDiagonal, dTanFOV ),
+		dDistance
+	} );
+
+	m_rayEyeLeft = CRay( vec3EyeLeft, CVector<3>( { 0, 0, -1 } ), vec2PYLeft );
+	m_rayEyeRight = CRay( vec3EyeRight, CVector<3>( { 0, 0, -1 } ), vec2PYRight );
+	CVector<2> vec2Scale = m_rayEyeLeft.PointOfShortestDistance( m_rayEyeRight );
+	m_rayEyeLeft *= vec2Scale[ 0 ];
+	m_rayEyeRight *= vec2Scale[ 1 ];
+}
+
+void *CGazeData::ReadThread( void *pArgs )
+{
+	std::string sLine;
+	std::smatch match;
+	while( std::getline( s_File, sLine ) )
+	{
+		try
+		{
+			s_Queue.Emplace_Back( sLine );
+		}
+		catch( int i )
+		{
+
+		}
+	}
+
+	s_Queue.Emplace_Back( );
+	return nullptr;
+}
+
+void *CGazeData::WriteThread( void *pArgs )
+{
+	CGazeData data;
+	while( true )
+	{
+		data = s_Queue.Pop_Front( );
+		if( data.m_uImage == (unsigned int) -1 )
+			break;
+
+		s_File << data.ToString( ) << "\n";
+		data.WriteImage( );
+	}
+	
+	return nullptr;
 }
 
 CBBox CGazeData::FindTemplate( CImage &imgSrc, const CImage &imgTemplate )
@@ -588,7 +586,7 @@ CBBox CGazeData::FindTemplate( CImage &imgSrc, const CImage &imgTemplate )
 
 	//Do the Matching and Normalize
 	cv::matchTemplate( imgSrc.matImage, imgTemplate.matImage, matResult, CV_TM_SQDIFF );
-	cv::normalize( matResult, matResult, 0, 1, NORM_MINMAX, -1, cv::Mat( ) );
+	cv::normalize( matResult, matResult, 0, 1, cv::NORM_MINMAX, -1, cv::Mat( ) );
 
 	//Localizing the best match with minMaxLoc
 	double dMinVal;

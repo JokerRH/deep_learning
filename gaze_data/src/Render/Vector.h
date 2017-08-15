@@ -13,6 +13,7 @@ public:
 	static_assert( uRows > 0, "Vector dimension must be greater than 0" );
 
 	CVector( const std::array<double, uRows> &adValues );
+	CVector( void );
 	CVector( const CVector<uRows> &other );
 
 	double &operator[]( size_t index );
@@ -47,6 +48,13 @@ template<unsigned int uRows>
 inline CVector<uRows>::CVector( const std::array<double, uRows> &adValues )
 {
 	memcpy( m_adValues, adValues.data( ), uRows * sizeof( double ) );
+}
+
+template<unsigned int uRows>
+inline CVector<uRows>::CVector( void ) :
+	m_adValues{ 0 }
+{
+
 }
 
 template<unsigned int uRows>
