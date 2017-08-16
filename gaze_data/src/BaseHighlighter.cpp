@@ -177,7 +177,7 @@ CBaseHighlighter::CBaseHighlighter( const CBaseHighlighter &other ) :
 	m_dPositionX( other.m_dPositionX ),
 	m_dPositionY( other.m_dPositionY )
 {
-	assert( other.szName != nullptr && strlen( other.szName ) && strlen( other.szName ) < 32 && strcmp( other.szName, "Unassigned" ) );
+	assert( other.szName != nullptr && strlen( other.szName ) && strlen( other.szName ) < 32 );
 	strncpy( const_cast<char *>( this->szName ), other.szName, 31 );
 	if( m_pParentBox )
 		m_pParentBox->AddChild( this );

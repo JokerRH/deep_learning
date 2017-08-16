@@ -70,6 +70,7 @@ inline void CGazeCapture::Swap( CGazeCapture &other, bool fSwapChildren )
 {
 	m_vec3Point.Swap( other.m_vec3Point );
 	m_imgGaze.Swap( other.m_imgGaze, fSwapChildren );
+	std::swap( m_uImage, other.m_uImage );
 }
 
 inline CGazeCapture &CGazeCapture::operator=( const CGazeCapture &other )

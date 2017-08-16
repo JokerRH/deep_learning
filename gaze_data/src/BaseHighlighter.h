@@ -17,6 +17,7 @@ public:
 	virtual CImage *GetImage( unsigned int uLevel = -1 );
 	virtual CBaseBBox *GetParent( unsigned int uLevel = -1 );
 	void Shift( const CVector<2> &vec2Offset );
+	bool IsValid( void ) const;
 
 	virtual void TransferOwnership( unsigned int uLevel = 1 );
 	virtual void TransferOwnership( CBaseBBox &parentBox );
@@ -48,3 +49,8 @@ protected:
 
 	friend CImage;
 };
+
+inline bool CBaseHighlighter::IsValid( void ) const
+{
+	return ( strcmp( szName, "Unassigned" ) );
+}

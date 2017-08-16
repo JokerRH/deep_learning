@@ -11,6 +11,8 @@
 #include <math.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <thread>
+#include <chrono>
 #ifdef _MSC_VER
 #	include <direct.h>
 #else
@@ -21,7 +23,9 @@ using namespace cv;
 
 std::fstream CGazeData::s_File;
 CQueue<CGazeData> CGazeData::s_Queue( 10 );
-pthread_t CGazeData::s_Thread;
+CQueue<CGazeData> CGazeData::s_QueueRaw( 10 );
+std::vector<pthread_t> CGazeData::s_vecThread;
+std::vector<pthread_t> CGazeData::s_vecThreadRaw;
 
 double CGazeData::s_dEyeDistance;
 FILE *CGazeData::s_pFile;
@@ -78,7 +82,8 @@ bool CGazeData::OpenWrite( const std::string &sFile )
 		{
 		case 141:	//Numpad enter
 		case 10:	//Enter
-			pthread_create( &s_Thread, nullptr, WriteThread, nullptr );
+			s_vecThread.emplace_back( );
+			pthread_create( &s_vecThread[ 0 ], nullptr, WriteThread, nullptr );
 			return true;
 		case 27:	//Escape
 			return false;
@@ -88,8 +93,11 @@ bool CGazeData::OpenWrite( const std::string &sFile )
 
 void CGazeData::CloseWrite( void )
 {
-	s_Queue.Emplace_Back( );
-	pthread_join( s_Thread, nullptr );
+	for( std::vector<pthread_t>::iterator it = s_vecThread.begin( ); it < s_vecThread.end( ); it++ )
+	{
+		pthread_cancel( *it );
+		pthread_join( *it, nullptr );
+	}
 	s_File.close( );
 }
 
@@ -163,7 +171,8 @@ bool CGazeData::OpenRead( const std::string &sFile )
 		s_File.seekg( posData );
 	}
 	
-	pthread_create( &s_Thread, nullptr, ReadThread, nullptr );
+	s_vecThread.emplace_back( );
+	pthread_create( &s_vecThread[ 0 ], nullptr, ReadThread, nullptr );
 
 	CUtility::Cls( );
 	printf( "Name        : %s\n", s_sName.c_str( ) );
@@ -187,13 +196,29 @@ bool CGazeData::OpenRead( const std::string &sFile )
 	}
 }
 
+bool CGazeData::OpenReadRaw( const std::string &sFile )
+{
+	if( !CGazeCapture::OpenRead( sFile ) )
+		return false;
+
+	s_vecThreadRaw.emplace_back( );
+	s_vecThreadRaw.emplace_back( );
+	pthread_create( &s_vecThreadRaw[ 0 ], nullptr, ReadRawThread, nullptr );
+	pthread_create( &s_vecThreadRaw[ 1 ], nullptr, ReadRawThread, nullptr );
+	return true;
+}
+
 bool CGazeData::ReadAsync( CGazeData &val )
 {
 	val = s_Queue.Pop_Front( );
 	if( val.m_uImage != (unsigned int) -1 )
 		return true;
 
-	pthread_join( s_Thread, nullptr );
+	for( std::vector<pthread_t>::iterator it = s_vecThread.begin( ); it < s_vecThread.end( ); it++ )
+	{
+		pthread_cancel( *it );
+		pthread_join( *it, nullptr );
+	}
 	s_File.close( );
 	return false;
 }
@@ -203,14 +228,29 @@ void CGazeData::WriteAsync( void )
 	s_Queue.Push_Back( *this );
 }
 
-std::vector<CGazeData> CGazeData::GetGazeData( CGazeCapture &capture, const char *szWindow )
+bool CGazeData::ReadRawAsync( CGazeData &val )
+{
+	val = s_QueueRaw.Pop_Front( );
+	if( val.m_uImage != (unsigned int) -1 )
+		return true;
+
+	for( std::vector<pthread_t>::iterator it = s_vecThreadRaw.begin( ); it < s_vecThreadRaw.end( ); it++ )
+	{
+		pthread_cancel( *it );
+		pthread_join( *it, nullptr );
+	}
+	s_File.close( );
+	return false;
+}
+
+std::vector<CGazeData> CGazeData::GetGazeData( CGazeCapture &capture )
 {
 	std::vector<CGazeData> vecData;
 
 	double dTanFOV = tan( capture.m_imgGaze.dFOV * M_PI / ( 2 * 180 ) );
-	std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( capture.m_imgGaze, szWindow );
+	std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( capture.m_imgGaze );
 	for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
-		vecData.emplace_back( *it, capture.m_vec3Point, dTanFOV );
+		vecData.emplace_back( *it, capture.m_vec3Point, dTanFOV, capture.m_uImage );
 
 	return vecData;
 }
@@ -243,13 +283,14 @@ double CGazeData::GetPosition( double dDistance, double dPixelDif, double dPixel
 	return dTanFOV * dDistance * dPixelDif / dPixelDiagonal;
 }
 
-CGazeData::CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double dTanFOV ) :
+CGazeData::CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double dTanFOV, unsigned int uImage ) :
 	m_rayEyeLeft( CVector<3>( { 0 } ), CVector<3>( { 0 } ) ),
 	m_rayEyeRight( CVector<3>( { 0 } ), CVector<3>( { 0 } ) ),
 	m_imgGaze( *landmark.boxFace.GetImage( -1 ) ),
 	m_boxFace( landmark.boxFace ),
 	m_ptEyeLeft( landmark.ptEyeLeft ),
-	m_ptEyeRight( landmark.ptEyeRight )
+	m_ptEyeRight( landmark.ptEyeRight ),
+	m_uImage( uImage )
 {
 	m_boxFace.TransferOwnership( m_imgGaze );
 	m_ptEyeLeft.TransferOwnership( m_boxFace );
@@ -285,22 +326,63 @@ CGazeData::CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double d
 	m_rayEyeRight = CRay( vec3EyeRight, vec3Point - vec3EyeRight );
 }
 
-void CGazeData::Swap( CGazeData &other, bool fSwapChildren )
+bool CGazeData::Adjust( const char *szWindow )
+{
+	while( true )
+	{
+		CImage imgDraw( m_imgGaze, "Image_Draw" );
+		m_ptEyeLeft.Draw( imgDraw, Scalar( 0, 255, 255 ), 4 );
+		m_ptEyeRight.Draw( imgDraw, Scalar( 0, 255, 255 ), 4 );
+		
+		//Write image number
+		char szImage[ 8 ];
+		sprintf( szImage, "%u", m_uImage );
+		int iBaseline = 0;
+		Size textSize = getTextSize( szImage, FONT_HERSHEY_SIMPLEX, 1, 3, &iBaseline );
+		iBaseline += 3;
+		Point ptText( imgDraw.matImage.cols - textSize.width - 5, textSize.height + 5 );
+		putText( imgDraw.matImage, szImage, ptText,  FONT_HERSHEY_SIMPLEX, 1, Scalar( 255, 255, 255 ), 3 );
+		
+		imgDraw.Show( szWindow );
+		unsigned char cKey;
+		bool fContinue = true;
+		while( fContinue )
+		{
+			cKey = waitKey( 0 );
+			switch( cKey )
+			{
+			case 8:		//Backspace
+				return false;
+			case 141:	//Numpad enter
+			case 10:	//Enter
+				return true;
+			case 27:	//Escape
+				throw( 1 );
+			case 'e':
+				fContinue = false;
+				break;
+			}
+		}
+
+		//Adjust eye position
+		CLandmark landmark( m_boxFace, m_ptEyeLeft, m_ptEyeRight );
+		landmark.Adjust( szWindow );
+		m_ptEyeLeft = landmark.ptEyeLeft;
+		m_ptEyeRight = landmark.ptEyeRight;
+		m_ptEyeLeft.TransferOwnership( m_boxFace );
+		m_ptEyeRight.TransferOwnership( m_boxFace );
+	}
+}
+
+void CGazeData::Swap( CGazeData &other )
 {
 	m_rayEyeLeft.Swap( other.m_rayEyeLeft );
 	m_rayEyeRight.Swap( other.m_rayEyeRight );
-	m_imgGaze.Swap( other.m_imgGaze, fSwapChildren );
-	m_boxFace.Swap( other.m_boxFace, fSwapChildren );
-	m_ptEyeLeft.Swap( other.m_ptEyeLeft, fSwapChildren );
-	m_ptEyeRight.Swap( other.m_ptEyeRight, fSwapChildren );
-	
-	m_boxFace.TransferOwnership( m_imgGaze );
-	m_ptEyeLeft.TransferOwnership( m_boxFace );
-	m_ptEyeRight.TransferOwnership( m_boxFace );
-	
-	other.m_boxFace.TransferOwnership( other.m_imgGaze );
-	other.m_ptEyeLeft.TransferOwnership( other.m_boxFace );
-	other.m_ptEyeRight.TransferOwnership( other.m_boxFace );
+	m_imgGaze.Swap( other.m_imgGaze, true );
+	m_boxFace.Swap( other.m_boxFace, true );
+	m_ptEyeLeft.Swap( other.m_ptEyeLeft, true );
+	m_ptEyeRight.Swap( other.m_ptEyeRight, true );
+	std::swap( m_uImage, other.m_uImage );
 }
 
 bool CGazeData::DrawScenery( const char *szWindow )
@@ -445,7 +527,7 @@ std::string CGazeData::ToString( unsigned int uPrecision ) const
 		out << szDate;
 	}
 
-	out << " " << s_uCurrentImage << " " << m_imgGaze.dFOV;
+	out << " " << m_uImage << " " << m_imgGaze.dFOV;
 	CVector<2> vec2Amp = m_rayEyeLeft.AmplitudeRepresentation( );
 	out << " (" << m_ptEyeLeft.GetRelPositionX( 0 ) << ", " << m_ptEyeLeft.GetRelPositionY( 0 ) << ")@(" << vec2Amp[ 0 ] << ", " << vec2Amp[ 1 ] << ")";
 	vec2Amp = m_rayEyeRight.AmplitudeRepresentation( );
@@ -558,7 +640,8 @@ void *CGazeData::ReadThread( void *pArgs )
 	}
 
 	s_Queue.Emplace_Back( );
-	return nullptr;
+	while( true )
+		std::this_thread::sleep_for( std::chrono::seconds( 0xFFFFFFFF ) );
 }
 
 void *CGazeData::WriteThread( void *pArgs )
@@ -567,14 +650,25 @@ void *CGazeData::WriteThread( void *pArgs )
 	while( true )
 	{
 		data = s_Queue.Pop_Front( );
-		if( data.m_uImage == (unsigned int) -1 )
-			break;
-
 		s_File << data.ToString( ) << "\n";
 		data.WriteImage( );
 	}
-	
-	return nullptr;
+}
+
+void *CGazeData::ReadRawThread( void *pArgs )
+{
+	CGazeCapture capture;
+	while( CGazeCapture::ReadAsync( capture ) )
+	{
+		double dTanFOV = tan( capture.m_imgGaze.dFOV * M_PI / ( 2 * 180 ) );
+		std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( capture.m_imgGaze );
+		for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
+			s_QueueRaw.Emplace_Back( *it, capture.m_vec3Point, dTanFOV, capture.m_uImage );
+	}
+
+	s_QueueRaw.Emplace_Back( );
+	while( true )
+		std::this_thread::sleep_for( std::chrono::seconds( 0xFFFFFFFF ) );
 }
 
 CBBox CGazeData::FindTemplate( CImage &imgSrc, const CImage &imgTemplate )

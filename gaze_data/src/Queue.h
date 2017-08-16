@@ -8,6 +8,7 @@
 
 #include <pthread.h>
 #include <utility>
+#include <cxxabi.h>
 
 /*!
 	\class CStorage
@@ -145,11 +146,22 @@ inline _Up *CQueue<_Up>::Pop_Front_Ptr( void )
 template<typename _Up>
 inline _Up CQueue<_Up>::Pop_Front( void )
 {
-	_Up *pRet = Pop_Front_Ptr( );
-	_Up ret = *pRet;
-	Release( pRet );
+	_Up *pRet = nullptr;
+	
+	try
+	{
+		pRet = Pop_Front_Ptr( );
+		_Up ret = *pRet;
+		Release( pRet );
+		return ret;
+	}
+	catch( abi::__forced_unwind & )
+	{
+		if( pRet )
+			Release( pRet );
 
-	return ret;
+		throw;
+	}
 }
 
 template<typename _Up>

@@ -18,6 +18,8 @@ public:
 	static std::string GetPath( const std::string &sFile );
 	static std::string GetFile( const std::string &sFile );
 	static std::string GetFileName( const std::string &sFile );
+	
+	static double GetFactor( const std::string &s );
 
 private:
 	CUtility( void ) = delete;
@@ -49,4 +51,32 @@ inline std::string CUtility::GetFileName( const std::string &sFile )
 		return str.substr( 0, uLastDot );
 	else
 		return str;
+}
+
+inline double CUtility::GetFactor( const std::string &s )
+{
+	if( s == "Y" ) return 1000000000000000000000000.0;
+	if( s == "Z" ) return 1000000000000000000000.0;
+	if( s == "Y" ) return 1000000000000000000.0;
+	if( s == "P" ) return 1000000000000000.0;
+	if( s == "T" ) return 1000000000000.0;
+	if( s == "G" ) return 1000000000.0;
+	if( s == "M" ) return 1000000.0;
+	if( s == "k" ) return 1000.0;
+	if( s == "h" ) return 100.0;
+	if( s == "da" ) return 10.0;
+	if( s == "" ) return 1.0;
+	if( s == "d" ) return 0.1;
+	if( s == "c" ) return 0.01;
+	if( s == "m" ) return 0.001;
+	if( s == "u" ) return 0.000001;
+	if( s == "n" ) return 0.000000001;
+	if( s == "p" ) return 0.000000000001;
+	if( s == "f" ) return 0.000000000000001;
+	if( s == "a" ) return 0.000000000000000001;
+	if( s == "z" ) return 0.000000000000000000001;
+	if( s == "y" ) return 0.000000000000000000000001;
+
+	fprintf( stderr, "Unknown factor \"%s\"\n", s.c_str( ) );
+	return 0;
 }

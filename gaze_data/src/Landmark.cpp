@@ -156,52 +156,20 @@ CPoint CLandmark::GetPointManual( CBBox &box, CPoint pt, const char *szWindow )
 	}
 }
 
-std::vector<CLandmark> CLandmark::GetLandmarks( std::vector<CLandmarkCandidate> vecCandidates, const char *szWindow )
+void CLandmark::Adjust( const char *szWindow )
 {
-	std::vector<CLandmark> vecLandmarks;
-	for( std::vector<CLandmarkCandidate>::iterator pCandidate = vecCandidates.begin( ); pCandidate < vecCandidates.end( ); pCandidate++ )
-	{
-		try
-		{
-			vecLandmarks.emplace_back( *pCandidate, szWindow );
-		}
-		catch( int i )
-		{
-			switch( i )
-			{
-			case 0:	//Invalid candidate, skip
-				break;
-			case 1:	//User interrupt
-			default:
-				throw;
-			}
-		}
-	}
-
-	return vecLandmarks;
-}
-
-CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
-	boxFace( candidate.boxFace )
-{
-	if( candidate.aEyes.size( ) < 2 )
-		throw( 0 );
-
-	CBBox boxEyeLeft = GetEyeBox( candidate.aEyes, CVector<2>( { 0.67, 0.398 } ) );
-	CBBox boxEyeRight = GetEyeBox( candidate.aEyes, CVector<2>( { 0.3, 0.398 } ) );
-
-	boxEyeLeft.TransferOwnership( boxFace );
-	boxEyeRight.TransferOwnership( boxFace );
-
-	ptEyeLeft = GetPoint( boxEyeLeft );
-	ptEyeRight = GetPoint( boxEyeRight );
-	ptEyeLeft.TransferOwnership( 1 );
-	ptEyeRight.TransferOwnership( 1 );
+	CBBox boxEyeLeft( boxFace, ptEyeLeft.GetRelPositionX( 0 )- 0.1, ptEyeLeft.GetRelPositionY( 0 ) - 0.075, 0.2, 0.15, "Box_EyeLeft" );
+	CBBox boxEyeRight( boxFace, ptEyeRight.GetRelPositionX( 0 )- 0.1, ptEyeRight.GetRelPositionY( 0 ) - 0.075, 0.2, 0.15, "Box_EyeRight" );
 
 	while( true )
 	{
+		ptEyeLeft = GetPointManual( boxEyeLeft, ptEyeLeft, szWindow );
+		ptEyeRight = GetPointManual( boxEyeRight, ptEyeRight, szWindow );
+		ptEyeLeft.TransferOwnership( 1 );
+		ptEyeRight.TransferOwnership( 1 );
+
 		CImage imgDraw;
-		imgDraw.Crop( candidate.boxFace );
+		imgDraw.Crop( boxFace );
 		Draw( imgDraw );
 		imgDraw.Show( szWindow );
 		unsigned char cKey;
@@ -223,12 +191,59 @@ CLandmark::CLandmark( CLandmarkCandidate &candidate, const char *szWindow ) :
 				break;
 			}
 		}
-		
-		ptEyeLeft = GetPointManual( boxEyeLeft, ptEyeLeft, szWindow );
-		ptEyeRight = GetPointManual( boxEyeRight, ptEyeRight, szWindow );
-		ptEyeLeft.TransferOwnership( 1 );
-		ptEyeRight.TransferOwnership( 1 );
 	}
+}
+
+std::vector<CLandmark> CLandmark::GetLandmarks( std::vector<CLandmarkCandidate> vecCandidates )
+{
+	std::vector<CLandmark> vecLandmarks;
+	for( std::vector<CLandmarkCandidate>::iterator pCandidate = vecCandidates.begin( ); pCandidate < vecCandidates.end( ); pCandidate++ )
+	{
+		try
+		{
+			vecLandmarks.emplace_back( *pCandidate );
+		}
+		catch( int i )
+		{
+			switch( i )
+			{
+			case 0:	//Invalid candidate, skip
+				break;
+			case 1:	//User interrupt
+			default:
+				throw;
+			}
+		}
+	}
+
+	return vecLandmarks;
+}
+
+CLandmark::CLandmark( CLandmarkCandidate &candidate ) :
+	boxFace( candidate.boxFace )
+{
+	if( candidate.aEyes.size( ) < 2 )
+		throw( 0 );
+
+	CBBox boxEyeLeft = GetEyeBox( candidate.aEyes, CVector<2>( { 0.67, 0.398 } ) );
+	CBBox boxEyeRight = GetEyeBox( candidate.aEyes, CVector<2>( { 0.3, 0.398 } ) );
+
+	boxEyeLeft.TransferOwnership( boxFace );
+	boxEyeRight.TransferOwnership( boxFace );
+
+	ptEyeLeft = GetPoint( boxEyeLeft );
+	ptEyeRight = GetPoint( boxEyeRight );
+	ptEyeLeft.TransferOwnership( 1 );
+	ptEyeRight.TransferOwnership( 1 );
+}
+
+CLandmark::CLandmark( const CBBox &boxFace, const CPoint &ptEyeLeft, const CPoint &ptEyeRight ) :
+	boxFace( boxFace ),
+	ptEyeLeft( ptEyeLeft ),
+	ptEyeRight( ptEyeRight )
+{
+	this->ptEyeLeft.TransferOwnership( this->boxFace );
+	this->ptEyeRight.TransferOwnership( this->boxFace );
 }
 
 void CLandmark::Draw( CImage &img )

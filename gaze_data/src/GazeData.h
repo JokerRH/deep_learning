@@ -16,18 +16,22 @@ public:
 	static bool OpenWrite( const std::string &sFile );
 	static void CloseWrite( void );
 	static bool OpenRead( const std::string &sFile );
+	static bool OpenReadRaw( const std::string &sFile );
 	static bool ReadAsync( CGazeData &val );
 	void WriteAsync( void );
+	static bool ReadRawAsync( CGazeData &val );
 
-	static std::vector<CGazeData> GetGazeData( CGazeCapture &capture, const char *szWindow );
+	static std::vector<CGazeData> GetGazeData( CGazeCapture &capture );
 	static double GetDistance( double dMeterDif, double dPixelDif, double dPixelDiagonal, double dTanFOV );
 	static double GetPosition( double dDistance, double dPixelDif, double dPixelDiagonal, double dTanFOV );
 
-	CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double dTanFOV );
+	CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double dTanFOV, unsigned int uImage );
 	CGazeData( const CGazeData &other );
 	CGazeData( void );
 	
-	void Swap( CGazeData &other, bool fSwapChildren = true );
+	bool Adjust( const char *szWindow );
+	
+	void Swap( CGazeData &other );
 	CGazeData &operator=( const CGazeData &other );
 	
 	bool DrawScenery( const char *szWindow );
@@ -40,6 +44,7 @@ private:
 	CGazeData( std::string sLine );
 	static void *ReadThread( void *pArgs );
 	static void *WriteThread( void *pArgs );
+	static void *ReadRawThread( void *pArgs );
 	static CBBox FindTemplate( CImage &imgSrc, const CImage &imgTemplate );
 
 	CRay m_rayEyeLeft;
@@ -52,7 +57,9 @@ private:
 
 	static std::fstream s_File;
 	static CQueue<CGazeData> s_Queue;
-	static pthread_t s_Thread;
+	static CQueue<CGazeData> s_QueueRaw;
+	static std::vector<pthread_t> s_vecThread;
+	static std::vector<pthread_t> s_vecThreadRaw;
 
 	static double s_dEyeDistance;
 	static FILE *s_pFile;
@@ -76,7 +83,8 @@ inline CGazeData::CGazeData( const CGazeData &other ) :
 	m_imgGaze( other.m_imgGaze ),
 	m_boxFace( other.m_boxFace ),
 	m_ptEyeLeft( other.m_ptEyeLeft ),
-	m_ptEyeRight( other.m_ptEyeRight )
+	m_ptEyeRight( other.m_ptEyeRight ),
+	m_uImage( other.m_uImage )
 {
 	m_boxFace.TransferOwnership( m_imgGaze );
 	m_ptEyeLeft.TransferOwnership( m_boxFace );
@@ -94,7 +102,7 @@ inline CGazeData &CGazeData::operator=( const CGazeData &other )
 	if( this != &other )
 	{
 		CGazeData temp( other );
-		Swap( temp, false );
+		Swap( temp );
 	}
 	return *this;
 }

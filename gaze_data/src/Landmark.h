@@ -11,13 +11,15 @@ public:
 	static CBBox GetEyeBox( const std::deque<CBBox> &vecEyes, const CVector<2> &vec2Pos );
 	static CPoint GetPoint( CBBox &box );
 	static CPoint GetPointManual( CBBox &box, CPoint pt, const char *szWindow );
-	inline static std::vector<CLandmark> GetLandmarks( CImage &img, const char *szWindow )
+	void Adjust( const char *szWindow );
+	inline static std::vector<CLandmark> GetLandmarks( CImage &img )
 	{
-		return GetLandmarks( CLandmarkCandidate::GetCandidates( img ), szWindow );
+		return GetLandmarks( CLandmarkCandidate::GetCandidates( img ) );
 	}
 
-	static std::vector<CLandmark> GetLandmarks( std::vector<CLandmarkCandidate> vecCandidates, const char *szWindow );
-	CLandmark( CLandmarkCandidate &candidate, const char *szWindow );
+	static std::vector<CLandmark> GetLandmarks( std::vector<CLandmarkCandidate> vecCandidates );
+	CLandmark( CLandmarkCandidate &candidate );
+	CLandmark( const CBBox &boxFace, const CPoint &ptEyeLeft, const CPoint &ptEyeRight );
 	void Draw( CImage &img );
 
 	CBBox boxFace;

@@ -25,8 +25,7 @@
 
 using namespace cv;
 
-const CVector<3> vec3MonitorPos( { 0.2375, -0.02, -0.02 } );
-const CVector<3> vec3MonitorDim( { -0.475, -0.298, -0.03 } );
+CConfig g_Config;
 
 int EditDataset( const char *szFile )
 {
@@ -58,7 +57,7 @@ int EditDataset( const char *szFile )
 	{
 		try
 		{
-			CGazeCapture capture( *pCamera, "Window", vec3MonitorPos, vec3MonitorDim );
+			CGazeCapture capture( *pCamera, "Window", g_Config.vec3MonitorPos, g_Config.vec3MonitorDim );
 			capture.WriteAsync( );
 		}
 		catch( int i )
@@ -82,21 +81,28 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 	
 	CLandmarkCandidate::Init( );
-	CScenery::SetScenery( vec3MonitorPos, vec3MonitorDim );
+	CScenery::SetScenery( g_Config.vec3MonitorPos, g_Config.vec3MonitorDim );
 	
 	srand( (unsigned int) time( nullptr ) );
-	if( !CGazeCapture::OpenRead( std::string( szSrc ) ) )
+	if( !CGazeData::OpenReadRaw( std::string( szSrc ) ) )
 		return EXIT_SUCCESS;
 	
 	if( !CGazeData::OpenWrite( std::string( szDst ) ) )
 		return EXIT_SUCCESS;
 
-	CGazeCapture capture;
-	while( CGazeCapture::ReadAsync( capture ) )
+	try
 	{
-		std::vector<CGazeData> vecData = CGazeData::GetGazeData( capture, "Window" );
-		for( std::vector<CGazeData>::iterator it = vecData.begin( ); it < vecData.end( ); it++ )
-			it->WriteAsync( );
+		CGazeData data;
+		while( CGazeData::ReadRawAsync( data ) )
+		{
+			if( data.Adjust( "Window" ) )
+				data.WriteAsync( );
+		}
+	}
+	catch( int i )
+	{
+		if( i != 1 )
+			throw;
 	}
 	
 	CGazeData::CloseWrite( );
@@ -113,7 +119,7 @@ int ShowDataset( const char *szFile )
 	namedWindow( "Window", CV_WINDOW_NORMAL );
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 
-	CScenery::SetScenery( vec3MonitorPos, vec3MonitorDim );
+	CScenery::SetScenery( g_Config.vec3MonitorPos, g_Config.vec3MonitorDim );
 
 	CGazeData data;
 	while( CGazeData::ReadAsync( data ) )
@@ -163,7 +169,7 @@ int CaptureVideo( void )
 		case 10:	//Enter
 			try
 			{
-				CLandmark::GetLandmarks( vecCandidates, "Window" );
+				CLandmark::GetLandmarks( vecCandidates );
 			}
 			catch( int i )
 			{
@@ -238,7 +244,7 @@ int TestImage( void )
 int CaptureGaze( void )
 {
 	VideoCapture cap( 0 );
-	if( !cap.isOpened( ) )
+	if( !cap.isOpened( ) )strcasecmp
 	{
 		fprintf( stderr, "Unable to open capture device\n" );
 		return EXIT_FAILURE;
@@ -368,6 +374,8 @@ int main(int argc, char **argv)
 	}
 #endif
 */
+
+	g_Config = CConfig( "./config.cfg" );
 
 	if( argc == 2 )
 	{
