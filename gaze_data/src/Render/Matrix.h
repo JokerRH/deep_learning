@@ -14,6 +14,10 @@ class CMatrix
 public:
 	CMatrix( const std::array<double, uCols * uRows> &adValues );
 	CMatrix( const CMatrix<uRows, uCols> &other );
+	CMatrix<uRows, uCols> &operator=( const CMatrix<uRows, uCols> &other );
+
+	CMatrix( CMatrix<uRows, uCols> &&other );
+	CMatrix<uRows, uCols> &operator=( CMatrix<uRows, uCols> &&other );
 	
 	double Determinant( void ) const;
 	double *operator[]( size_t index );
@@ -27,7 +31,6 @@ public:
 	CMatrix<uRows, uCols> &operator*=( const CMatrix<uCols, uRows> &other );
 	CMatrix<uRows, uCols> Inverse( void ) const;
 	CMatrix<uRows, uCols> &Invert( void );
-	void Swap( CMatrix<uRows, uCols> &other );
 
 	std::string ToString( unsigned int uPrecision = 2 ) const;
 
@@ -46,6 +49,26 @@ template<unsigned int uRows, unsigned int uCols>
 inline CMatrix<uRows, uCols>::CMatrix( const CMatrix<uRows, uCols> &other )
 {
 	memcpy( m_adValues, other.m_adValues, uCols * uRows * sizeof( double ) );
+}
+
+template<unsigned int uRows, unsigned int uCols>
+inline CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::operator=( const CMatrix<uRows, uCols> &other )
+{
+	memcpy( m_adValues, other.m_adValues, uCols * uRows * sizeof( double ) );
+	return *this;
+}
+
+template<unsigned int uRows, unsigned int uCols>
+inline CMatrix<uRows, uCols>::CMatrix( CMatrix<uRows, uCols> &&other )
+{
+	memcpy( m_adValues, other.m_adValues, uCols * uRows * sizeof( double ) );
+}
+
+template<unsigned int uRows, unsigned int uCols>
+inline CMatrix<uRows, uCols> & CMatrix<uRows, uCols>::operator=( CMatrix<uRows, uCols> &&other )
+{
+	memcpy( m_adValues, other.m_adValues, uCols * uRows * sizeof( double ) );
+	return *this;
 }
 
 template<>
@@ -169,12 +192,6 @@ inline CMatrix<uRows, uCols>& CMatrix<uRows, uCols>::Invert( void )
 {
 	assert( false );
 	return *this;
-}
-
-template<unsigned int uRows, unsigned int uCols>
-inline void CMatrix<uRows, uCols>::Swap( CMatrix<uRows, uCols> &other )
-{
-	swap_ranges( m_adValues, m_adValues + uRows * uCols, other.m_adValues );
 }
 
 template<unsigned int uRows, unsigned int uCols>

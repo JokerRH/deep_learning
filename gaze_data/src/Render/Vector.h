@@ -14,7 +14,12 @@ public:
 
 	CVector( const std::array<double, uRows> &adValues );
 	CVector( void );
+
 	CVector( const CVector<uRows> &other );
+	CVector<uRows> &operator=( const CVector<uRows> &other );
+
+	CVector( CVector<uRows> &&other );
+	CVector<uRows> &operator=( CVector<uRows> &&other );
 
 	double &operator[]( size_t index );
 	constexpr const double &operator[]( size_t index ) const;
@@ -37,7 +42,6 @@ public:
 	CVector<3> CrossProduct( const CVector<3> &other );
 	CVector<3> &MakeCrossProduct( const CVector<3> &other );
 	std::string ToString( unsigned int uPrecision = 2 ) const;
-	void Swap( CVector<uRows> &other );
 	double Angle( const CVector<3> &other ) const;
 
 private:
@@ -61,6 +65,26 @@ template<unsigned int uRows>
 inline CVector<uRows>::CVector( const CVector<uRows> &other )
 {
 	memcpy( m_adValues, other.m_adValues, uRows * sizeof( double ) );
+}
+
+template<unsigned int uRows>
+inline CVector<uRows> &CVector<uRows>::operator=( const CVector<uRows> &other )
+{
+	memcpy( m_adValues, other.m_adValues, uRows * sizeof( double ) );
+	return *this;
+}
+
+template<unsigned int uRows>
+inline CVector<uRows>::CVector( CVector<uRows> &&other )
+{
+	memcpy( m_adValues, other.m_adValues, uRows * sizeof( double ) );
+}
+
+template<unsigned int uRows>
+inline CVector<uRows> & CVector<uRows>::operator=( CVector<uRows> &&other )
+{
+	memcpy( m_adValues, other.m_adValues, uRows * sizeof( double ) );
+	return *this;
 }
 
 template<unsigned int uRows>
@@ -252,13 +276,6 @@ inline std::string CVector<uRows>::ToString( unsigned int uPrecision ) const
 
 	out << ")";
 	return out.str( );
-}
-
-template<unsigned int uRows>
-inline void CVector<uRows>::Swap( CVector<uRows> &other )
-{
-	for( unsigned int u = 0; u < uRows; u++ )
-		std::swap( m_adValues[ u ], other.m_adValues[ u ] );
 }
 
 template<unsigned int uRows>

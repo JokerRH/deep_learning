@@ -1,6 +1,7 @@
 #include "Config.h"
 #include "Utility.h"
 #include <fstream>
+#include <stdio.h>
 #include <regex>
 
 const std::regex CConfig::s_regexMonPos( R"a(\s*monpos\s*=\s*\(\s*([+-]?(?:\d+(?:\.\d+)?)|(?:\.\d+))(?:(\S)?m)?\s*,\s*([+-]?(?:\d+(?:\.\d+)?)|(?:\.\d+))(?:(\S)?m)?\s*,\s*([+-]?(?:\d+(?:\.\d+)?)|(?:\.\d+))(?:(\S)?m)?\s*\).*)a" );
@@ -9,12 +10,18 @@ const std::regex CConfig::s_regexMonDim( R"a(\s*mondim\s*=\s*([+-]?(?:\d+(?:\.\d
 CConfig::CConfig( const std::string &sFile )
 {
 	std::ifstream file( sFile );
+	if( !file.is_open( ) )
+	{
+		fprintf( stderr, "Error opening file \"%s\"\n", sFile.c_str( ) );
+		throw( 0 );
+	}
 	
 	std::string sLine;
 	std::smatch match;
 	unsigned char fFound = 0;
 	while( std::getline( file, sLine ) )
 	{
+		printf( "Test: \"%s\"\n", sLine.c_str( ) );
 		if( fFound == 3 )
 			break;
 
@@ -50,22 +57,6 @@ CConfig::CConfig( const std::string &sFile )
 	if( fFound != 3 )
 	{
 		fprintf( stderr, "Config file \"%s\" is missing fields\n", sFile.c_str( ) );
-		throw( 0 );
+		throw( 1 );
 	}
-}
-
-void CConfig::Swap( CConfig &other )
-{
-	vec3MonitorPos.Swap( other.vec3MonitorPos );
-	vec3MonitorDim.Swap( other.vec3MonitorDim );
-}
-
-CConfig &CConfig::operator=( const CConfig &other )
-{
-	if( this != &other )
-	{
-		CConfig temp( other );
-		Swap( temp );
-	}
-	return *this;
 }

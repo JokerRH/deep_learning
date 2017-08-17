@@ -9,7 +9,6 @@
 #include <vector>
 #include <fstream>
 
-class CGazeResult;
 class CGazeData
 {
 public:
@@ -26,13 +25,15 @@ public:
 	static double GetPosition( double dDistance, double dPixelDif, double dPixelDiagonal, double dTanFOV );
 
 	CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double dTanFOV, unsigned int uImage );
-	CGazeData( const CGazeData &other );
 	CGazeData( void );
+
+	CGazeData( const CGazeData &other );
+	CGazeData &operator=( const CGazeData &other );
+
+	CGazeData( CGazeData &&other ) = default;
+	CGazeData &operator=( CGazeData &&other ) = default;
 	
 	bool Adjust( const char *szWindow );
-	
-	void Swap( CGazeData &other );
-	CGazeData &operator=( const CGazeData &other );
 	
 	bool DrawScenery( const char *szWindow );
 	void RandomizeFace( double dMaxScale );
@@ -91,18 +92,14 @@ inline CGazeData::CGazeData( const CGazeData &other ) :
 	m_ptEyeRight.TransferOwnership( m_boxFace );
 }
 
+inline CGazeData &CGazeData::operator=( const CGazeData &other )
+{
+	operator=( std::move( CGazeData( other ) ) );
+	return *this;
+}
+
 inline CGazeData::CGazeData( void ) :
 	m_uImage( -1 )
 {
 
-}
-
-inline CGazeData &CGazeData::operator=( const CGazeData &other )
-{
-	if( this != &other )
-	{
-		CGazeData temp( other );
-		Swap( temp );
-	}
-	return *this;
 }

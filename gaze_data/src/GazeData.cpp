@@ -13,10 +13,10 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <thread>
 #include <chrono>
+#define HAVE_STRUCT_TIMESPEC
+#include <pthread.h>
 #ifdef _MSC_VER
 #	include <direct.h>
-#else
-#	include <pthread.h>
 #endif
 
 using namespace cv;
@@ -374,17 +374,6 @@ bool CGazeData::Adjust( const char *szWindow )
 	}
 }
 
-void CGazeData::Swap( CGazeData &other )
-{
-	m_rayEyeLeft.Swap( other.m_rayEyeLeft );
-	m_rayEyeRight.Swap( other.m_rayEyeRight );
-	m_imgGaze.Swap( other.m_imgGaze, true );
-	m_boxFace.Swap( other.m_boxFace, true );
-	m_ptEyeLeft.Swap( other.m_ptEyeLeft, true );
-	m_ptEyeRight.Swap( other.m_ptEyeRight, true );
-	std::swap( m_uImage, other.m_uImage );
-}
-
 bool CGazeData::DrawScenery( const char *szWindow )
 {
 	CScenery scenery( m_rayEyeLeft, m_rayEyeRight );
@@ -633,7 +622,7 @@ void *CGazeData::ReadThread( void *pArgs )
 		{
 			s_Queue.Emplace_Back( sLine );
 		}
-		catch( int i )
+		catch( int )
 		{
 
 		}

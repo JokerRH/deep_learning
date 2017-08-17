@@ -22,11 +22,13 @@ public:
 	void WriteAsync( void );
 	
 	CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim );
-	CGazeCapture( const CGazeCapture &other );
 	CGazeCapture( void );
-	
-	void Swap( CGazeCapture &other, bool fSwapChildren = true );
-	CGazeCapture &operator=( const CGazeCapture &other );
+
+	CGazeCapture( const CGazeCapture &other ) = default;
+	CGazeCapture &operator=( const CGazeCapture &other ) = default;
+
+	CGazeCapture( CGazeCapture &&other ) = default;
+	CGazeCapture &operator=( CGazeCapture &&other ) = default;
 
 	std::string ToString( unsigned int uPrecision = std::numeric_limits< double >::max_digits10 ) const;
 	void WriteImage( void ) const;
@@ -57,31 +59,6 @@ private:
 	
 	friend CQueue<CGazeCapture>;
 };
-
-inline CGazeCapture::CGazeCapture( const CGazeCapture &other ) :
-	m_imgGaze( other.m_imgGaze ),
-	m_vec3Point( other.m_vec3Point ),
-	m_uImage( other.m_uImage )
-{
-
-}
-
-inline void CGazeCapture::Swap( CGazeCapture &other, bool fSwapChildren )
-{
-	m_vec3Point.Swap( other.m_vec3Point );
-	m_imgGaze.Swap( other.m_imgGaze, fSwapChildren );
-	std::swap( m_uImage, other.m_uImage );
-}
-
-inline CGazeCapture &CGazeCapture::operator=( const CGazeCapture &other )
-{
-	if( this != &other )
-	{
-		CGazeCapture temp( other );
-		Swap( temp, false );
-	}
-	return *this;
-}
 
 inline CGazeCapture::CGazeCapture( void ) :
 	m_uImage( -1 )

@@ -9,6 +9,13 @@ class CBaseBBox;
 class CBaseHighlighter
 {
 public:
+	CBaseHighlighter( void );
+	CBaseHighlighter( const CBaseHighlighter &other );
+	CBaseHighlighter &operator=( const CBaseHighlighter &other );
+
+	CBaseHighlighter( CBaseHighlighter &&other );
+	CBaseHighlighter &operator=( CBaseHighlighter &&other );
+
 	~CBaseHighlighter( void );
 	virtual unsigned int GetPositionX( unsigned int uLevel = -1 ) const;
 	virtual unsigned int GetPositionY( unsigned int uLevel = -1 ) const;
@@ -25,14 +32,10 @@ public:
 	const char szName[ 32 ];
 
 protected:
-	CBaseHighlighter( void );
 	CBaseHighlighter( const char *szName );
 	CBaseHighlighter( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uLevel, const char *szName );
 	CBaseHighlighter( CBaseBBox &parentBox, double dX, double dY, const char *szName );
 	CBaseHighlighter( CBaseBBox &parentBox, const CVector<2> &vec2Pos, const char *szName );
-	CBaseHighlighter( const CBaseHighlighter &other );
-
-	void Swap( CBaseHighlighter &other, bool fSwapChildren = true );
 
 	inline void AddChild( CBaseHighlighter *pChild )
 	{
@@ -52,5 +55,5 @@ protected:
 
 inline bool CBaseHighlighter::IsValid( void ) const
 {
-	return ( strcmp( szName, "Unassigned" ) );
+	return strcmp( szName, "Unassigned" ) != 0;
 }

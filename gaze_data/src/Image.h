@@ -15,11 +15,15 @@ public:
 	CImage( const char *szName );
 	CImage( const cv::Mat &mat, const char *szName );
 	CImage( const cv::Mat &mat, double dFOV, time_t timestamp, const char *szName );
-	CImage( const CImage &other );
 	CImage( CImage &img, const char *szName );
 	CImage( CImage &parentImage, cv::Mat &matImage, const cv::Point &point, const char *szName );
-	void Swap( CImage &other, bool fSwapChildren = true );
-	CImage &operator=( const CImage &other );
+
+	CImage( const CImage &other ) = default;
+	CImage &operator=( const CImage &other ) = default;
+
+	CImage( CImage &&other ) = default;
+	CImage &operator=( CImage &&other ) = default;
+
 	unsigned int GetPositionX( unsigned int uLevel = -1 ) const override;
 	unsigned int GetPositionY( unsigned int uLevel = -1 ) const override;
 	unsigned int GetWidth( unsigned int uLevel = -1 ) const override;
@@ -72,15 +76,6 @@ inline CImage::CImage( const cv::Mat &mat, double dFOV, time_t timestamp, const 
 
 }
 
-inline CImage::CImage( const CImage &other ) :
-	CBaseBBox( other ),
-	matImage( other.matImage ),
-	dFOV( other.dFOV ),
-	timestamp( other.timestamp )
-{
-
-}
-
 inline CImage::CImage( CImage &img, const char *szName ) :
 	CBaseBBox( img, 0, 0, 1, 1, szName ),
 	matImage( img.matImage.clone( ) ),
@@ -97,24 +92,6 @@ inline CImage::CImage( CImage &parentImage, cv::Mat &matImage, const cv::Point &
 	timestamp( 0 )
 {
 	//printf( "Creating image \"%s\" of dim %ux%u/%4.2fx%4.2f at (%u, %u)/(%4.2f, %4.2f); Parent dim: %ux%u\n", szName, matImage.cols, matImage.rows, m_rWidth, m_rHeight, point.x, point.y, m_rPositionX, m_rPositionY, parentImage.GetWidth( 0 ), parentImage.GetHeight( 0 ) );
-}
-
-inline void CImage::Swap( CImage &other, bool fSwapChildren )
-{
-	CBaseBBox::Swap( other, fSwapChildren );
-	cv::swap( matImage, other.matImage );
-	std::swap( dFOV, other.dFOV );
-	std::swap( timestamp, other.timestamp );
-}
-
-inline CImage &CImage::operator=( const CImage &other )
-{
-	if( this != &other )
-	{
-		CImage temp( other );
-		Swap( temp, false );
-	}
-	return *this;
 }
 
 inline unsigned int CImage::GetPositionX( unsigned int uLevel ) const

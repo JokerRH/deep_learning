@@ -6,9 +6,9 @@
 */
 #pragma once
 
+#define HAVE_STRUCT_TIMESPEC
 #include <pthread.h>
 #include <utility>
-#include <cxxabi.h>
 
 /*!
 	\class CStorage
@@ -146,22 +146,12 @@ inline _Up *CQueue<_Up>::Pop_Front_Ptr( void )
 template<typename _Up>
 inline _Up CQueue<_Up>::Pop_Front( void )
 {
-	_Up *pRet = nullptr;
-	
-	try
-	{
-		pRet = Pop_Front_Ptr( );
-		_Up ret = *pRet;
-		Release( pRet );
-		return ret;
-	}
-	catch( abi::__forced_unwind & )
-	{
-		if( pRet )
-			Release( pRet );
-
-		throw;
-	}
+	pthread_setcancelstate( PTHREAD_CANCEL_DISABLE, nullptr );
+	_Up *pRet = Pop_Front_Ptr( );
+	_Up ret = *pRet;
+	Release( pRet );
+	pthread_setcancelstate( PTHREAD_CANCEL_ENABLE, nullptr );
+	return ret;
 }
 
 template<typename _Up>

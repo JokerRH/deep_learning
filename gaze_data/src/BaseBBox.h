@@ -9,6 +9,13 @@ class CLine;
 class CBaseBBox : public CBaseHighlighter
 {
 public:
+	CBaseBBox( void ) = default;
+	CBaseBBox( const CBaseBBox &other ) = default;
+	CBaseBBox &operator=( const CBaseBBox &other ) = default;
+
+	CBaseBBox( CBaseBBox &&other ) = default;
+	CBaseBBox &operator=( CBaseBBox &&other ) = default;
+
 	virtual unsigned int GetWidth( unsigned int uLevel = -1 ) const;
 	virtual unsigned int GetHeight( unsigned int uLevel = -1 ) const;
 	virtual double GetRelWidth( unsigned int uLevel = -1 ) const;
@@ -21,18 +28,10 @@ public:
 	virtual void TransferOwnership( CBaseBBox &parentBox );
 
 protected:
-	CBaseBBox( void )
-	{
-
-	}
-
 	CBaseBBox( const char *szName );
-	CBaseBBox( const CBaseBBox &other );
 	CBaseBBox( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uWidth, unsigned int uHeight, unsigned int uLevel, const char *szName );
 	CBaseBBox( CBaseBBox &parentBox, double dX, double dY, double dWidth, double dHeight, const char *szName );
 	
-	void Swap( CBaseBBox &other, bool fSwapChildren = true );
-
 	double m_dWidth = 1;	///Width in % of parent's width
 	double m_dHeight = 1;	///Height in % of parent's height
 	

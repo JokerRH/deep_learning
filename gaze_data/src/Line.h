@@ -8,6 +8,17 @@
 class CLine : public CBaseHighlighter
 {
 public:
+	CLine( void ) = default;
+	CLine( const char *szName );
+	CLine( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uX2, unsigned int uY2, unsigned int uLevel, const char *szName );
+	CLine( CBaseBBox &parentBox, double dX, double dY, double dX2, double dY2, const char *szName );
+
+	CLine( const CLine &other ) = default;
+	CLine &operator=( const CLine &other ) = default;
+
+	CLine( CLine &&other ) = default;
+	CLine &operator=( CLine &&other ) = default;
+
 	unsigned int GetPositionX2( unsigned int uLevel = -1 ) const;
 	unsigned int GetPositionY2( unsigned int uLevel = -1 ) const;
 	double GetRelPositionX2( unsigned int uLevel = -1 ) const;
@@ -16,18 +27,8 @@ public:
 	void TransferOwnership( unsigned int uLevel = 1 );
 	void TransferOwnership( CBaseBBox &parentBox );
 
-	CLine &operator=( const CLine &other );
-	
 	void Draw( const cv::Scalar &color, int iThickness = 2, int iLineType = 8, int iShift = 0, unsigned int uLevel = -1 );
 	void Draw( CImage &img, const cv::Scalar &color, int iThickness = 2, int iLineType = 8, int iShift = 0 ) const;
-
-	CLine( void );
-	CLine( const char *szName );
-	CLine( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uX2, unsigned int uY2, unsigned int uLevel, const char *szName );
-	CLine( CBaseBBox &parentBox, double dX, double dY, double dX2, double dY2, const char *szName );
-	CLine( const CLine &other );
-
-	void Swap( CLine &other, bool fSwapChildren = true );
 
 protected:
 	double m_dPositionX2;
@@ -62,16 +63,6 @@ inline double CLine::GetRelPositionY2( unsigned int uLevel ) const
 	return dPositionY + dHeight * m_dPositionY2;
 }
 
-inline CLine &CLine::operator=( const CLine &other )
-{
-	if( this != &other )
-	{
-		CLine temp( other );
-		Swap( temp, false );
-	}
-	return *this;
-}
-
 inline void CLine::Draw( const cv::Scalar &color, int iThickness, int iLineType, int iShift, unsigned int uLevel )
 {
 	cv::line( GetImage( uLevel )->matImage, cv::Point( GetPositionX( uLevel ), GetPositionY( uLevel ) ), cv::Point( GetPositionX2( uLevel ), GetPositionY2( uLevel ) ), color, iThickness, iLineType, iShift );
@@ -82,11 +73,6 @@ inline void CLine::Draw( CImage &img, const cv::Scalar &color, int iThickness, i
 	cv::Point pt1( GetPositionX( -1 ) - img.GetPositionX( -1 ), GetPositionY( -1 ) - img.GetPositionY( -1 ) );
 	cv::Point pt2( GetPositionX2( -1 ) - img.GetPositionX( -1 ), GetPositionY2( -1 ) - img.GetPositionY( -1 ) );
 	cv::line( img.matImage, pt1, pt2, color, iThickness, iLineType, iShift );
-}
-
-inline CLine::CLine( void )
-{
-
 }
 
 inline CLine::CLine( const char *szName ) :
@@ -109,19 +95,4 @@ inline CLine::CLine( CBaseBBox &parentBox, double dX, double dY, double dX2, dou
 	m_dPositionY2( dY2 )
 {
 	
-}
-
-inline CLine::CLine( const CLine &other ) :
-	CBaseHighlighter( other ),
-	m_dPositionX2( other.m_dPositionX2 ),
-	m_dPositionY2( other.m_dPositionY2 )
-{
-
-}
-
-inline void CLine::Swap( CLine &other, bool fSwapChildren )
-{
-	CBaseHighlighter::Swap( other, fSwapChildren );
-	std::swap( m_dPositionX2, other.m_dPositionX2 );
-	std::swap( m_dPositionY2, other.m_dPositionY2 );
 }

@@ -8,27 +8,20 @@
 class CArrowedLine : public CLine
 {
 public:
-	CArrowedLine &operator=( const CArrowedLine &other );
+	CArrowedLine( void ) = default;
+	CArrowedLine( const CArrowedLine &other ) = default;
+	CArrowedLine &operator=( const CArrowedLine &other ) = default;
+
+	CArrowedLine( CArrowedLine &&other ) = default;
+	CArrowedLine &operator=( CArrowedLine &&other ) = default;
 	
 	void Draw( const cv::Scalar &color, int iThickness = 2, int iLineType = 8, int iShift = 0, double dTipLength = 0.1, unsigned int uLevel = -1 );
 	void Draw( const CImage &img, const cv::Scalar &color, int iThickness = 2, int iLineType = 8, int iShift = 0, double dTipLength = 0.1 );
 
-	CArrowedLine( void );
 	CArrowedLine( const char *szName );
 	CArrowedLine( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uX2, unsigned int uY2, unsigned int uLevel, const char *szName );
 	CArrowedLine( CBaseBBox &parentBox, double dX, double dY, double dX2, double dY2, const char *szName );
-	CArrowedLine( const CArrowedLine &other );
 };
-
-inline CArrowedLine &CArrowedLine::operator=( const CArrowedLine &other )
-{
-	if( this != &other )
-	{
-		CArrowedLine temp( other );
-		Swap( temp, false );
-	}
-	return *this;
-}
 
 inline void CArrowedLine::Draw( const cv::Scalar &color, int iThickness, int iLineType, int iShift, double dTipLength, unsigned int uLevel )
 {
@@ -40,11 +33,6 @@ inline void CArrowedLine::Draw( const CImage &img, const cv::Scalar &color, int 
 	cv::Point pt1( GetPositionX( -1 ) - img.GetPositionX( -1 ), GetPositionY( -1 ) - img.GetPositionY( -1 ) );
 	cv::Point pt2( GetPositionX2( -1 ) - img.GetPositionX( -1 ), GetPositionY2( -1 ) - img.GetPositionY( -1 ) );
 	cv::arrowedLine( img.matImage, pt1, pt2, color, iThickness, iLineType, iShift, dTipLength );
-}
-
-inline CArrowedLine::CArrowedLine( void )
-{
-
 }
 
 inline CArrowedLine::CArrowedLine( const char *szName ) :
@@ -63,10 +51,4 @@ inline CArrowedLine::CArrowedLine( CBaseBBox &parentBox, double dX, double dY, d
 	CLine( parentBox, dX, dY, dX2, dY2, szName )
 {
 	
-}
-
-inline CArrowedLine::CArrowedLine( const CArrowedLine &other ) :
-	CLine( other )
-{
-
 }

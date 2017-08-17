@@ -183,36 +183,57 @@ CBaseHighlighter::CBaseHighlighter( const CBaseHighlighter &other ) :
 		m_pParentBox->AddChild( this );
 }
 
-void CBaseHighlighter::Swap( CBaseHighlighter &other, bool fSwapChildren )
+CBaseHighlighter & CBaseHighlighter::operator=( const CBaseHighlighter &other )
 {
-	{
-		char szTempName[ 32 ];
-		memcpy( szTempName, szName, 32 );
-		memcpy( const_cast<char *>( szName ), other.szName, 32 );
-		memcpy( const_cast<char *>( other.szName ), szTempName, 32 );
-	}
+	operator=( std::move( CBaseHighlighter( other ) ) );
+	return *this;
+}
 
+CBaseHighlighter::CBaseHighlighter( CBaseHighlighter &&other ) :
+	szName{ 0 },
+	m_pParentBox( other.m_pParentBox ),
+	m_vecpChildren( std::move( other.m_vecpChildren ) ),
+	m_dPositionX( other.m_dPositionX ),
+	m_dPositionY( other.m_dPositionY )
+{
+	assert( other.szName != nullptr && strlen( other.szName ) && strlen( other.szName ) < 32 );
+	strncpy( const_cast<char *>( this->szName ), other.szName, 31 );
+	strncpy( const_cast<char *>( other.szName ), "Unassigned", 31 );
+
+	if( m_pParentBox )
+	{
+		m_pParentBox->RemoveChild( &other );
+		m_pParentBox->AddChild( this );
+	}
+	for( auto pChild : m_vecpChildren )
+		pChild->m_pParentBox = static_cast<CBaseBBox *>( this );	//If the BaseHighlighter has children it must be of type CBaseBBox!
+}
+
+CBaseHighlighter &CBaseHighlighter::operator=( CBaseHighlighter &&other )
+{
+	assert( !m_vecpChildren.size( ) );	//Children would become invalid on move
 	if( m_pParentBox )
 		m_pParentBox->RemoveChild( this );
-	if( other.m_pParentBox )
-		other.m_pParentBox->RemoveChild( &other );
 
-	std::swap( m_pParentBox, other.m_pParentBox );
-	if( fSwapChildren )
-	{
-		m_vecpChildren.swap( other.m_vecpChildren );
-		for( std::vector<CBaseHighlighter *>::iterator it = m_vecpChildren.begin( ); it < m_vecpChildren.end( ); it++ )
-			( *it )->m_pParentBox = GetParent( 0 );
-		for( std::vector<CBaseHighlighter *>::iterator it = other.m_vecpChildren.begin( ); it < other.m_vecpChildren.end( ); it++ )
-			( *it )->m_pParentBox = other.GetParent( 0 );
-	}
-	std::swap( m_dPositionX, other.m_dPositionX );
-	std::swap( m_dPositionY, other.m_dPositionY );
+	m_pParentBox = other.m_pParentBox;
+	m_vecpChildren = std::move( other.m_vecpChildren );
+	m_dPositionX = other.m_dPositionX;
+	m_dPositionY = other.m_dPositionY;
+
+	assert( other.szName != nullptr && strlen( other.szName ) && strlen( other.szName ) < 32 );
+	strncpy( const_cast<char *>( this->szName ), other.szName, 31 );
+	strncpy( const_cast<char *>( other.szName ), "Unassigned", 31 );
 
 	if( m_pParentBox )
+	{
+		m_pParentBox->RemoveChild( &other );
 		m_pParentBox->AddChild( this );
-	if( other.m_pParentBox )
-		other.m_pParentBox->AddChild( &other );
+	}
+
+	for( auto pChild : m_vecpChildren )
+		pChild->m_pParentBox = static_cast<CBaseBBox *>( this );	//If the BaseHighlighter has children it must be of type CBaseBBox!
+
+	return *this;
 }
 
 bool CBaseHighlighter::RemoveChild( CBaseHighlighter *pChild )

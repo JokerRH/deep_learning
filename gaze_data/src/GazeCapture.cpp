@@ -122,7 +122,7 @@ bool CGazeCapture::OpenWrite( const std::string &sFile )
 				if( match.size( ) )
 				{
 					unsigned int u = std::stoul( match[ 7 ].str( ) );
-					s_uCurrentImage = std::max( s_uCurrentImage, u );
+					s_uCurrentImage = std::max( (int) s_uCurrentImage, (int) u );
 				}
 			}
 			s_uCurrentImage++;
@@ -294,8 +294,16 @@ CGazeCapture::CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3
 		m_imgGaze.matImage = Mat( uHeight, uWidth, CV_8UC3, Scalar( 127, 0, 0 ) );
 	}
 
-	CPoint ptGaze = CPoint( m_imgGaze, rand( ) / (double) RAND_MAX, rand( ) / (double) RAND_MAX, "Point_Gaze" );
-	ptGaze.Draw( Scalar( 255, 255, 255 ), 5 );
+	{
+		CPoint ptGaze = CPoint( m_imgGaze, rand( ) / (double) RAND_MAX, rand( ) / (double) RAND_MAX, "Point_Gaze" );
+		ptGaze.Draw( Scalar( 0, 190, 190 ), 5 );
+		m_vec3Point = CVector<3>(
+		{
+			-( vec3ScreenTL[ 0 ] + ptGaze.GetRelPositionX( -1 ) * vec3ScreenDim[ 0 ] ),
+			vec3ScreenTL[ 1 ] + ptGaze.GetRelPositionY( -1 ) * vec3ScreenDim[ 1 ],
+			vec3ScreenTL[ 2 ]
+		} );
+	}
 
 	m_imgGaze.Show( szWindow );
 	unsigned char cKey;
@@ -317,12 +325,6 @@ CGazeCapture::CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3
 	}
 
 	camera.TakePicture( m_imgGaze );
-	m_vec3Point = CVector<3>(
-	{
-		-( vec3ScreenTL[ 0 ] + ptGaze.GetRelPositionX( -1 ) * vec3ScreenDim[ 0 ] ),
-		vec3ScreenTL[ 1 ] + ptGaze.GetRelPositionY( -1 ) * vec3ScreenDim[ 1 ],
-		vec3ScreenTL[ 2 ]
-	} );
 }
 
 std::string CGazeCapture::ToString( unsigned int uPrecision ) const
@@ -390,7 +392,7 @@ void *CGazeCapture::ReadThread( void *pArgs )
 		{
 			s_Queue.Emplace_Back( sLine );
 		}
-		catch( int i )
+		catch( int )
 		{
 
 		}
@@ -409,7 +411,7 @@ void *CGazeCapture::WriteThread( void *pArgs )
 		if( capture.m_uImage == (unsigned int) -1 )
 			break;
 
-		s_File << capture.ToString( ) << "\n";
+		s_File << capture.ToString( ) << std::endl;
 		capture.WriteImage( );
 	}
 	

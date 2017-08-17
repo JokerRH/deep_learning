@@ -37,14 +37,6 @@ CBaseBBox::CBaseBBox( const char *szName ) :
 
 }
 
-CBaseBBox::CBaseBBox( const CBaseBBox &other ) :
-	CBaseHighlighter( other ),
-	m_dWidth( other.m_dWidth ),
-	m_dHeight( other.m_dHeight )
-{
-
-}
-
 CBaseBBox::CBaseBBox( CBaseBBox &parentBox, unsigned int uX, unsigned int uY, unsigned int uWidth, unsigned int uHeight, unsigned int uLevel, const char *szName ) :
 	CBaseHighlighter( parentBox, uX, uY, uLevel, szName ),
 	m_dWidth( uWidth / (double) parentBox.GetWidth( uLevel ) ),
@@ -61,11 +53,4 @@ CBaseBBox::CBaseBBox( CBaseBBox &parentBox, double dX, double dY, double dWidth,
 {
 	assert( m_dWidth >= 0.0 && m_dPositionX + m_dWidth <= 1.0 );
 	assert( m_dHeight >= 0.0 && m_dPositionY + m_dHeight <= 1.0 );
-}
-
-void CBaseBBox::Swap( CBaseBBox &other, bool fSwapChildren )
-{
-	CBaseHighlighter::Swap( other, fSwapChildren );
-	std::swap( m_dWidth, other.m_dWidth );
-	std::swap( m_dHeight, other.m_dHeight );
 }
