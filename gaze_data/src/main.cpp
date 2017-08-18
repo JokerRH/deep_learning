@@ -54,7 +54,7 @@ int EditDataset( const char *szFile )
 	namedWindow( "Window", CV_WINDOW_NORMAL );
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
 	
-	ShowCursor( FALSE );
+	CUtility::ShowCursor( false, "Window" );
 	while( true )
 	{
 		try
@@ -70,7 +70,7 @@ int EditDataset( const char *szFile )
 			break;
 		}
 	}
-	ShowCursor( TRUE );
+	CUtility::ShowCursor( true, "Window" );
 
 	CGazeCapture::CloseWrite( );
 	delete pCamera;

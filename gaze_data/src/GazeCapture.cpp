@@ -373,9 +373,11 @@ CGazeCapture::CGazeCapture( std::string sLine )
 	
 	//Load image
 	std::string str = s_sDataPath + "img_" + std::to_string( m_uImage ) + ".jpg";
-	cv::Mat matImage = imread( str, CV_LOAD_IMAGE_COLOR );
-	if( !matImage.data )
+	
+	cv::Mat matImage = imread( str.c_str( ), CV_LOAD_IMAGE_COLOR );
+	if( matImage.empty( ) )
 	{
+		printf( "Test\n" );
 		fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
 		throw 1;
 	}

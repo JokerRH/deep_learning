@@ -5,6 +5,11 @@
 #include <opencv2/highgui.hpp>
 #include <iostream>
 
+#include <gtk/gtk.h>
+
+//`pkg-config --cflags gtk+-2.0`
+//`pkg-config --libs gtk+-2.0`
+
 unsigned char CUtility::WaitKey( unsigned int uMilliseconds )
 {
 	return cv::waitKey( uMilliseconds );
@@ -39,5 +44,17 @@ unsigned char CUtility::GetChar( void )
 		perror( "tcsetattr ~ICANON" );
 
 	return buf;
+}
+
+void CUtility::ShowCursor( bool fShow, const char *szWindow )
+{
+	GtkWidget *pWindow = (GtkWidget *) cvGetWindowHandle( szWindow );
+	GdkCursor *pCursor;
+	if( fShow )
+		pCursor = nullptr;
+	else
+		pCursor = gdk_cursor_new_for_display( gdk_display_get_default( ), GDK_BLANK_CURSOR );
+
+	gdk_window_set_cursor( gtk_widget_get_window( pWindow ), pCursor );
 }
 #endif

@@ -19,6 +19,8 @@ public:
 	static std::string GetFile( const std::string &sFile );
 	static std::string GetFileName( const std::string &sFile );
 	
+	static void ShowCursor( bool fShow, const char *szWindow );
+	
 	static double GetFactor( const std::string &s );
 
 private:

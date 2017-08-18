@@ -102,4 +102,9 @@ unsigned char CUtility::GetChar( void )
 
 	return (unsigned char) iKey;
 }
+
+void CUtility::ShowCursor( bool fShow, const char *szWindow )
+{
+	ShowCursor( fShow ? TRUE : FALSE );
+}
 #endif
