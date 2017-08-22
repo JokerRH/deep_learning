@@ -8,6 +8,12 @@
 class CLandmark
 {
 public:
+	CLandmark( const CLandmark &other );
+	CLandmark &operator=( const CLandmark &other ) = default;
+
+	CLandmark( CLandmark &&other ) = default;
+	CLandmark &operator=( CLandmark &&other );
+
 	static CBBox GetEyeBox( const std::deque<CBBox> &vecEyes, const CVector<2> &vec2Pos );
 	static CPoint GetPoint( CBBox &box );
 	static CPoint GetPointManual( CBBox &box, CPoint pt, const char *szWindow );
@@ -32,3 +38,19 @@ protected:
 
 	}
 };
+
+inline CLandmark::CLandmark( const CLandmark &other ) :
+	boxFace( other.boxFace ),
+	ptEyeLeft( other.ptEyeLeft ),
+	ptEyeRight( other.ptEyeRight )
+{
+	ptEyeLeft.TransferOwnership( boxFace );
+	ptEyeRight.TransferOwnership( boxFace );
+}
+
+inline CLandmark &CLandmark::operator=( CLandmark &&other )
+{
+	this->~CLandmark( );
+	new( this ) CLandmark( std::move( other ) );
+	return *this;
+}

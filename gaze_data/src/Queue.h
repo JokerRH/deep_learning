@@ -95,7 +95,15 @@ template<typename... _Args>
 inline void CQueue<_Up>::Emplace_Back( _Args&&... __args )
 {
 	_Up *pData = static_cast<_Up *>( GetPointer( ) );
-	::new( pData ) _Up( std::forward<_Args>( __args )... );
+	try
+	{
+		::new( pData ) _Up( std::forward<_Args>( __args )... );
+	}
+	catch( ... )
+	{
+		ReleasePointer( pData );
+		throw;
+	}
 	
 	pthread_cleanup_push( (void (*)(void*)) pthread_mutex_unlock, (void *) &m_mtxRead );
 		pthread_mutex_lock( &m_mtxRead );

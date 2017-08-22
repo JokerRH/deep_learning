@@ -28,7 +28,7 @@ public:
 	CGazeCapture &operator=( const CGazeCapture &other ) = default;
 
 	CGazeCapture( CGazeCapture &&other ) = default;
-	CGazeCapture &operator=( CGazeCapture &&other ) = default;
+	CGazeCapture &operator=( CGazeCapture &&other );
 
 	std::string ToString( unsigned int uPrecision = std::numeric_limits< double >::max_digits10 ) const;
 	void WriteImage( void ) const;
@@ -64,4 +64,11 @@ inline CGazeCapture::CGazeCapture( void ) :
 	m_uImage( -1 )
 {
 
+}
+
+inline CGazeCapture &CGazeCapture::operator=( CGazeCapture &&other )
+{
+	this->~CGazeCapture( );
+	new( this ) CGazeCapture( std::move( other) );
+	return *this;
 }

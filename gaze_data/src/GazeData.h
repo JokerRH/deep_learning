@@ -12,7 +12,7 @@
 class CGazeData
 {
 public:
-	static bool OpenWrite( const std::string &sFile );
+	static bool OpenWrite( const std::string &sFile, bool fCreateDataFolder = true );
 	static void CloseWrite( void );
 	static bool OpenRead( const std::string &sFile );
 	static bool OpenReadRaw( const std::string &sFile );
@@ -31,7 +31,7 @@ public:
 	CGazeData &operator=( const CGazeData &other );
 
 	CGazeData( CGazeData &&other ) = default;
-	CGazeData &operator=( CGazeData &&other ) = default;
+	CGazeData &operator=( CGazeData &&other );
 	
 	bool Adjust( const char *szWindow );
 	
@@ -57,10 +57,14 @@ private:
 	unsigned int m_uImage;
 
 	static std::fstream s_File;
+	static std::fstream s_FileWrite;
 	static CQueue<CGazeData> s_Queue;
+	static CQueue<CGazeData> s_QueueWrite;
 	static CQueue<CGazeData> s_QueueRaw;
 	static std::vector<pthread_t> s_vecThread;
+	static std::vector<pthread_t> s_vecThreadWrite;
 	static std::vector<pthread_t> s_vecThreadRaw;
+	static std::vector<unsigned int> s_vecIgnore;
 
 	static double s_dEyeDistance;
 	static FILE *s_pFile;
@@ -71,6 +75,7 @@ private:
 
 	static const std::regex s_regex_name;
 	static const std::regex s_regex_dist;
+	static const std::regex s_regex_datapath;
 	static const std::regex s_regex_raw;
 	static const std::regex s_regex_data;
 	static const std::regex s_regex_line;
@@ -102,4 +107,11 @@ inline CGazeData::CGazeData( void ) :
 	m_uImage( -1 )
 {
 
+}
+
+inline CGazeData &CGazeData::operator=( CGazeData &&other )
+{
+	this->~CGazeData( );
+	new( this ) CGazeData( std::move( other ) );
+	return *this;
 }

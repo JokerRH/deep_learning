@@ -22,6 +22,7 @@ void CImage::GetScreenResolution( unsigned int &uWidth, unsigned int &uHeight )
 	Screen *s = DefaultScreenOfDisplay( d );
 	uWidth = s->width;
 	uHeight = s->height;
+	XCloseDisplay( d );
 #endif
 }
 
@@ -48,13 +49,13 @@ void CImage::TransferOwnership( unsigned int uLevel )
 
 void CImage::Show( const char *szWindow )
 {
-#ifdef _MSC_VER
+//#ifdef _MSC_VER
 	unsigned int uWidth;
 	unsigned int uHeight;
 	GetScreenResolution( uWidth, uHeight );
 	cv::Mat mat( uHeight, uWidth, CV_8UC3, cv::Scalar::all( 255 ) );
 
-	if( (unsigned int) matImage.cols > uWidth || (unsigned int) matImage.rows > uHeight )
+	//if( (unsigned int) matImage.cols > uWidth || (unsigned int) matImage.rows > uHeight )
 	{
 		double dScale = uWidth / (double) matImage.cols;
 		if( matImage.rows * dScale > (double) uHeight )
@@ -64,16 +65,17 @@ void CImage::Show( const char *szWindow )
 		cv::Rect rect( ( uWidth - size.width ) / 2, ( uHeight - size.height ) / 2, size.width, size.height );
 		cv::resize( matImage, mat( rect ), size );
 	}
-	else
+	//else
+	if( 0 )
 	{
 		cv::Rect rect( ( uWidth - matImage.cols ) / 2, ( uHeight - matImage.rows ) / 2, matImage.cols, matImage.rows );
 		matImage.copyTo( mat( rect ) );
 	}
 
 	cv::imshow( szWindow, mat );
-#else
-	cv::imshow( szWindow, matImage );
-#endif
+//#else
+	//cv::imshow( szWindow, matImage );
+//#endif
 }
 
 void CImage::Crop( CBBox &box, unsigned int uLevel )

@@ -12,6 +12,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <thread>
+#include <algorithm>
 #include <chrono>
 #define HAVE_STRUCT_TIMESPEC
 #include <pthread.h>
@@ -22,10 +23,14 @@
 using namespace cv;
 
 std::fstream CGazeData::s_File;
-CQueue<CGazeData> CGazeData::s_Queue( 10 );
-CQueue<CGazeData> CGazeData::s_QueueRaw( 10 );
+std::fstream CGazeData::s_FileWrite;
+CQueue<CGazeData> CGazeData::s_Queue( 100 );
+CQueue<CGazeData> CGazeData::s_QueueWrite( 100 );
+CQueue<CGazeData> CGazeData::s_QueueRaw( 100 );
 std::vector<pthread_t> CGazeData::s_vecThread;
+std::vector<pthread_t> CGazeData::s_vecThreadWrite;
 std::vector<pthread_t> CGazeData::s_vecThreadRaw;
+std::vector<unsigned int> CGazeData::s_vecIgnore;
 
 double CGazeData::s_dEyeDistance;
 FILE *CGazeData::s_pFile;
@@ -36,44 +41,121 @@ unsigned int CGazeData::s_uCurrentImage;
 
 const std::regex CGazeData::s_regex_name( R"a(name=([\s\S]*).*)a" );
 const std::regex CGazeData::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm.*)a" );
+const std::regex CGazeData::s_regex_datapath( R"a(data=([\s\S]*).*)a" );
 const std::regex CGazeData::s_regex_raw( R"a(raw=([\s\S]*).*)a" );
 const std::regex CGazeData::s_regex_data( R"a(data:.*)a" );
 const std::regex CGazeData::s_regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)@\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)@\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\).*)a" );
 
-bool CGazeData::OpenWrite( const std::string &sFile )
+bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
 {
-	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
-	s_uCurrentImage = 0;
-	s_dEyeDistance = CGazeCapture::s_dEyeDistance;
-	s_sName = CGazeCapture::s_sName;
-	s_sRawPath = CGazeCapture::s_sDataPath;
+	if( fCreateDataFolder )
+		s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
 
+	s_uCurrentImage = 0;
+
+	std::vector<std::string> vecLines;
+	if( CUtility::Exists( sFile ) )
+	{
+		//File exists, check which images have been processed
+		s_FileWrite.open( sFile, std::fstream::in );
+
+		std::smatch match;
+		unsigned char fFound = 0;
+		std::string sLine;
+		while( std::getline( s_FileWrite, sLine ) )
+		{
+			std::regex_match( sLine, match, s_regex_name );
+			if( match.size( ) )
+			{
+				s_sName = match[ 1 ].str( );
+				fFound |= 1;
+				continue;
+			}
+
+			std::regex_match( sLine, match, s_regex_dist );
+			if( match.size( ) )
+			{
+				s_dEyeDistance = std::stod( match[ 1 ].str( ) ) / 100;
+				fFound |= 2;
+				continue;
+			}
+
+			std::regex_match( sLine, match, s_regex_datapath );
+			if( match.size( ) )
+			{
+				s_sDataPath = match[ 1 ].str( );
+				fFound |= 4;
+				continue;
+			}
+
+			std::regex_match( sLine, match, s_regex_raw );
+			if( match.size( ) )
+			{
+				s_sRawPath = match[ 1 ].str( );
+				fFound |= 8;
+				continue;
+			}
+
+			std::regex_match( sLine, match, s_regex_data );
+			if( match.size( ) )
+			{
+				fFound |= 16;
+				break;	//Start of data
+			}
+		}
+
+		if( fFound != 31 )
+		{
+			fprintf( stderr, "File \"%s\" is missing fields\n", sFile.c_str( ) );
+			s_FileWrite.close( );
+			return false;
+		}
+		
+		while( std::getline( s_FileWrite, sLine ) )
+		{
+			std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
+			std::regex_match( sLine, match, s_regex_line );
+			if( !match.size( ) )
+				continue;
+
+			unsigned int uCurrent = std::stoul( match[ 7 ].str( ) );
+			s_vecIgnore.push_back( uCurrent );
+			vecLines.push_back( sLine );
+			s_uCurrentImage = std::max( (int) s_uCurrentImage, (int) uCurrent );
+		}
+		s_FileWrite.close( );
+	}
+	else
 #ifdef _MSC_VER
-	if( _mkdir( s_sDataPath.c_str( ) ) && errno != EEXIST )
-	{
-		perror( "Error creating directory" );
-		return false;
-	}
+		if( _mkdir( s_sDataPath.c_str( ) ) && errno != EEXIST )
+		{
+			perror( "Error creating directory" );
+			return false;
+		}
 #else
-	if( mkdir( s_sDataPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) && errno != EEXIST )
-	{
-		perror( "Error creating directory" );
-		return false;
-	}
+		if( mkdir( s_sDataPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) && errno != EEXIST )
+		{
+			perror( "Error creating directory" );
+			return false;
+		}
 #endif
 
-	s_File.open( sFile, std::fstream::out );
-	s_File << "name=" << s_sName << "\n";
-	s_File << "dist=" << std::to_string( s_dEyeDistance * 100 ) << "cm\n";
-	s_File << "raw=" << s_sRawPath << "\n";
-	s_File << "\ndata:\n";
+	s_FileWrite.open( sFile, std::fstream::out );
+	s_FileWrite << "name=" << s_sName << "\n";
+	s_FileWrite << "dist=" << std::to_string( s_dEyeDistance * 100 ) << "cm\n";
+	s_FileWrite << "data=" << s_sDataPath << "\n";
+	s_FileWrite << "raw=" << s_sRawPath << "\n";
+	s_FileWrite << "\ndata:\n";
+	for( auto line: vecLines )
+		s_FileWrite << line << std::endl;
 
 	CUtility::Cls( );
 	printf( "Name        : %s\n", s_sName.c_str( ) );
 	printf( "Eye distance: %4.2fcm\n", s_dEyeDistance * 100 );
 	printf( "Data path   : %s\n", s_sDataPath.c_str( ) );
 	printf( "Raw path    : %s\n", s_sRawPath.c_str( ) );
-	printf( "Next image  : %u\n", s_uCurrentImage );
+	printf( "Last image  : %u\n", s_uCurrentImage );
+	printf( "Processed   : %lu\n", s_vecIgnore.size( ) );
 	unsigned char cKey;
 	while( true )
 	{
@@ -82,8 +164,8 @@ bool CGazeData::OpenWrite( const std::string &sFile )
 		{
 		case 141:	//Numpad enter
 		case 10:	//Enter
-			s_vecThread.emplace_back( );
-			pthread_create( &s_vecThread[ 0 ], nullptr, WriteThread, nullptr );
+			s_vecThreadWrite.emplace_back( );
+			pthread_create( &s_vecThreadWrite[ 0 ], nullptr, WriteThread, nullptr );
 			return true;
 		case 27:	//Escape
 			return false;
@@ -93,12 +175,12 @@ bool CGazeData::OpenWrite( const std::string &sFile )
 
 void CGazeData::CloseWrite( void )
 {
-	for( std::vector<pthread_t>::iterator it = s_vecThread.begin( ); it < s_vecThread.end( ); it++ )
+	for( std::vector<pthread_t>::iterator it = s_vecThreadWrite.begin( ); it < s_vecThreadWrite.end( ); it++ )
 	{
 		pthread_cancel( *it );
 		pthread_join( *it, nullptr );
 	}
-	s_File.close( );
+	s_FileWrite.close( );
 }
 
 bool CGazeData::OpenRead( const std::string &sFile )
@@ -106,9 +188,7 @@ bool CGazeData::OpenRead( const std::string &sFile )
 	if( !CUtility::Exists( sFile ) )
 		return false;
 
-	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
 	s_uCurrentImage = (unsigned int) -1;
-	
 	s_File.open( sFile, std::fstream::in );
 	
 	{
@@ -133,23 +213,31 @@ bool CGazeData::OpenRead( const std::string &sFile )
 				continue;
 			}
 
+			std::regex_match( sLine, match, s_regex_datapath );
+			if( match.size( ) )
+			{
+				s_sDataPath = match[ 1 ].str( );
+				fFound |= 4;
+				continue;
+			}
+
 			std::regex_match( sLine, match, s_regex_raw );
 			if( match.size( ) )
 			{
 				s_sRawPath = match[ 1 ].str( );
-				fFound |= 4;
+				fFound |= 8;
 				continue;
 			}
 
 			std::regex_match( sLine, match, s_regex_data );
 			if( match.size( ) )
 			{
-				fFound |= 8;
+				fFound |= 16;
 				break;	//Start of data
 			}
 		}
 
-		if( fFound != 15 )
+		if( fFound != 31 )
 		{
 			fprintf( stderr, "File \"%s\" is missing fields\n", sFile.c_str( ) );
 			s_File.close( );
@@ -201,6 +289,10 @@ bool CGazeData::OpenReadRaw( const std::string &sFile )
 	if( !CGazeCapture::OpenRead( sFile ) )
 		return false;
 
+	s_dEyeDistance = CGazeCapture::s_dEyeDistance;
+	s_sName = CGazeCapture::s_sName;
+	s_sRawPath = CGazeCapture::s_sDataPath;
+
 	s_vecThreadRaw.emplace_back( );
 	s_vecThreadRaw.emplace_back( );
 	pthread_create( &s_vecThreadRaw[ 0 ], nullptr, ReadRawThread, nullptr );
@@ -210,7 +302,10 @@ bool CGazeData::OpenReadRaw( const std::string &sFile )
 
 bool CGazeData::ReadAsync( CGazeData &val )
 {
-	val = s_Queue.Pop_Front( );
+	do
+	{
+		val = s_Queue.Pop_Front( );
+	} while( std::find( s_vecIgnore.begin( ), s_vecIgnore.end( ), val.m_uImage ) != s_vecIgnore.end( ) );
 	if( val.m_uImage != (unsigned int) -1 )
 		return true;
 
@@ -225,7 +320,7 @@ bool CGazeData::ReadAsync( CGazeData &val )
 
 void CGazeData::WriteAsync( void )
 {
-	s_Queue.Push_Back( *this );
+	s_QueueWrite.Push_Back( *this );
 }
 
 bool CGazeData::ReadRawAsync( CGazeData &val )
@@ -348,7 +443,7 @@ bool CGazeData::Adjust( const char *szWindow )
 		bool fContinue = true;
 		while( fContinue )
 		{
-			cKey = waitKey( 0 );
+			cKey = CUtility::WaitKey( 0 );
 			switch( cKey )
 			{
 			case 8:		//Backspace
@@ -542,6 +637,8 @@ CGazeData::CGazeData( std::string sLine )
 		throw 0;
 
 	m_uImage = std::stoul( match[ 7 ].str( ) );
+	if( std::find( s_vecIgnore.begin( ), s_vecIgnore.end( ), m_uImage ) != s_vecIgnore.end( ) )
+		throw 2;	//Image on blacklist
 
 	double dFOV = std::stod( match[ 8 ].str( ) );
 	struct tm timeinfo = { 0 };
@@ -638,8 +735,8 @@ void *CGazeData::WriteThread( void *pArgs )
 	CGazeData data;
 	while( true )
 	{
-		data = s_Queue.Pop_Front( );
-		s_File << data.ToString( ) << "\n";
+		data = s_QueueWrite.Pop_Front( );
+		s_FileWrite << data.ToString( ) << std::endl;
 		data.WriteImage( );
 	}
 }
@@ -649,6 +746,9 @@ void *CGazeData::ReadRawThread( void *pArgs )
 	CGazeCapture capture;
 	while( CGazeCapture::ReadAsync( capture ) )
 	{
+		if( std::find( s_vecIgnore.begin( ), s_vecIgnore.end( ), capture.m_uImage ) != s_vecIgnore.end( ) )
+			continue;	//Image on blacklist
+
 		double dTanFOV = tan( capture.m_imgGaze.dFOV * M_PI / ( 2 * 180 ) );
 		std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( capture.m_imgGaze );
 		for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )

@@ -87,6 +87,24 @@ void CBaseHighlighter::Shift( const CVector<2> &vec2Offset )
 		m_dPositionY = 1;
 }
 
+void CBaseHighlighter::MakeInvalid( void )
+{
+	if( m_pParentBox )
+		m_pParentBox->RemoveChild( this );
+
+	if( !m_vecpChildren.size( ) )
+	{
+		strncpy( const_cast<char *>( this->szName ), "Unassigned", 31 );
+		return;
+	}
+
+	fprintf( stderr, "Error invalidating \"%s\"; The following child elements would be invalid:\n", szName );
+	for( std::vector<CBaseHighlighter *>::iterator it = m_vecpChildren.begin( ); it < m_vecpChildren.end( ); it++ )
+		fprintf( stderr, "  \"%s\"\n", ( *it )->szName );
+
+	assert( !m_vecpChildren.size( ) );
+}
+
 void CBaseHighlighter::TransferOwnership( unsigned int uLevel )
 {
 	if( !uLevel || !m_pParentBox->m_pParentBox )

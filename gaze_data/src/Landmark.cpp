@@ -39,10 +39,10 @@ CBBox CLandmark::GetEyeBox( const std::deque<CBBox> &vecEyes, const CVector<2> &
 
 struct greater_than_key
 {
-    inline bool operator()( const vector<Point> &vec1, const vector<Point> &vec2 )
-    {
-        return ( contourArea( vec1, false ) > contourArea( vec2, false ) );
-    }
+	inline bool operator()( const vector<Point> &vec1, const vector<Point> &vec2 )
+	{
+		return ( contourArea( vec1, false ) > contourArea( vec2, false ) );
+	}
 };
 
 CPoint CLandmark::GetPoint( CBBox &box )
@@ -88,13 +88,12 @@ CPoint CLandmark::GetPointManual( CBBox &box, CPoint pt, const char *szWindow )
 	double dStepY = 1.0 / box.GetHeight( -1 );
 	unsigned char cKey;
 	CImage imgFocus;
-	CImage imgDraw;
 	
 	imgFocus.Crop( box );
 	while( true )
 	{
-		imgDraw = CImage( imgFocus, "Image_Draw" );
-		pt = CPoint( imgDraw, dX, dY, "Point_Eye" );
+		CImage imgDraw( imgFocus, "Image_Draw" );
+		CPoint pt = CPoint( imgDraw, dX, dY, "Point_Eye" );
 		pt.Draw( Scalar( 0, 255, 255 ), 1, -1, 0 );
 		imgDraw.Show( szWindow );
 

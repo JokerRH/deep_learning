@@ -25,6 +25,7 @@ public:
 	virtual CBaseBBox *GetParent( unsigned int uLevel = -1 );
 	void Shift( const CVector<2> &vec2Offset );
 	bool IsValid( void ) const;
+	void MakeInvalid( void );
 
 	virtual void TransferOwnership( unsigned int uLevel = 1 );
 	virtual void TransferOwnership( CBaseBBox &parentBox );

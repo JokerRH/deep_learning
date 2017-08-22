@@ -80,9 +80,6 @@ int EditDataset( const char *szFile )
 
 int ProcessDataset( const char *szSrc, const char *szDst )
 {	
-	namedWindow( "Window", CV_WINDOW_NORMAL );
-	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
-	
 	CLandmarkCandidate::Init( );
 	CScenery::SetScenery( g_Config.vec3MonitorPos, g_Config.vec3MonitorDim );
 	
@@ -93,10 +90,46 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 	if( !CGazeData::OpenWrite( std::string( szDst ) ) )
 		return EXIT_SUCCESS;
 
+	namedWindow( "Window", CV_WINDOW_NORMAL );
+	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+
 	try
 	{
 		CGazeData data;
 		while( CGazeData::ReadRawAsync( data ) )
+			data.WriteAsync( );
+	}
+	catch( int i )
+	{
+		if( i != 1 )
+			throw;
+	}
+	
+	CGazeData::CloseWrite( );
+
+	destroyAllWindows( );
+	return EXIT_SUCCESS;
+}
+
+int AdjustDataset( const char *szSrc, const char *szDst )
+{	
+	CLandmarkCandidate::Init( );
+	CScenery::SetScenery( g_Config.vec3MonitorPos, g_Config.vec3MonitorDim );
+	
+	srand( (unsigned int) time( nullptr ) );
+	if( !CGazeData::OpenRead( std::string( szSrc ) ) )
+		return EXIT_SUCCESS;
+	
+	if( !CGazeData::OpenWrite( std::string( szDst ), false ) )
+		return EXIT_SUCCESS;
+
+	namedWindow( "Window", CV_WINDOW_NORMAL );
+	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+
+	try
+	{
+		CGazeData data;
+		while( CGazeData::ReadAsync( data ) )
 		{
 			if( data.Adjust( "Window" ) )
 				data.WriteAsync( );
@@ -307,13 +340,22 @@ int main(int argc, char **argv)
 	}
 	else if( argc == 4 )
 	{
-		#ifdef _MSC_VER
+#ifdef _MSC_VER
 		if( !_stricmp( argv[ 1 ], "proc" ) )
 #else
 		if( !strcasecmp( argv[ 1 ], "proc" ) )
 #endif
 		{
 			return ProcessDataset( argv[ 2 ], argv[ 3 ] );
+		}
+		
+#ifdef _MSC_VER
+		if( !_stricmp( argv[ 1 ], "adj" ) )
+#else
+		if( !strcasecmp( argv[ 1 ], "adj" ) )
+#endif
+		{
+			return AdjustDataset( argv[ 2 ], argv[ 3 ] );
 		}
 	}
 	
