@@ -84,7 +84,7 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 	CScenery::SetScenery( g_Config.vec3MonitorPos, g_Config.vec3MonitorDim );
 	
 	srand( (unsigned int) time( nullptr ) );
-	if( !CGazeData::OpenReadRaw( std::string( szSrc ) ) )
+	if( !CGazeData::OpenReadRaw( std::string( szSrc ), std::string( szDst ) ) )
 		return EXIT_SUCCESS;
 	
 	if( !CGazeData::OpenWrite( std::string( szDst ) ) )
