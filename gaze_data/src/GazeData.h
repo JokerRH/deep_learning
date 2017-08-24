@@ -9,6 +9,19 @@
 #include <vector>
 #include <fstream>
 
+struct gazedata
+{
+	gazedata( std::string sLine );
+
+	time_t time;
+	unsigned int uImage;
+	double dFOV;
+	CVector<2> vec2EyeLeft;
+	CVector<2> vec2PYLeft;
+	CVector<2> vec2EyeRight;
+	CVector<2> vec2PYRight;
+}
+
 class CGazeData
 {
 public:

@@ -46,6 +46,34 @@ const std::regex CGazeData::s_regex_raw( R"a(raw=([\s\S]*).*)a" );
 const std::regex CGazeData::s_regex_data( R"a(data:.*)a" );
 const std::regex CGazeData::s_regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)@\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)@\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\).*)a" );
 
+gazedata::gazedata( std::string sLine )
+{
+	std::smatch match;
+	std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
+	std::regex_match( sLine, match, s_regex_line );
+	if( !match.size( ) )
+		throw 0;
+
+	{
+		struct tm timeinfo = { 0 };
+		timeinfo.tm_sec = std::stoi( match[ 6 ].str( ) );
+		timeinfo.tm_min = std::stoi( match[ 5 ].str( ) );
+		timeinfo.tm_hour = std::stoi( match[ 4 ].str( ) );
+		timeinfo.tm_mday = std::stoi( match[ 3 ].str( ) );
+		timeinfo.tm_mon = std::stoi( match[ 2 ].str( ) ) - 1;
+		timeinfo.tm_year = std::stoi( match[ 1 ].str( ) ) - 1900;
+		time = mktime( &timeinfo );
+	}
+
+	uImage = std::stoul( match[ 7 ].str( ) );
+	dFOV = std::stod( match[ 8 ].str( ) );
+
+	vec2EyeLeft( { std::stod( match[ 9 ].str( ) ), std::stod( match[ 10 ].str( ) } );
+	vec2PYLeft( { std::stod( match[ 11 ].str( ) ), std::stod( match[ 12 ].str( ) ) } );
+	vec2EyeRight( { std::stod( match[ 13 ].str( ) ), std::stod( match[ 14 ].str( ) } );
+	vec2PYRight( { std::stod( match[ 15 ].str( ) ), std::stod( match[ 16 ].str( ) ) } );
+}
+
 bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
 {
 	if( fCreateDataFolder )
