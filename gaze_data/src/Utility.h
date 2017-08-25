@@ -10,11 +10,13 @@
 class CUtility
 {
 public:
+	static int Stricmp( const char *szA, const char *szB );
 	static unsigned char WaitKey( unsigned int uTime );
 	static void Cls( void );
 	static unsigned char GetChar( void );
 	
 	static bool Exists( const std::string &sFile );
+	static bool CreateFolder( const std::string &sPath );
 	static std::string GetPath( const std::string &sFile );
 	static std::string GetFile( const std::string &sFile );
 	static std::string GetFileName( const std::string &sFile );
@@ -27,6 +29,15 @@ private:
 	CUtility( void ) = delete;
 	CUtility( const CUtility & ) = delete;
 };
+
+inline int CUtility::Stricmp( const char *szA, const char *szB )
+{
+#ifdef _MSC_VER
+		return _stricmp( szA, szB );
+#else
+		return strcasecmp( szA, szB );
+#endif
+}
 
 inline bool CUtility::Exists( const std::string &sFile )
 {

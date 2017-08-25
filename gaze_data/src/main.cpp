@@ -96,7 +96,7 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 	try
 	{
 		CGazeData data;
-		while( CGazeData::ReadRawAsync( data ) )
+		while( CGazeData::ReadAsync( data ) )
 			data.WriteAsync( );
 	}
 	catch( int i )
@@ -219,75 +219,6 @@ int TestImage( void )
 	return EXIT_SUCCESS;
 }
 
-int RenderTest( void )
-{
-	CVector<3> vec3Monitor( { -0.2375, -0.02, -0.02 } );
-	CVector<3> vec3MonitorDim( { 0.475, -0.298, -0.03 } );
-	
-	CVector<3> vec3EyeLeft( { 0.0325, -0.02, 0.5 } );
-	CVector<3> vec3EyeRight( { -0.0325, 0, 0.5 } );
-	CVector<3> vec3Gaze( { 0.2, -0.15, -0.02 } );
-	CRay rayEyeLeft( vec3EyeLeft, vec3Gaze - vec3EyeLeft );
-	CRay rayEyeRight( vec3EyeRight, vec3Gaze - vec3EyeRight );
-	
-	CScenery scenery( vec3Monitor, vec3MonitorDim, rayEyeLeft, rayEyeRight );
-	CImage img( "Image_Scenery" );
-	img.matImage = cv::Mat( 1050, 1050, CV_8UC3, cv::Scalar( 0, 0, 0 ) );
-
-	namedWindow( "Window", CV_WINDOW_NORMAL );
-	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
-
-	unsigned char cKey;
-	bool fContinue = true;
-	double dDegX = 0;
-	double dDegY = 0;
-	while( fContinue )
-	{
-		CImage imgDraw( img, "Image_Draw" );
-		
-		scenery.Transformed( CRenderHelper::GetRotationMatrix( dDegX, dDegY, 0 ) ).Fit( ).Draw( imgDraw );
-		imgDraw.Show( "Window" );
-
-		//cKey = (unsigned char) waitKey( 0 );
-		cKey = CUtility::WaitKey( 0 );
-		switch( cKey )
-		{
-		case 27:	//Escape
-			fContinue = false;
-			break;
-		case 81:	//Key)_Left
-			dDegY -= 1;
-			if( dDegY < 0 )
-				dDegY = 360;
-
-			break;
-		case 82:	//Key_Up
-			dDegX -= 1;
-			if( dDegX < 0 )
-				dDegX = 360;
-
-			break;
-		case 83:	//Key_Right
-			dDegY += 1;
-			if( dDegY > 360 )
-				dDegY = 0;
-
-			break;
-		case 84:	//Key_Down
-			dDegX += 1;
-			if( dDegX > 360 )
-				dDegX = 0;
-
-			break;
-		default:
-			printf( "Key: %u\n", cKey & 0xFF );
-		}
-	}
-
-	destroyAllWindows( );
-	return EXIT_SUCCESS;
-}
-
 int main(int argc, char **argv)
 {
 /*
@@ -310,53 +241,29 @@ int main(int argc, char **argv)
 
 	if( argc == 2 )
 	{
-#ifdef _MSC_VER
-		if( !_stricmp( argv[ 1 ], "test" ) )
-#else
-		if( !strcasecmp( argv[ 1 ], "test" ) )
-#endif
-		{
+		if( !CUtility::Stricmp( argv[ 1 ], "test" ) )
 			return TestImage( );
-		}
 	}
 	else if( argc == 3 )
 	{
-#ifdef _MSC_VER
-		if( !_stricmp( argv[ 1 ], "edit" ) )
-#else
-		if( !strcasecmp( argv[ 1 ], "edit" ) )
-#endif
-		{
+		if( !CUtility::Stricmp( argv[ 1 ], "edit" ) )
 			return EditDataset( argv[ 2 ] );
-		}
-#ifdef _MSC_VER
-		else if( !_stricmp( argv[ 1 ], "show" ) )
-#else
-		else if( !strcasecmp( argv[ 1 ], "show" ) )
-#endif
-		{
+		else if( !CUtility::Stricmp( argv[ 1 ], "show" ) )
 			return ShowDataset( argv[ 2 ] );
-		}
 	}
 	else if( argc == 4 )
 	{
-#ifdef _MSC_VER
-		if( !_stricmp( argv[ 1 ], "proc" ) )
-#else
-		if( !strcasecmp( argv[ 1 ], "proc" ) )
-#endif
-		{
+		if( !CUtility::Stricmp( argv[ 1 ], "proc" ) )
 			return ProcessDataset( argv[ 2 ], argv[ 3 ] );
-		}
-		
-#ifdef _MSC_VER
-		if( !_stricmp( argv[ 1 ], "adj" ) )
-#else
-		if( !strcasecmp( argv[ 1 ], "adj" ) )
-#endif
-		{
+		else if( !CUtility::Stricmp( argv[ 1 ], "adj" ) )
 			return AdjustDataset( argv[ 2 ], argv[ 3 ] );
-		}
+		else if( !CUtility::Stricmp( argv[ 1 ], "exp" ) )
+			return CGazeData::Export( argv[ 2 ], argv[ 3 ] ) ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
+	else if( argc == 5 )
+	{
+		if( !CUtility::Stricmp( argv[ 1 ], "exp" ) )
+			return CGazeData::Export( argv[ 2 ], argv[ 3 ], atof( argv[ 4 ] ) ) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	
 	fprintf( stderr, "Invalid arguments\n" );

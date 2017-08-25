@@ -22,23 +22,12 @@
 
 using namespace cv;
 
-std::fstream CGazeData::s_File;
-std::fstream CGazeData::s_FileWrite;
-CQueue<CGazeData> CGazeData::s_Queue( 100 );
-CQueue<CGazeData> CGazeData::s_QueueWrite( 100 );
-CQueue<CGazeData> CGazeData::s_QueueRaw( 100 );
-std::vector<pthread_t> CGazeData::s_vecThread;
-std::vector<pthread_t> CGazeData::s_vecThreadWrite;
-std::vector<pthread_t> CGazeData::s_vecThreadRaw;
-std::vector<unsigned int> CGazeData::s_vecIgnore;
-
 gazedata_set CGazeData::s_DataSet;
-double CGazeData::s_dEyeDistance;
-FILE *CGazeData::s_pFile;
-std::string CGazeData::s_sName;
-std::string CGazeData::s_sDataPath;
-std::string CGazeData::s_sRawPath;
-unsigned int CGazeData::s_uCurrentImage;
+CQueue<CGazeData> CGazeData::s_QueueRead( 100 );
+CQueue<CGazeData> CGazeData::s_QueueWrite( 100 );
+std::vector<pthread_t> CGazeData::s_vecThreadRead;
+std::vector<pthread_t> CGazeData::s_vecThreadWrite;
+unsigned CGazeData::s_uNextImage;
 
 const std::regex gazedata_set::s_regex_name( R"a(name=([\s\S]*).*)a" );
 const std::regex gazedata_set::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm.*)a" );
@@ -75,7 +64,7 @@ gazedata::gazedata( std::string sLine )
 	vec2PYRight = CVector<2>( { std::stod( match[ 15 ].str( ) ), std::stod( match[ 16 ].str( ) ) } );
 }
 
-std::string gazedata::ToString( unsigned int uPrecision )
+std::string gazedata::ToString( unsigned int uPrecision ) const
 {
 	std::ostringstream out;
 	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
@@ -92,6 +81,16 @@ std::string gazedata::ToString( unsigned int uPrecision )
 	out << " " << uImage << " " << dFOV;
 	out << " (" << vec2EyeLeft[ 0 ] << ", " << vec2EyeLeft[ 1 ] << ")@(" << vec2PYLeft[ 0 ] << ", " << vec2PYLeft[ 1 ] << ")";
 	out << " (" << vec2EyeRight[ 0 ] << ", " << vec2EyeRight[ 1 ] << ")@(" << vec2PYRight[ 0 ] << ", " << vec2PYRight[ 1 ] << ")";
+	return out.str( );
+}
+
+std::string gazedata::ToCSV( void ) const
+{
+	std::ostringstream out;
+	out << (unsigned) ( vec2EyeLeft[ 0 ] * 255 ) << "," << (unsigned) ( vec2EyeLeft[ 1 ] * 255 ) << ",";
+	out << (unsigned) ( vec2PYLeft[ 0 ] * 127 + 127 ) << "," << (unsigned) ( vec2PYLeft[ 1 ] * 127 + 127 ) << ",";
+	out << (unsigned) ( vec2EyeRight[ 0 ] * 255 ) << "," << (unsigned) ( vec2EyeRight[ 1 ] * 255 ) << ",";
+	out << (unsigned) ( vec2PYRight[ 0 ] * 127 + 127 ) << "," << (unsigned) ( vec2PYRight[ 1 ] * 127 + 127 );
 	return out.str( );
 }
 
@@ -184,10 +183,20 @@ gazedata_set::gazedata_set( const std::vector<gazedata> &vecData, const std::str
 	sDataPath( sDataPath ),
 	sRawPath( sRawPath )
 {
-	
+	pthread_spin_init( &m_spinIterator, PTHREAD_PROCESS_PRIVATE );
+	ResetIterator( );
 }
 
-bool gazedata_set::Write( const std::string &sFile )
+void gazedata_set::Write( const gazedata &data, unsigned uPrecision )
+{
+	pthread_cleanup_push( (void (*)(void *)) pthread_spin_unlock, (void *) &m_spinIterator );
+		pthread_spin_lock( &m_spinIterator );
+		vecData.push_back( data );
+		m_FileWrite << data.ToString( uPrecision ) << std::endl;
+	pthread_cleanup_pop( 1 );
+}
+
+bool gazedata_set::WriteAll( const std::string &sFile )
 {
 	std::fstream file( sFile, std::fstream::out );
 	if( !file.is_open( ) )
@@ -208,6 +217,45 @@ bool gazedata_set::Write( const std::string &sFile )
 	return true;
 }
 
+unsigned gazedata_set::RemoveDuplicates( void )
+{
+	unsigned int uSize = vecData.size( );
+	vecData.erase( std::unique( vecData.begin( ), vecData.end( ), []( const gazedata &dataA, const gazedata &dataB )
+		{
+			return dataA.uImage == dataB.uImage;
+		} ), vecData.end( ) );
+		
+	return uSize - vecData.size( );
+}
+
+bool gazedata_set::Export( const std::string &sPath )
+{
+	std::fstream fileLabels( sPath + "/labels.csv", std::fstream::out );
+	if( !fileLabels.is_open( ) )
+	{
+		fprintf( stderr, "Unable to open file \"%s\"\n", ( sPath + "/labels.csv" ).c_str( ) );			
+		return false;
+	}
+
+	std::fstream fileData( sPath + "/data.txt", std::fstream::out );
+	if( !fileData.is_open( ) )
+	{
+		fprintf( stderr, "Unable to open file \"%s\"\n", ( sPath + "/data.txt" ).c_str( ) );			
+		fileLabels.close( );
+		return false;
+	}
+	
+	for( auto &data: vecData )
+	{
+		fileLabels << data.ToCSV( ) << std::endl;
+		fileData << "img_" << data.uImage << ".jpg 0" << std::endl;
+	}
+		
+	fileLabels.close( );
+	fileData.close( );
+	return true;
+}
+
 bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
 {
 	gazedata_set dataset;
@@ -217,24 +265,28 @@ bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
 	else
 	{
 #ifdef _MSC_VER
-		if( _mkdir( s_sDataPath.c_str( ) ) && errno != EEXIST )
+		if( _mkdir( s_DataSet.sDataPath.c_str( ) ) && errno != EEXIST )
 		{
 			perror( "Error creating directory" );
 			return false;
 		}
 #else
-		if( mkdir( s_sDataPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) && errno != EEXIST )
+		if( mkdir( s_DataSet.sDataPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) && errno != EEXIST )
 		{
 			perror( "Error creating directory" );
 			return false;
 		}
 #endif
 	
-		dataset = gazedata_set( s_DataSet );
+		//dataset = gazedata_set( s_DataSet );
 	}
 
 	dataset.Sort( );
 	dataset.Write( sFile );
+	if( s_DataSet.vecData.size( ) )
+		s_uNextImage = s_DataSet.vecData.back( ).uImage + 1;
+	else
+		s_uNextImage = 0;
 
 	CUtility::Cls( );
 	printf( "Name        : %s\n", dataset.sName.c_str( ) );
@@ -242,7 +294,7 @@ bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
 	printf( "Data path   : %s\n", dataset.sDataPath.c_str( ) );
 	printf( "Raw path    : %s\n", dataset.sRawPath.c_str( ) );
 	printf( "Images      : %lu\n", dataset.vecData.size( ) );
-	printf( "Last image  : %u\n", dataset.vecData.back( ).uImage );
+	printf( "Next image  : %u\n", s_uNextImage );
 	unsigned char cKey;
 	while( true )
 	{
@@ -252,7 +304,7 @@ bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
 		case 141:	//Numpad enter
 		case 10:	//Enter
 			s_vecThreadWrite.emplace_back( );
-			pthread_create( &s_vecThreadWrite[ 0 ], nullptr, (void *(*)(void *)) WriteThread, new gazedata_set( dataset ) );
+			pthread_create( &s_vecThreadWrite[ 0 ], nullptr, WriteThread, nullptr );
 			return true;
 		case 27:	//Escape
 			return false;
@@ -267,7 +319,6 @@ void CGazeData::CloseWrite( void )
 		pthread_cancel( *it );
 		pthread_join( *it, nullptr );
 	}
-	s_FileWrite.close( );
 }
 
 bool CGazeData::OpenRead( const std::string &sFile )
@@ -277,6 +328,10 @@ bool CGazeData::OpenRead( const std::string &sFile )
 		
 	s_DataSet = gazedata_set::LoadList( sFile );
 	s_DataSet.Sort( );
+	if( s_DataSet.vecData.size( ) )
+		s_uNextImage = s_DataSet.vecData.back( ).uImage + 1;
+	else
+		s_uNextImage = 0;
 
 	CUtility::Cls( );
 	printf( "Name        : %s\n", s_DataSet.sName.c_str( ) );
@@ -284,7 +339,7 @@ bool CGazeData::OpenRead( const std::string &sFile )
 	printf( "Data path   : %s\n", s_DataSet.sDataPath.c_str( ) );
 	printf( "Raw path    : %s\n", s_DataSet.sRawPath.c_str( ) );
 	printf( "Images      : %lu\n", s_DataSet.vecData.size( ) );
-	printf( "Last image  : %u\n", s_DataSet.vecData.back( ).uImage );
+	printf( "Next image  : %u\n", s_uNextImage );
 	unsigned char cKey;
 	while( true )
 	{
@@ -293,8 +348,8 @@ bool CGazeData::OpenRead( const std::string &sFile )
 		{
 		case 141:	//Numpad enter
 		case 10:	//Enter
-			s_vecThread.emplace_back( );
-			pthread_create( &s_vecThread[ 0 ], nullptr, (void *(*)(void *)) ReadThread, new gazedata_set( s_DataSet ) );
+			s_vecThreadRead.emplace_back( );
+			pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadThread, nullptr );
 			return true;
 		case 27:	//Escape
 			return false;
@@ -308,30 +363,53 @@ bool CGazeData::OpenReadRaw( const std::string &sFileRaw, const std::string &sFi
 		return false;
 
 	s_DataSet = gazedata_set::LoadList( sFile );
-	gazedata_set dataset_new( s_DataSet.vecData, s_DataSet.sName, s_DataSet.dEyeDistance, s_DataSet.sDataPath, CGazeCapture::s_sDataPath );
+	s_DataSet = gazedata_set::LoadList( sFile );
+	s_DataSet.Sort( );
+	if( s_DataSet.vecData.size( ) )
+		s_uNextImage = s_DataSet.vecData.back( ).uImage + 1;
+	else
+		s_uNextImage = 0;
 
-	s_vecThreadRaw.emplace_back( );
-	s_vecThreadRaw.emplace_back( );
-	pthread_create( &s_vecThreadRaw[ 0 ], nullptr, (void *(*)(void *)) ReadRawThread, new gazedata_set( dataset_new ) );
-	pthread_create( &s_vecThreadRaw[ 1 ], nullptr, (void *(*)(void *)) ReadRawThread, new gazedata_set( dataset_new ) );
+	CUtility::Cls( );
+	printf( "Name        : %s\n", s_DataSet.sName.c_str( ) );
+	printf( "Eye distance: %4.2fcm\n", s_DataSet.dEyeDistance * 100 );
+	printf( "Data path   : %s\n", s_DataSet.sDataPath.c_str( ) );
+	printf( "Raw path    : %s\n", s_DataSet.sRawPath.c_str( ) );
+	printf( "Proc path   : %s\n", CGazeCapture::s_sDataPath.c_str( ) );
+	printf( "Images      : %lu\n", s_DataSet.vecData.size( ) );
+	printf( "Next image  : %u\n", s_uNextImage );
+	unsigned char cKey;
+	while( true )
+	{
+		cKey = CUtility::GetChar( );
+		switch( cKey )
+		{
+		case 141:	//Numpad enter
+		case 10:	//Enter
+			s_vecThreadRead.emplace_back( );
+			s_vecThreadRead.emplace_back( );
+			pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadRawThread, nullptr );
+			pthread_create( &s_vecThreadRead[ 1 ], nullptr, ReadRawThread, nullptr );
+			return true;
+		case 27:	//Escape
+			return false;
+		}
+	}
+
 	return true;
 }
 
 bool CGazeData::ReadAsync( CGazeData &val )
 {
-	do
-	{
-		val = s_Queue.Pop_Front( );
-	} while( std::find( s_vecIgnore.begin( ), s_vecIgnore.end( ), val.m_uImage ) != s_vecIgnore.end( ) );
+	val = s_QueueRead.Pop_Front( );
 	if( val.m_uImage != (unsigned int) -1 )
 		return true;
 
-	for( std::vector<pthread_t>::iterator it = s_vecThread.begin( ); it < s_vecThread.end( ); it++ )
+	for( std::vector<pthread_t>::iterator it = s_vecThreadRead.begin( ); it < s_vecThreadRead.end( ); it++ )
 	{
 		pthread_cancel( *it );
 		pthread_join( *it, nullptr );
 	}
-	s_File.close( );
 	return false;
 }
 
@@ -340,19 +418,142 @@ void CGazeData::WriteAsync( void )
 	s_QueueWrite.Push_Back( *this );
 }
 
-bool CGazeData::ReadRawAsync( CGazeData &val )
+bool CGazeData::Export( const std::string &sFile, const std::string &sPath, double dTrainValRatio )
 {
-	val = s_QueueRaw.Pop_Front( );
-	if( val.m_uImage != (unsigned int) -1 )
-		return true;
+	const std::string sTrainPath = sPath + "/train/";
+	const std::string sValPath = sPath + "/val/";
 
-	for( std::vector<pthread_t>::iterator it = s_vecThreadRaw.begin( ); it < s_vecThreadRaw.end( ); it++ )
+	CUtility::CreateFolder( sPath );
+	CUtility::CreateFolder( sTrainPath );
+	CUtility::CreateFolder( sValPath );
+	
+	s_DataSet = gazedata_set::LoadList( sFile );
+	s_DataSet.Sort( );
+	if( s_DataSet.vecData.size( ) )
+		s_uNextImage = s_DataSet.vecData.back( ).uImage + 1;
+	else
+		s_uNextImage = 0;
+	
+	unsigned uDuplicates = s_DataSet.RemoveDuplicates( );
+
+	CUtility::Cls( );
+	printf( "Name        : %s\n", s_DataSet.sName.c_str( ) );
+	printf( "Eye distance: %4.2fcm\n", s_DataSet.dEyeDistance * 100 );
+	printf( "Data path   : %s\n", s_DataSet.sDataPath.c_str( ) );
+	printf( "Raw path    : %s\n", s_DataSet.sRawPath.c_str( ) );
+	printf( "Images      : %lu\n", s_DataSet.vecData.size( ) );
+	printf( "Next image  : %u\n", s_uNextImage );
+	printf( "Validation  : %u\n", (unsigned) ( s_DataSet.vecData.size( ) * dTrainValRatio ) );
+	printf( "Training    : %u\n", (unsigned) ( s_DataSet.vecData.size( ) * ( 1 - dTrainValRatio ) ) );
+	if( uDuplicates )
+		printf( "Warning: Removed %u duplicates\n", uDuplicates );
+
+	unsigned char cKey = 255;
+	while( cKey )
 	{
-		pthread_cancel( *it );
-		pthread_join( *it, nullptr );
+		cKey = CUtility::GetChar( );
+		switch( cKey )
+		{
+		case 141:	//Numpad enter
+		case 10:	//Enter
+			cKey = 0;
+			break;
+		case 27:	//Escape
+			return true;
+		}
 	}
-	s_File.close( );
-	return false;
+	
+	s_DataSet.Shuffle( );
+	gazedata_set setTrain(
+		std::vector<gazedata>( s_DataSet.vecData.begin( ), s_DataSet.vecData.begin( ) + s_DataSet.vecData.size( ) * dTrainValRatio ),
+		s_DataSet.sName,
+		s_DataSet.dEyeDistance,
+		s_DataSet.sDataPath,
+		s_DataSet.sRawPath
+	);
+	
+	gazedata_set setVal(
+		std::vector<gazedata>( s_DataSet.vecData.begin( ) + s_DataSet.vecData.size( ) * dTrainValRatio, s_DataSet.vecData.end( ) ),
+		s_DataSet.sName,
+		s_DataSet.dEyeDistance,
+		s_DataSet.sDataPath,
+		s_DataSet.sRawPath
+	);
+	
+	CUtility::Cls( );
+	CGazeData val;
+	double dTotal;
+	double dCurrent;
+
+	//Process training data
+	printf( "Writing training data to %s\n", sTrainPath.c_str( ) );
+	s_DataSet = setTrain;
+	s_vecThreadRead.emplace_back( );
+	s_vecThreadRead.emplace_back( );
+	s_vecThreadRead.emplace_back( );
+	s_vecThreadRead.emplace_back( );
+	pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadThread, nullptr );
+	pthread_create( &s_vecThreadRead[ 1 ], nullptr, ReadThread, nullptr );
+	pthread_create( &s_vecThreadRead[ 2 ], nullptr, ReadThread, nullptr );
+	pthread_create( &s_vecThreadRead[ 3 ], nullptr, ReadThread, nullptr );
+	dTotal = s_DataSet.vecData.size( );
+	dCurrent = 0;
+	while( ReadAsync( val ) )
+	{
+		val.RandomizeFace( 0.1 );
+		val.WriteImage( sTrainPath );
+		
+		//Write %
+		dCurrent++;
+		printf( "\r%3.0f%%", dCurrent / dTotal * 100 );
+		fflush( stdout );
+	}
+	putchar( '\n' );
+	pthread_join( s_vecThreadRead[ 0 ], nullptr );
+	pthread_join( s_vecThreadRead[ 1 ], nullptr );
+	pthread_join( s_vecThreadRead[ 2 ], nullptr );
+	pthread_join( s_vecThreadRead[ 3 ], nullptr );
+	s_vecThreadRead.clear( );
+	setTrain.Sort( );
+	if( !setTrain.Export( sTrainPath ) )
+		return false;
+	
+	//Process training data
+	printf( "Writing validation data to %s\n", sValPath.c_str( ) );
+	s_DataSet = setVal;
+	s_vecThreadRead.emplace_back( );
+	s_vecThreadRead.emplace_back( );
+	s_vecThreadRead.emplace_back( );
+	s_vecThreadRead.emplace_back( );
+	pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadThread, nullptr );
+	pthread_create( &s_vecThreadRead[ 1 ], nullptr, ReadThread, nullptr );
+	pthread_create( &s_vecThreadRead[ 2 ], nullptr, ReadThread, nullptr );
+	pthread_create( &s_vecThreadRead[ 3 ], nullptr, ReadThread, nullptr );
+	dTotal = s_DataSet.vecData.size( );
+	dCurrent = 0;
+	while( ReadAsync( val ) )
+	{
+		val.RandomizeFace( 0.1 );
+		val.WriteImage( sValPath );
+		
+		//Write %
+		dCurrent++;
+		printf( "\r%3.0f%%", dCurrent / dTotal * 100 );
+		fflush( stdout );
+	}
+	putchar( '\n' );
+	pthread_join( s_vecThreadRead[ 0 ], nullptr );
+	pthread_join( s_vecThreadRead[ 1 ], nullptr );
+	pthread_join( s_vecThreadRead[ 2 ], nullptr );
+	pthread_join( s_vecThreadRead[ 3 ], nullptr );
+	s_vecThreadRead.clear( );
+	setVal.Sort( );
+	if( !setVal.Export( sValPath ) )
+		return false;
+	
+	printf( "Done.\n" );
+	CUtility::GetChar( );
+	return true;
 }
 
 std::vector<CGazeData> CGazeData::GetGazeData( CGazeCapture &capture )
@@ -418,7 +619,7 @@ CGazeData::CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double d
 		dPixelDif = ( vec2EyeRight - vec2EyeLeft ).Abs( );
 	}
 	double dPixelDiagonal = sqrt( dWidth * dWidth + dHeight * dHeight );
-	double dDistance = GetDistance( s_dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
+	double dDistance = GetDistance( s_DataSet.dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
 
 	CVector<3> vec3EyeLeft(
 	{
@@ -637,15 +838,29 @@ std::string CGazeData::ToString( unsigned int uPrecision ) const
 	return out.str( );
 }
 
-void CGazeData::WriteImage( void ) const
+void CGazeData::WriteImage( const std::string &sPath ) const
 {
 	CImage img( m_imgGaze );
 	CBBox boxFace( m_boxFace );
 	img.Crop( boxFace );
-	imwrite( s_sDataPath + "img_" + std::to_string( m_uImage ) + ".jpg", img.matImage );
+	imwrite( sPath + "img_" + std::to_string( m_uImage ) + ".jpg", img.matImage );
 }
 
-CGazeData::CGazeData( const gazedata_set &set, const gazedata &data )
+gazedata CGazeData::ToData( void ) const
+{
+	return gazedata(
+		m_imgGaze.timestamp,
+		m_uImage,
+		m_imgGaze.dFOV,
+		CVector<2>( { m_ptEyeLeft.GetRelPositionX( 0 ), m_ptEyeLeft.GetRelPositionY( 0 ) } ),
+		m_rayEyeLeft.AmplitudeRepresentation( ),
+		CVector<2>( { m_ptEyeRight.GetRelPositionX( 0 ), m_ptEyeRight.GetRelPositionY( 0 ) } ),
+		m_rayEyeRight.AmplitudeRepresentation( )
+	);
+}
+
+CGazeData::CGazeData( const gazedata_set &set, const gazedata &data ) :
+	m_uImage( data.uImage )
 {
 	//Load raw image
 	std::string str = set.sRawPath + "img_" + std::to_string( data.uImage ) + ".jpg";
@@ -682,7 +897,7 @@ CGazeData::CGazeData( const gazedata_set &set, const gazedata &data )
 		dPixelDif = ( vec2EyeRight - vec2EyeLeft ).Abs( );
 	}
 	double dPixelDiagonal = sqrt( dWidth * dWidth + dHeight * dHeight );
-	double dDistance = GetDistance( s_dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
+	double dDistance = GetDistance( s_DataSet.dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
 
 	CVector<3> vec3EyeLeft(
 	{
@@ -705,62 +920,56 @@ CGazeData::CGazeData( const gazedata_set &set, const gazedata &data )
 	m_rayEyeRight *= vec2Scale[ 1 ];
 }
 
-void *CGazeData::ReadThread( gazedata_set *pDataSet )
+void *CGazeData::ReadThread( void * )
 {
-	pthread_cleanup_push( []( void *pDataSet )->void{ delete (gazedata_set *) pDataSet; }, pDataSet );
-		for( auto data: pDataSet->vecData )
+	gazedata *pData;
+	while( ( pData = s_DataSet.GetNext( ) ) )
+	{
+		try
 		{
-			try
-			{
-				s_Queue.Emplace_Back( *pDataSet, data );
-			}
-			catch( int )
-			{
-
-			}
+			s_QueueRead.Emplace_Back( s_DataSet, *pData );
 		}
-		
-		s_Queue.Emplace_Back( );
-		while( true )
-			std::this_thread::sleep_for( std::chrono::seconds( 0xFFFFFFFF ) );
-	pthread_cleanup_pop( 1 );
+		catch( int )
+		{
+
+		}
+	}
+
+	std::this_thread::sleep_for( std::chrono::seconds( 4 ) );
+	s_QueueRead.Emplace_Back( );
+	return nullptr;
 }
 
-void *CGazeData::WriteThread( void *pArgs )
+void *CGazeData::WriteThread( void * )
 {
-	pthread_cleanup_push( []( void *pDataSet ){ delete (gazedata_set *) pDataSet; }, pArgs );
-		CGazeData data;
-		while( true )
-		{
-			data = s_QueueWrite.Pop_Front( );
-			s_FileWrite << data.ToString( ) << std::endl;
-			data.WriteImage( );
-		}
-	pthread_cleanup_pop( 1 );
+	CGazeData data;
+	while( true )
+	{
+		data = s_QueueWrite.Pop_Front( );
+		s_DataSet.Write( data.ToData( ) );
+		data.WriteImage( s_DataSet.sDataPath );
+	}
 }
 
-void *CGazeData::ReadRawThread( gazedata_set *pDataSet )
+void *CGazeData::ReadRawThread( void * )
 {
-	pthread_cleanup_push( []( void *pDataSet ){ delete (gazedata_set *) pDataSet; }, pDataSet );
-		CGazeCapture capture;
-		while( CGazeCapture::ReadAsync( capture ) )
-		{
-			if( std::find_if( pDataSet->vecData.begin( ), pDataSet->vecData.end( ), [capture]( const gazedata &data )
-				{
-					return ( data.uImage == capture.m_uImage );
-				} ) != pDataSet->vecData.end( ) )
-				continue;	//Image already exists
+	CGazeCapture capture;
+	while( CGazeCapture::ReadAsync( capture ) )
+	{
+		if( std::find_if( s_DataSet.vecData.begin( ), s_DataSet.vecData.end( ), [capture]( const gazedata &data )
+			{
+				return ( data.uImage == capture.m_uImage );
+			} ) != s_DataSet.vecData.end( ) )
+			continue;	//Image already exists
 
-			double dTanFOV = tan( capture.m_imgGaze.dFOV * M_PI / ( 2 * 180 ) );
-			std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( capture.m_imgGaze );
-			for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
-				s_QueueRaw.Emplace_Back( *it, capture.m_vec3Point, dTanFOV, capture.m_uImage );
-		}
+		double dTanFOV = tan( capture.m_imgGaze.dFOV * M_PI / ( 2 * 180 ) );
+		std::vector<CLandmark> vecLandmarks = CLandmark::GetLandmarks( capture.m_imgGaze );
+		for( std::vector<CLandmark>::iterator it = vecLandmarks.begin( ); it < vecLandmarks.end( ); it++ )
+			s_QueueRead.Emplace_Back( *it, capture.m_vec3Point, dTanFOV, capture.m_uImage );
+	}
 
-		s_QueueRaw.Emplace_Back( );
-		while( true )
-			std::this_thread::sleep_for( std::chrono::seconds( 0xFFFFFFFF ) );
-	pthread_cleanup_pop( 1 );
+	s_QueueRead.Emplace_Back( );
+	return nullptr;
 }
 
 CBBox CGazeData::FindTemplate( CImage &imgSrc, const CImage &imgTemplate )

@@ -46,6 +46,17 @@ unsigned char CUtility::GetChar( void )
 	return buf;
 }
 
+bool CUtility::CreateFolder( const std::string &sPath )
+{
+	if( mkdir( sPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) && errno != EEXIST )
+	{
+		perror( "Error creating directory" );
+		return false;
+	}
+	
+	return true;
+}
+
 void CUtility::ShowCursor( bool fShow, const char *szWindow )
 {
 	GtkWidget *pWindow = (GtkWidget *) cvGetWindowHandle( szWindow );
