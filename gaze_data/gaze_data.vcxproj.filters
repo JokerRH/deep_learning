@@ -176,6 +176,9 @@
     <ClInclude Include="src\Queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\FileFormat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Scenery.cpp">
@@ -248,6 +251,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\FileFormat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

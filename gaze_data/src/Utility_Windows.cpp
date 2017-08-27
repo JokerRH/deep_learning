@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <Windows.h>
 #include <conio.h>
+#include <direct.h>
 #include <opencv2\highgui.hpp>
 
 unsigned int VK2VSC( unsigned int uKey )
@@ -103,8 +104,19 @@ unsigned char CUtility::GetChar( void )
 	return (unsigned char) iKey;
 }
 
+bool CUtility::CreateFolder( const std::string &sPath )
+{
+	if( _mkdir( sPath.c_str( ) ) && errno != EEXIST )
+	{
+		perror( "Error creating directory" );
+		return false;
+	}
+
+	return true;
+}
+
 void CUtility::ShowCursor( bool fShow, const char *szWindow )
 {
-	ShowCursor( fShow ? TRUE : FALSE );
+	::ShowCursor( fShow ? TRUE : FALSE );
 }
 #endif
