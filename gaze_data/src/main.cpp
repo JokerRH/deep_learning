@@ -263,7 +263,10 @@ int main(int argc, char **argv)
 	else if( argc == 5 )
 	{
 		if( !CUtility::Stricmp( argv[ 1 ], "exp" ) )
+		{
+			srand( (unsigned int) time( nullptr ) );
 			return CGazeData::Export( argv[ 2 ], argv[ 3 ], atof( argv[ 4 ] ) ) ? EXIT_SUCCESS : EXIT_FAILURE;
+		}
 	}
 	
 	fprintf( stderr, "Invalid arguments\n" );

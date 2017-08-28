@@ -1,4 +1,5 @@
 #include "FileFormat.h"
+#include <time.h>
 
 const std::regex CGazeData_Set::s_regex_name( R"a(name=([\s\S]*).*)a" );
 const std::regex CGazeData_Set::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm.*)a" );
@@ -44,7 +45,11 @@ std::string CGazeData_Set::gazedata::ToString( unsigned int uPrecision ) const
 	//Write date
 	{
 		struct tm timeinfo;
+#ifdef _MSC_VER
 		localtime_s( &timeinfo, &time );
+#else
+		localtime_r( &time, &timeinfo );
+#endif
 		char szDate[ 20 ];
 		strftime( szDate, 20, "%F %T", &timeinfo ); //YYYY-MM-DD HH:MM:SS
 		out << szDate;
@@ -56,13 +61,16 @@ std::string CGazeData_Set::gazedata::ToString( unsigned int uPrecision ) const
 	return out.str( );
 }
 
-std::string CGazeData_Set::gazedata::ToCSV( void ) const
+std::string CGazeData_Set::gazedata::ToCSV( unsigned int uPrecision ) const
 {
 	std::ostringstream out;
-	out << (unsigned) ( vec2EyeLeft[ 0 ] * 255 ) << "," << (unsigned) ( vec2EyeLeft[ 1 ] * 255 ) << ",";
-	out << (unsigned) ( vec2PYLeft[ 0 ] * 127 + 127 ) << "," << (unsigned) ( vec2PYLeft[ 1 ] * 127 + 127 ) << ",";
-	out << (unsigned) ( vec2EyeRight[ 0 ] * 255 ) << "," << (unsigned) ( vec2EyeRight[ 1 ] * 255 ) << ",";
-	out << (unsigned) ( vec2PYRight[ 0 ] * 127 + 127 ) << "," << (unsigned) ( vec2PYRight[ 1 ] * 127 + 127 );
+	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	out.precision( uPrecision );
+
+	out << vec2EyeLeft[ 0 ] << "," << vec2EyeLeft[ 1 ] << ",";
+	out << vec2PYLeft[ 0 ] << "," << vec2PYLeft[ 1 ] << ",";
+	out << vec2EyeRight[ 0 ] << "," << vec2EyeRight[ 1 ] << ",";
+	out << vec2PYRight[ 0 ] << "," << vec2PYRight[ 1 ];
 	return out.str( );
 }
 

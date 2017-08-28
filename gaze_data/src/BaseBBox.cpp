@@ -1,5 +1,20 @@
 #include "BaseBBox.h"
 
+void CBaseBBox::Shift( const CVector<2> &vec2Offset )
+{
+	m_dPositionX += vec2Offset[ 0 ];
+	m_dPositionY += vec2Offset[ 1 ];
+	m_dPositionX = m_dPositionX >= 0 ? m_dPositionX : 0;
+	m_dPositionX = m_dPositionX <= 1 ? m_dPositionX : 1;
+	m_dPositionY = m_dPositionY >= 0 ? m_dPositionY : 0;
+	m_dPositionY = m_dPositionY <= 1 ? m_dPositionY : 1;
+	
+	if( m_dPositionX + m_dWidth > 1 )
+		m_dWidth = 1 - m_dPositionX;
+	if( m_dPositionY + m_dHeight > 1 )
+		m_dHeight = 1 - m_dPositionY;
+}
+
 void CBaseBBox::TransferOwnership( unsigned int uLevel )
 {
 	if( !uLevel || !m_pParentBox->m_pParentBox )

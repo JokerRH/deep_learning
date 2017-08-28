@@ -23,6 +23,7 @@ public:
 	CBaseBBox *GetParent( unsigned int uLevel = -1 ) override;
 	CVector<2> GetCenter( void ) const;
 	void Scale( const CVector<2> &vec2Scale );
+	void Shift( const CVector<2> &vec2Offset ) override;
 	
 	virtual void TransferOwnership( unsigned int uLevel = 1 );
 	virtual void TransferOwnership( CBaseBBox &parentBox );
@@ -87,4 +88,8 @@ inline void CBaseBBox::Scale( const CVector<2> &vec2Scale )
 {
 	m_dWidth *= vec2Scale[ 0 ];
 	m_dHeight *= vec2Scale[ 1 ];
+	m_dWidth = m_dWidth >= 0 ? m_dWidth : 0;
+	m_dWidth = m_dWidth <= 1 ? m_dWidth : 1;
+	m_dHeight = m_dHeight >= 0 ? m_dHeight : 0;
+	m_dHeight = m_dHeight <= 1 ? m_dHeight : 1;
 }

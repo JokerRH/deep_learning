@@ -23,7 +23,7 @@ public:
 	virtual double GetRelPositionY( unsigned int uLevel = -1 ) const;
 	virtual CImage *GetImage( unsigned int uLevel = -1 );
 	virtual CBaseBBox *GetParent( unsigned int uLevel = -1 );
-	void Shift( const CVector<2> &vec2Offset );
+	virtual void Shift( const CVector<2> &vec2Offset );
 	bool IsValid( void ) const;
 	void MakeInvalid( void );
 

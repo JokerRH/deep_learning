@@ -15,7 +15,7 @@ public:
 		gazedata( std::string sLine );
 		gazedata( time_t time, unsigned uImage, double dFOV, const CVector<2> &vec2EyeLeft, const CVector<2> &vec2PYLeft, const CVector<2> &vec2EyeRight, const CVector<2> &vec2PYRight );
 		std::string ToString( unsigned uPrecision = std::numeric_limits< double >::max_digits10 ) const;
-		std::string ToCSV( void ) const;
+		std::string ToCSV( unsigned uPrecision = std::numeric_limits< double >::max_digits10 ) const;
 
 		time_t time;
 		unsigned int uImage;
