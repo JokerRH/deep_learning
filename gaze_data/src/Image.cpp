@@ -26,6 +26,15 @@ void CImage::GetScreenResolution( unsigned int &uWidth, unsigned int &uHeight )
 #endif
 }
 
+CImage::CImage( CImage &imgLeft, CImage &imgRight ) :
+	matImage( std::max( imgLeft.matImage.rows, imgRight.matImage.rows ), imgLeft.matImage.cols + imgRight.matImage.cols, CV_8UC3, cv::Scalar::all( 255 ) ),
+	dFOV( 0 ),
+	timestamp( time( nullptr ) )
+{
+	imgLeft.matImage.copyTo( matImage( cv::Rect( 0, 0, imgLeft.matImage.cols, imgLeft.matImage.rows ) ) );
+	imgRight.matImage.copyTo( matImage( cv::Rect( imgLeft.matImage.cols, 0, imgRight.matImage.cols, imgRight.matImage.rows ) ) );
+}
+
 void CImage::TransferOwnership( unsigned int uLevel )
 {
 	if( !m_pParentBox || !uLevel )
@@ -47,7 +56,7 @@ void CImage::TransferOwnership( unsigned int uLevel )
 		m_pParentBox->AddChild( this );
 }
 
-void CImage::Show( const char *szWindow )
+void CImage::Show( const char *szWindow ) const
 {
 //#ifdef _MSC_VER
 	unsigned int uWidth;

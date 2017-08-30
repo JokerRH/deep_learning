@@ -20,7 +20,8 @@ public:
 	static bool OpenReadRaw( const std::string &sFileRaw, const std::string &sFile );
 	static bool ReadAsync( CGazeData &val );
 	void WriteAsync( void );
-	static bool Export( const std::string &sFile, const std::string &sPath, double dTrainValRatio = 2.0 / 3.0 );
+	static bool Export( const std::string &sFile, const std::string &sPath, unsigned int uTestBatchSize, double dTrainValRatio = 2.0 / 3.0 );
+	static bool Import( const std::string &sPath, const std::string &sRaw );
 
 	static std::vector<CGazeData> GetGazeData( CGazeCapture &capture );
 	static double GetDistance( double dMeterDif, double dPixelDif, double dPixelDiagonal, double dTanFOV );

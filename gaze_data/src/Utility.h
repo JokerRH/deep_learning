@@ -20,6 +20,7 @@ public:
 	static std::string GetPath( const std::string &sFile );
 	static std::string GetFile( const std::string &sFile );
 	static std::string GetFileName( const std::string &sFile );
+	static std::vector<std::string> GetFilesInDir( const std::string &sDir );
 	
 	static void ShowCursor( bool fShow, const char *szWindow );
 	
@@ -28,6 +29,8 @@ public:
 private:
 	CUtility( void ) = delete;
 	CUtility( const CUtility & ) = delete;
+	
+	static std::vector<std::string> s_vecFiles;
 };
 
 inline int CUtility::Stricmp( const char *szA, const char *szB )

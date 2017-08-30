@@ -7,6 +7,68 @@
 #define HAVE_STRUCT_TIMESPEC
 #include <pthread.h>
 
+#if 0
+class CGazeCapture_Set
+{
+public:
+	struct gazecapture
+	{
+		gazecapture( std::string sLine );
+		gazecapture( time_t time, unsigned uImage, double dFOV, const CVector<3> &vec3Gaze, const std::string &sImage = "" );
+		std::string ToString( unsigned uPrecision = std::numeric_limits< double >::max_digits10 ) const;
+
+		time_t time;
+		unsigned int uImage;
+		double dFOV;
+		CVector<3> vec3Gaze;
+		std::string sImage;
+
+	private:
+		static const std::regex s_regLine;
+	};
+
+	static CGazeCapture_Set LoadList( const std::string &sFile );
+	CGazeCapture_Set( const std::vector<gazecapture> &vecData, const std::string &sName, double dEyeDistance, const std::string &sDataPath );
+	CGazeCapture_Set( void );
+	CGazeCapture_Set( const CGazeCapture_Set &other );
+	CGazeCapture_Set &operator=( const CGazeCapture_Set &other );
+
+	CGazeCapture_Set( CGazeCapture_Set &&other );
+	CGazeCapture_Set &operator=( CGazeCapture_Set &&other );
+	~CGazeCapture_Set( void );
+
+	void ResetIterator( void );
+	gazedata *GetNext( void );
+	bool OpenWrite( const std::string &sFile );
+	void Write( const gazedata &data, unsigned uPrecision = std::numeric_limits< double >::max_digits10 );
+	void CloseWrite( void );
+	void Sort( void );
+	unsigned CheckDuplicates( bool fRemove );
+	void Shuffle( void );
+
+	bool WriteHeader( const std::string &sFile ) const;
+	bool WriteAll( const std::string &sFile ) const;
+	bool Export( const std::string &sPath );
+
+	std::vector<gazedata> vecData;
+	const std::string sName;
+	const double dEyeDistance;
+	const std::string sDataPath;
+	const std::string sRawPath;
+
+private:
+	pthread_spinlock_t m_spinIterator;
+	std::vector<gazedata>::iterator m_itData;
+	std::fstream m_FileWrite;
+
+	static const std::regex s_regex_name;
+	static const std::regex s_regex_dist;
+	static const std::regex s_regex_datapath;
+	static const std::regex s_regex_rawpath;
+	static const std::regex s_regex_data;
+};
+#endif
+
 class CGazeData_Set
 {
 public:

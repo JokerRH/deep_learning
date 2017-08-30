@@ -17,6 +17,7 @@ public:
 	CImage( const cv::Mat &mat, double dFOV, time_t timestamp, const char *szName );
 	CImage( CImage &img, const char *szName );
 	CImage( CImage &parentImage, cv::Mat &matImage, const cv::Point &point, const char *szName );
+	CImage( CImage &imgLeft, CImage &imgRight );
 
 	CImage( const CImage &other ) = default;
 	CImage &operator=( const CImage &other ) = default;
@@ -35,7 +36,7 @@ public:
 	CImage *GetImage( unsigned int uLevel = -1 ) override;
 	void TransferOwnership( unsigned int uLevel = 1 ) override;
 	void TransferOwnership( CBaseBBox &parentBox ) override;
-	void Show( const char *szWindow );
+	void Show( const char *szWindow ) const;
 	void Crop( CBBox &box, unsigned int uLevel = 0 );
 
 	cv::Mat matImage;

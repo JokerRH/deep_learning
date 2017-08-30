@@ -5,6 +5,7 @@
 #include "Point.h"
 #include "Camera.h"
 #include "Queue.h"
+#include "FileFormat.h"
 #include <fstream>
 #include <regex>
 #ifdef _MSC_VER
@@ -20,6 +21,7 @@ public:
 	static bool OpenRead( const std::string &sFile );
 	static bool ReadAsync( CGazeCapture &val );
 	void WriteAsync( void );
+	static bool ImportCGD( const std::string &sCGDPath, const std::string &sFile );
 	
 	CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim );
 	CGazeCapture( void );
@@ -50,6 +52,8 @@ private:
 	static CQueue<CGazeCapture> s_Queue;
 	static pthread_t s_Thread;
 	
+	static CGazeCapture_Set s_DataSetRead;
+	static CGazeCapture_Set s_DataSetWrite;
 	static unsigned int s_uCurrentImage;
 	
 	static const std::regex s_regex_name;

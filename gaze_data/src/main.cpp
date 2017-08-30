@@ -165,6 +165,33 @@ int ShowDataset( const char *szFile )
 	return EXIT_SUCCESS;
 }
 
+int ImportDataset( const char *szPath, const char *szRaw )
+{
+	if( !CGazeData::Import( szPath, szRaw ) )
+		return EXIT_FAILURE;
+
+	namedWindow( "Window", CV_WINDOW_NORMAL );
+	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+
+	CScenery::SetScenery( g_Config.vec3MonitorPos, g_Config.vec3MonitorDim );
+
+	CGazeData data;
+	while( CGazeData::ReadAsync( data ) )
+		data.DrawScenery( "Window" );
+		
+	destroyAllWindows( );
+	return EXIT_SUCCESS;
+}
+
+int LoadCGDataset( const char *szCGDPath, const char *szFile )
+{
+	std::vector<std::string> vecFiles = CUtility::GetFilesInDir( szCGDPath );
+	for( const auto &str: vecFiles )
+		printf( "found file \"%s\"\n", str.c_str( ) );
+		
+	return EXIT_SUCCESS;
+}
+
 int TestImage( void )
 {
 	(void) CBaseCamera::Init( );
@@ -257,15 +284,25 @@ int main(int argc, char **argv)
 			return ProcessDataset( argv[ 2 ], argv[ 3 ] );
 		else if( !CUtility::Stricmp( argv[ 1 ], "adj" ) )
 			return AdjustDataset( argv[ 2 ], argv[ 3 ] );
-		else if( !CUtility::Stricmp( argv[ 1 ], "exp" ) )
-			return CGazeData::Export( argv[ 2 ], argv[ 3 ] ) ? EXIT_SUCCESS : EXIT_FAILURE;
+		else if( !CUtility::Stricmp( argv[ 1 ], "imp" ) )
+			return ImportDataset( argv[ 2 ], argv[ 3 ] );
+		else if( !CUtility::Stricmp( argv[ 1 ], "cgd" ) )
+			return LoadCGDataset( argv[ 2 ], argv[ 3 ] );
 	}
 	else if( argc == 5 )
 	{
 		if( !CUtility::Stricmp( argv[ 1 ], "exp" ) )
 		{
 			srand( (unsigned int) time( nullptr ) );
-			return CGazeData::Export( argv[ 2 ], argv[ 3 ], atof( argv[ 4 ] ) ) ? EXIT_SUCCESS : EXIT_FAILURE;
+			return CGazeData::Export( argv[ 2 ], argv[ 3 ], atoi( argv[ 4 ] ) ) ? EXIT_SUCCESS : EXIT_FAILURE;
+		}
+	}
+	else if( argc == 6 )
+	{
+		if( !CUtility::Stricmp( argv[ 1 ], "exp" ) )
+		{
+			srand( (unsigned int) time( nullptr ) );
+			return CGazeData::Export( argv[ 2 ], argv[ 3 ], atoi( argv[ 4 ] ), atof( argv[ 5 ] ) ) ? EXIT_SUCCESS : EXIT_FAILURE;
 		}
 	}
 	

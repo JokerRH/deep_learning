@@ -8,6 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <regex>
 
 #ifdef _MSC_VER
 #	include <direct.h>
@@ -27,6 +28,8 @@ std::fstream CGazeCapture::s_File;
 CQueue<CGazeCapture> CGazeCapture::s_Queue( 10 );
 pthread_t CGazeCapture::s_Thread;
 
+CGazeCapture_Set CGazeCapture::s_DataSetRead;
+CGazeCapture_Set CGazeCapture::s_DataSetWrite;
 double CGazeCapture::s_dEyeDistance;
 std::string CGazeCapture::s_sName;
 std::string CGazeCapture::s_sDataPath;
@@ -39,6 +42,55 @@ const std::regex CGazeCapture::s_regex_line( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2
 
 bool CGazeCapture::OpenWrite( const std::string &sFile )
 {
+	if( CUtility::Exists( sFile ) )
+		s_DataSetWrite = CGazeCapture_Set::LoadList( sFile );
+	else
+	{
+		std::string sName;
+		double dEyeDistance;
+		CUtility::Cls( );
+		printf( "Creating new profile\n" );
+		printf( "Name                : " );
+		getline( std::cin, sName );
+		printf( "Eye distance (in cm): " );
+		std::string str;
+		getline( std::cin, str );
+		dEyeDistance = std::stod( str ) / 100;
+		
+		s_DataSetWrite = CGazeCapture_Set( std::vector<CGazeCapture_Set::gazecapture>( ), sName, dEyeDistance, CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/" );
+	}
+	
+	s_DataSetWrite.Sort( );
+	CheckDuplicates( s_DataSetWrite, sFile );
+	if( s_DataSetWrite.vecData.size( ) )
+		s_uNextImage = s_DataSetWrite.vecData.back( ).uImage + 1;
+	else
+		s_uNextImage = 0;
+		
+	CUtility::Cls( );
+	printf( "Name        : %s\n", s_DataSetWrite.sName.c_str( ) );
+	printf( "Eye distance: %4.2fcm\n", s_DataSetWrite.dEyeDistance * 100 );
+	printf( "Data path   : %s\n", s_DataSetWrite.sDataPath.c_str( ) );
+	printf( "Images      : %u\n", (unsigned) s_DataSetWrite.vecData.size( ) );
+	printf( "Next image  : %u\n", s_uNextImage );
+	unsigned char cKey;
+	while( true )
+	{
+		cKey = CUtility::GetChar( );
+		switch( cKey )
+		{
+		case 141:	//Numpad enter
+		case 10:	//Enter
+			s_DataSetWrite.OpenWrite( sFile );
+			s_vecThreadWrite.emplace_back( );
+			pthread_create( &s_vecThreadWrite[ 0 ], nullptr, WriteThread, nullptr );
+			return true;
+		case 27:	//Escape
+			return false;
+		}
+	}
+	
+#if 0
 	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
 	if( !CUtility::Exists( sFile ) )
 	{
@@ -53,19 +105,8 @@ bool CGazeCapture::OpenWrite( const std::string &sFile )
 		getline( std::cin, str );
 		s_dEyeDistance = std::stod( str ) / 100;
 
-#ifdef _MSC_VER
-		if( _mkdir( s_sDataPath.c_str( ) ) && errno != EEXIST )
-		{
-			perror( "Error creating directory" );
+		if( !CUtility::CreateFolder( s_sDataPath ) )
 			return false;
-		}
-#else
-		if( mkdir( s_sDataPath.c_str( ), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) && errno != EEXIST )
-		{
-			perror( "Error creating directory" );
-			return false;
-		}
-#endif
 
 		s_File.open( sFile, std::fstream::out );
 		s_File << "name=" << s_sName << "\n";
@@ -152,13 +193,23 @@ bool CGazeCapture::OpenWrite( const std::string &sFile )
 			return false;
 		}
 	}
+#endif
 }
 
 void CGazeCapture::CloseWrite( void )
 {
+	for( std::vector<pthread_t>::iterator it = s_vecThreadWrite.begin( ); it < s_vecThreadWrite.end( ); it++ )
+	{
+		pthread_cancel( *it );
+		pthread_join( *it, nullptr );
+	}
+	s_DataSetWrite.CloseWrite( );
+
+#if 0
 	s_Queue.Emplace_Back( );
 	pthread_join( s_Thread, nullptr );
 	s_File.close( );
+#endif
 }
 
 bool CGazeCapture::OpenRead( const std::string &sFile )
@@ -280,6 +331,31 @@ bool CGazeCapture::ReadAsync( CGazeCapture &val )
 void CGazeCapture::WriteAsync( void )
 {
 	s_Queue.Push_Back( *this );
+}
+
+bool CGazeCapture::ImportCGD( const std::string &sCGDPath, const std::string &sFile )
+{
+	std::vector<std::string> vecFiles = CUtility::GetFilesInDir( sCGDPath );
+	const std::regex regFile( R"a(\d+_\d+m_([+-]?\d+)P_([+-]?\d+)V_([+-]?\d+)H.jpg)a" );
+	std::smatch match;
+	std::vector<CGazeCapture_Set::gazecapture> vecData;
+	unsigned uImage = 0;
+	for( const auto &sFile: vecFiles )
+	{
+		std::string str( CUtility::GetFileName( sFile ) );
+		std::regex_match( str, match, regFile );
+		if( !match.size( ) )
+			continue;
+
+		if( std::stod( match[ 1 ].str( ) ) != 0.0 )
+			continue; //Ignore side view
+
+		vecData.emplace_back( time( nullptr ), uImage++, 0, CVector<3>( {
+			atan( std::stod( match[ 3 ].str( ) ) ) / 2.5,
+			atan( std::stod( match[ 2 ].str( ) ) ) / 2.5,
+			-0.5,
+		} ), str );
+	}
 }
 
 CGazeCapture::CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim ) :

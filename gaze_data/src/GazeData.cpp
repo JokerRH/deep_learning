@@ -65,7 +65,7 @@ bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
 	printf( "Eye distance: %4.2fcm\n", s_DataSetWrite.dEyeDistance * 100 );
 	printf( "Data path   : %s\n", s_DataSetWrite.sDataPath.c_str( ) );
 	printf( "Raw path    : %s\n", s_DataSetWrite.sRawPath.c_str( ) );
-	printf( "Images      : %llu\n", s_DataSetWrite.vecData.size( ) );
+	printf( "Images      : %u\n", (unsigned) s_DataSetWrite.vecData.size( ) );
 	printf( "Next image  : %u\n", s_uNextImage );
 	unsigned char cKey;
 	while( true )
@@ -117,7 +117,7 @@ bool CGazeData::OpenRead( const std::string &sFile )
 	printf( "Eye distance: %4.2fcm\n", s_DataSetRead.dEyeDistance * 100 );
 	printf( "Data path   : %s\n", s_DataSetRead.sDataPath.c_str( ) );
 	printf( "Raw path    : %s\n", s_DataSetRead.sRawPath.c_str( ) );
-	printf( "Images      : %llu\n", s_DataSetRead.vecData.size( ) );
+	printf( "Images      : %u\n", (unsigned) s_DataSetRead.vecData.size( ) );
 	printf( "Next image  : %u\n", s_uNextImage );
 	unsigned char cKey;
 	while( true )
@@ -155,7 +155,7 @@ bool CGazeData::OpenReadRaw( const std::string &sFileRaw, const std::string &sFi
 	printf( "Data path   : %s\n", s_DataSetRead.sDataPath.c_str( ) );
 	printf( "Raw path    : %s\n", s_DataSetRead.sRawPath.c_str( ) );
 	printf( "Proc path   : %s\n", CGazeCapture::s_sDataPath.c_str( ) );
-	printf( "Images      : %llu\n", s_DataSetRead.vecData.size( ) );
+	printf( "Images      : %u\n", (unsigned) s_DataSetRead.vecData.size( ) );
 	printf( "Next image  : %u\n", s_uNextImage );
 	unsigned char cKey;
 	while( true )
@@ -197,7 +197,7 @@ void CGazeData::WriteAsync( void )
 	s_QueueWrite.Push_Back( *this );
 }
 
-bool CGazeData::Export( const std::string &sFile, const std::string &sPath, double dTrainValRatio )
+bool CGazeData::Export( const std::string &sFile, const std::string &sPath, unsigned int uTestBatchSize, double dTrainValRatio )
 {
 	const std::string sTrainPath = sPath + "/train/";
 	const std::string sValPath = sPath + "/val/";
@@ -213,13 +213,19 @@ bool CGazeData::Export( const std::string &sFile, const std::string &sPath, doub
 		s_uNextImage = s_DataSetRead.vecData.back( ).uImage + 1;
 	else
 		s_uNextImage = 0;
+		
+	{
+		double dBatchCount = s_DataSetRead.vecData.size( ) * ( 1 - dTrainValRatio ) / uTestBatchSize;
+		dBatchCount = round( dBatchCount );
+		dTrainValRatio = 1 - dBatchCount * uTestBatchSize / s_DataSetRead.vecData.size( );
+	}
 
 	CUtility::Cls( );
 	printf( "Name        : %s\n", s_DataSetRead.sName.c_str( ) );
 	printf( "Eye distance: %4.2fcm\n", s_DataSetRead.dEyeDistance * 100 );
 	printf( "Data path   : %s\n", s_DataSetRead.sDataPath.c_str( ) );
 	printf( "Raw path    : %s\n", s_DataSetRead.sRawPath.c_str( ) );
-	printf( "Images      : %llu\n", s_DataSetRead.vecData.size( ) );
+	printf( "Images      : %u\n", (unsigned) s_DataSetRead.vecData.size( ) );
 	printf( "Next image  : %u\n", s_uNextImage );
 	printf( "Validation  : %u\n", (unsigned) ( s_DataSetRead.vecData.size( ) * dTrainValRatio ) );
 	printf( "Training    : %u\n", (unsigned) ( s_DataSetRead.vecData.size( ) * ( 1 - dTrainValRatio ) ) );
@@ -273,7 +279,7 @@ bool CGazeData::Export( const std::string &sFile, const std::string &sPath, doub
 	dCurrent = 0;
 	while( ReadAsync( val ) )
 	{
-		val.RandomizeFace( 0.1 );
+		//val.RandomizeFace( 0.1 );
 		val.WriteImage( sTrainPath );
 		
 		//Write %
@@ -300,7 +306,7 @@ bool CGazeData::Export( const std::string &sFile, const std::string &sPath, doub
 	dCurrent = 0;
 	while( ReadAsync( val ) )
 	{
-		val.RandomizeFace( 0.1 );
+		//val.RandomizeFace( 0.1 );
 		val.WriteImage( sValPath );
 		
 		//Write %
@@ -318,6 +324,87 @@ bool CGazeData::Export( const std::string &sFile, const std::string &sPath, doub
 	printf( "Done.\n" );
 	CUtility::GetChar( );
 	return true;
+}
+
+bool CGazeData::Import( const std::string &sPath, const std::string &sRaw )
+{
+	std::fstream fileData( sPath + "/data.txt", std::fstream::in );
+	std::fstream fileLabel( sPath + "/labels.csv" );
+	
+	std::string sLineData;
+	std::string sLineLabel;
+	
+	const std::regex regData( R"a(img_(\d+)\.jpg\s+\d+.*)a" );
+	const std::regex regLabel( R"a(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)).*)a" );
+	
+	std::vector<CGazeData_Set::gazedata> vecData;
+	while( true )
+	{
+		if( !std::getline( fileData, sLineData ) )
+		{
+			if( std::getline( fileLabel, sLineLabel ) )
+				printf( "Warning: Data file shorter than label file\n" );
+
+			break;
+		}
+		if( !std::getline( fileLabel, sLineLabel ) )
+		{
+			printf( "Warning: Label file shorter than data file\n" );
+			break;
+		}
+		
+		std::smatch matchData;
+		std::replace( sLineData.begin( ), sLineData.end( ), '\r', ' ' );
+		std::regex_match( sLineData, matchData, regData );
+		if( !matchData.size( ) )
+		{
+			printf( "Data match failed: \"%s\"\n", sLineData.c_str( ) );
+			continue;
+		}
+			
+		std::smatch matchLabel;
+		std::replace( sLineLabel.begin( ), sLineLabel.end( ), '\r', ' ' );
+		std::regex_match( sLineLabel, matchLabel, regLabel );
+		if( !matchLabel.size( ) )
+		{
+			printf( "Label match failed: \"%s\"\n", sLineLabel.c_str( ) );
+			continue;
+		}
+		
+		vecData.emplace_back(
+			time( nullptr ),
+			std::stoul( matchData[ 1 ].str( ) ),
+			60,
+			CVector<2>( { std::stod( matchLabel[ 1 ].str( ) ), std::stod( matchLabel[ 2 ].str( ) ) } ),
+			CVector<2>( { std::stod( matchLabel[ 3 ].str( ) ), std::stod( matchLabel[ 4 ].str( ) ) } ),
+			CVector<2>( { std::stod( matchLabel[ 5 ].str( ) ), std::stod( matchLabel[ 6 ].str( ) ) } ),
+			CVector<2>( { std::stod( matchLabel[ 7 ].str( ) ), std::stod( matchLabel[ 8 ].str( ) ) } )
+		);
+	}
+	
+	s_DataSetRead = CGazeData_Set( vecData, "Import", 0.066, sPath, sRaw );
+
+	CUtility::Cls( );
+	printf( "Name        : %s\n", s_DataSetRead.sName.c_str( ) );
+	printf( "Eye distance: %4.2fcm\n", s_DataSetRead.dEyeDistance * 100 );
+	printf( "Data path   : %s\n", s_DataSetRead.sDataPath.c_str( ) );
+	printf( "Raw path    : %s\n", s_DataSetRead.sRawPath.c_str( ) );
+	printf( "Images      : %u\n", (unsigned) s_DataSetRead.vecData.size( ) );
+	unsigned char cKey;
+	while( true )
+	{
+		cKey = CUtility::GetChar( );
+		switch( cKey )
+		{
+		case 141:	//Numpad enter
+		case 10:	//Enter
+			s_vecThreadRead.emplace_back( );
+			pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadThread, nullptr );
+			return true;
+		case 27:	//Escape
+			return false;
+		}
+	}
 }
 
 std::vector<CGazeData> CGazeData::GetGazeData( CGazeCapture &capture )
@@ -456,6 +543,12 @@ bool CGazeData::DrawScenery( const char *szWindow )
 	CScenery scenery( m_rayEyeLeft, m_rayEyeRight );
 	CImage img( "Image_Scenery" );
 	img.matImage = cv::Mat( 1050, 1050, CV_8UC3, cv::Scalar( 0, 0, 0 ) );
+	
+	CImage imgFace( m_imgGaze );
+	imgFace.Crop( m_boxFace );
+	cv::resize( imgFace.matImage, imgFace.matImage, cv::Size( 525, 525 ) );
+	cv::circle( imgFace.matImage, cv::Point( m_ptEyeLeft.GetRelPositionX( 0 ) * imgFace.matImage.cols, m_ptEyeLeft.GetRelPositionY( 0 ) * imgFace.matImage.rows ), 1, cv::Scalar( 0, 255, 0 ), -1 );
+	cv::circle( imgFace.matImage, cv::Point( m_ptEyeRight.GetRelPositionX( 0 ) * imgFace.matImage.cols, m_ptEyeRight.GetRelPositionY( 0 ) * imgFace.matImage.rows ), 1, cv::Scalar( 0, 255, 0 ), -1 );
 
 	//Write distance
 	char szDistance[ 8 ];
@@ -477,7 +570,7 @@ bool CGazeData::DrawScenery( const char *szWindow )
 		//printf( "Rot: (%f, %f, %f)\n", dDegX, dDegY, dDegZ );
 		scenery.Transformed( CRenderHelper::GetRotationMatrix( dDegX, dDegY, dDegZ ) ).Fit( ).Draw( imgDraw );
 		putText( imgDraw.matImage, szDistance, ptText,  FONT_HERSHEY_SIMPLEX, 1, Scalar( 255, 255, 255 ), 3 );
-		imgDraw.Show( szWindow );
+		CImage( imgDraw, imgFace ).Show( szWindow );
 
 		cKey = CUtility::WaitKey( 0 );
 		switch( cKey )

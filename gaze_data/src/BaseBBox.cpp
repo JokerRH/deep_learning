@@ -1,4 +1,5 @@
 #include "BaseBBox.h"
+#include "Render/Matrix.h"
 
 void CBaseBBox::Shift( const CVector<2> &vec2Offset )
 {
@@ -13,6 +14,10 @@ void CBaseBBox::Shift( const CVector<2> &vec2Offset )
 		m_dWidth = 1 - m_dPositionX;
 	if( m_dPositionY + m_dHeight > 1 )
 		m_dHeight = 1 - m_dPositionY;
+
+	CVector<2> vec2ChildOffset = CMatrix<2, 2>( { m_pParentBox->m_dWidth / m_dWidth, 0, m_pParentBox->m_dHeight / m_dHeight, 0 } ) * vec2Offset;
+	for( auto pHighlighter: m_vecpChildren )
+		pHighlighter->Shift( -vec2ChildOffset );
 }
 
 void CBaseBBox::TransferOwnership( unsigned int uLevel )

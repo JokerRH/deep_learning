@@ -4,11 +4,14 @@
 #include <termios.h>
 #include <opencv2/highgui.hpp>
 #include <iostream>
+#include <ftw.h>
 
 #include <gtk/gtk.h>
 
 //`pkg-config --cflags gtk+-2.0`
 //`pkg-config --libs gtk+-2.0`
+
+std::vector<std::string> CUtility::s_vecFiles;
 
 unsigned char CUtility::WaitKey( unsigned int uMilliseconds )
 {
@@ -55,6 +58,21 @@ bool CUtility::CreateFolder( const std::string &sPath )
 	}
 	
 	return true;
+}
+
+std::vector<std::string> CUtility::GetFilesInDir( const std::string &sDir )
+{
+	s_vecFiles.clear( );
+	ftw( sDir.c_str( ), []( const char *szPath, const struct stat *pStat, int fType )->int
+		{
+			if( fType != FTW_F )
+				return 0; //Continue
+			
+			s_vecFiles.push_back( szPath );
+			return 0; //Continue
+		}, 16 );
+
+	return s_vecFiles;
 }
 
 void CUtility::ShowCursor( bool fShow, const char *szWindow )
