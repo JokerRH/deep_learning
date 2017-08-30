@@ -89,111 +89,6 @@ bool CGazeCapture::OpenWrite( const std::string &sFile )
 			return false;
 		}
 	}
-	
-#if 0
-	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
-	if( !CUtility::Exists( sFile ) )
-	{
-		s_uCurrentImage = 0;
-
-		CUtility::Cls( );
-		printf( "Creating new profile\n" );
-		printf( "Name                : " );
-		getline( std::cin, s_sName );
-		printf( "Eye distance (in cm): " );
-		std::string str;
-		getline( std::cin, str );
-		s_dEyeDistance = std::stod( str ) / 100;
-
-		if( !CUtility::CreateFolder( s_sDataPath ) )
-			return false;
-
-		s_File.open( sFile, std::fstream::out );
-		s_File << "name=" << s_sName << "\n";
-		s_File << "dist=" << std::to_string( s_dEyeDistance * 100 ) << "cm\n";
-		s_File << "\ndata:\n";
-	}
-	else
-	{
-		s_uCurrentImage = (unsigned int) -1;
-
-		//File exists, open
-		s_File.open( sFile, std::fstream::in );
-		{
-			std::smatch match;
-			unsigned char fFound = 0;
-			std::string sLine;
-			while( std::getline( s_File, sLine ) )
-			{
-				std::regex_match( sLine, match, s_regex_name );
-				if( match.size( ) )
-				{
-					s_sName = match[ 1 ].str( );
-					fFound |= 1;
-					continue;
-				}
-
-				std::regex_match( sLine, match, s_regex_dist );
-				if( match.size( ) )
-				{
-					s_dEyeDistance = std::stod( match[ 1 ].str( ) ) / 100;
-					fFound |= 2;
-					continue;
-				}
-				
-				std::regex_match( sLine, match, s_regex_data );
-				if( match.size( ) )
-				{
-					fFound |= 4;
-					break;	//Start of data
-				}
-			}
-
-			if( fFound != 7 )
-			{
-				fprintf( stderr, "File \"%s\" is missing fields\n", sFile.c_str( ) );
-				s_File.close( );
-				return false;
-			}
-
-			while( std::getline( s_File, sLine ) )
-			{
-				std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
-				std::regex_match( sLine, match, s_regex_line );
-				if( match.size( ) )
-				{
-					unsigned int u = std::stoul( match[ 7 ].str( ) );
-					s_uCurrentImage = std::max( (int) s_uCurrentImage, (int) u );
-				}
-			}
-			s_uCurrentImage++;
-		}
-		
-		s_File.close( );
-		s_File.open( sFile, std::fstream::out | std::fstream::app );
-	}
-
-	CUtility::Cls( );
-	printf( "Name        : %s\n", s_sName.c_str( ) );
-	printf( "Eye distance: %4.2fcm\n", s_dEyeDistance * 100 );
-	printf( "Data path   : %s\n", s_sDataPath.c_str( ) );
-	printf( "Next image  : %u\n", s_uCurrentImage );
-	unsigned char cKey;
-	while( true )
-	{
-		cKey = CUtility::GetChar( );
-		switch( cKey )
-		{
-		case 141:	//Numpad enter
-		case 10:	//Enter
-			pthread_create( &s_Thread, nullptr, WriteThread, nullptr );
-			return true;
-		case 27:	//Escape
-			s_File.close( );
-			return false;
-		}
-	}
-#endif
 }
 
 void CGazeCapture::CloseWrite( void )
@@ -204,99 +99,31 @@ void CGazeCapture::CloseWrite( void )
 		pthread_join( *it, nullptr );
 	}
 	s_DataSetWrite.CloseWrite( );
-
-#if 0
-	s_Queue.Emplace_Back( );
-	pthread_join( s_Thread, nullptr );
-	s_File.close( );
-#endif
 }
 
 bool CGazeCapture::OpenRead( const std::string &sFile )
 {
 	if( !CUtility::Exists( sFile ) )
 	{
-		CUtility::Cls( );
-		printf( "File \"%s\" does not exist.\n", sFile.c_str( ) );
+		fprintf( stderr, "Failed to open file \"%s\": File not found\n", sFile.c_str( ) );
 		CUtility::GetChar( );
 		return false;
 	}
 
-	s_sDataPath = CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/";
-	s_uCurrentImage = (unsigned int) -1;
-	
-	s_File.open( sFile, std::fstream::in );
-
-	//Read header
-	{
-		std::smatch match;
-		std::string sLine;
-		unsigned char fFound = 0;
-		while( std::getline( s_File, sLine ) )
-		{
-			std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
-			std::regex_match( sLine, match, s_regex_name );
-			if( match.size( ) )
-			{
-				s_sName = match[ 1 ].str( );
-				fFound |= 1;
-				continue;
-			}
-
-			std::regex_match( sLine, match, s_regex_dist );
-			if( match.size( ) )
-			{
-				s_dEyeDistance = std::stod( match[ 1 ].str( ) ) / 100;
-				fFound |= 2;
-				continue;
-			}
-
-			std::regex_match( sLine, match, s_regex_data );
-			if( match.size( ) )
-			{
-				fFound |= 4;
-				break;	//Start of data
-			}
-		}
-
-		if( fFound != 7 )
-		{
-			CUtility::Cls( );
-			fprintf( stderr, "File \"%s\" is missing fields\n", sFile.c_str( ) );
-			printf( "File \"%s\" is missing fields\n", sFile.c_str( ) );
-			if( !( fFound & 1 ) )
-				printf( "Missing Name field\n" );
-			if( !( fFound & 2 ) )
-				printf( "Missing Distance field\n" );
-			if( !( fFound & 4 ) )
-				printf( "Missing Data field\n" );
-			CUtility::GetChar( );
-			s_File.close( );
-			return false;
-		}
-		
-		std::streampos posData = s_File.tellg( );
-		while( std::getline( s_File, sLine ) )
-		{
-			std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
-			std::regex_match( sLine, match, s_regex_line );
-			if( !match.size( ) )
-				continue;
-
-			s_uCurrentImage = std::max( (int) s_uCurrentImage, (int) std::stoul( match[ 7 ].str( ) ) );
-		}
-		s_uCurrentImage++;
-		s_File.clear();
-		s_File.seekg( posData );
-	}
-	
-	pthread_create( &s_Thread, nullptr, ReadThread, nullptr );
+	s_DataSetRead = CGazeCapture_Set::LoadList( sFile );
+	s_DataSetRead.Sort( );
+	CheckDuplicates( s_DataSetRead, sFile );
+	if( s_DataSetRead.vecData.size( ) )
+		s_uNextImage = s_DataSetRead.vecData.back( ).uImage + 1;
+	else
+		s_uNextImage = 0;
 
 	CUtility::Cls( );
-	printf( "Name        : %s\n", s_sName.c_str( ) );
-	printf( "Eye distance: %4.2fcm\n", s_dEyeDistance * 100 );
-	printf( "Data path   : %s\n", s_sDataPath.c_str( ) );
-	printf( "Images      : %u\n", s_uCurrentImage );
+	printf( "Name        : %s\n", s_DataSetRead.sName.c_str( ) );
+	printf( "Eye distance: %4.2fcm\n", s_DataSetRead.dEyeDistance * 100 );
+	printf( "Data path   : %s\n", s_DataSetRead.sDataPath.c_str( ) );
+	printf( "Images      : %u\n", (unsigned) s_DataSetRead.vecData.size( ) );
+	printf( "Next image  : %u\n", s_uNextImage );
 	unsigned char cKey;
 	while( true )
 	{
@@ -305,9 +132,10 @@ bool CGazeCapture::OpenRead( const std::string &sFile )
 		{
 		case 141:	//Numpad enter
 		case 10:	//Enter
+			s_vecThreadRead.emplace_back( );
+			pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadThread, nullptr );
 			return true;
 		case 27:	//Escape
-			s_File.close( );
 			return false;
 		}
 	}
@@ -315,22 +143,26 @@ bool CGazeCapture::OpenRead( const std::string &sFile )
 
 bool CGazeCapture::ReadAsync( CGazeCapture &val )
 {
-	printf( "Test1\n" );
-	val = s_Queue.Pop_Front( );
-	printf( "Test2\n" );
-	if( val.m_uImage != (unsigned int) -1 )
-		return true;
-		
-	printf( "Test3\n" );
+	static unsigned uFinished = 0;
+	for( ; uFinished < s_vecThreadRead.size( ); uFinished++ )
+	{
+		val = s_QueueRead.Pop_Front( );
+		if( val.m_uImage != (unsigned int) -1 )
+			return true;
+	}
 
-	pthread_join( s_Thread, nullptr );
-	s_File.close( );
+	//All threads finished, join
+	for( auto &thread: s_vecThreadRead )
+		pthread_join( thread, nullptr );
+
+	s_vecThreadRead.clear( );
+	uFinished = 0;
 	return false;
 }
 
 void CGazeCapture::WriteAsync( void )
 {
-	s_Queue.Push_Back( *this );
+	s_QueueWrite.Push_Back( *this );
 }
 
 bool CGazeCapture::ImportCGD( const std::string &sCGDPath, const std::string &sFile )
@@ -460,15 +292,14 @@ CGazeCapture::CGazeCapture( std::string sLine )
 	m_imgGaze = CImage( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" );
 }
 
-void *CGazeCapture::ReadThread( void *pArgs )
+void *CGazeCapture::ReadThread( void * )
 {
-	std::string sLine;
-	std::smatch match;
-	while( std::getline( s_File, sLine ) )
+	CGazeCapture_Set::gazecapture *pData;
+	while( ( pData = s_DataSetRead.GetNext( ) ) )
 	{
 		try
 		{
-			s_Queue.Emplace_Back( sLine );
+			s_QueueRead.Emplace_Back( s_DataSetRead, *pData );
 		}
 		catch( int )
 		{
@@ -476,22 +307,41 @@ void *CGazeCapture::ReadThread( void *pArgs )
 		}
 	}
 
-	s_Queue.Emplace_Back( );
+	s_QueueRead.Emplace_Back( );
 	return nullptr;
 }
 
-void *CGazeCapture::WriteThread( void *pArgs )
+void *CGazeCapture::WriteThread( void * )
 {
-	CGazeCapture capture;
+	CGazeCapture data;
 	while( true )
 	{
-		capture = s_Queue.Pop_Front( );
-		if( capture.m_uImage == (unsigned int) -1 )
-			break;
-
-		s_File << capture.ToString( ) << std::endl;
-		capture.WriteImage( );
+		data = s_QueueWrite.Pop_Front( );
+		s_DataSetWrite.Write( data.ToData( ) );
+		data.WriteImage( s_DataSetWrite.sDataPath );
 	}
-	
-	return nullptr;
+}
+
+void CGazeCapture::CheckDuplicates( CGazeCapture_Set &dataset, const std::string &sFile )
+{
+	unsigned int uDuplicates = dataset.CheckDuplicates( false );
+	if( !uDuplicates )
+		return;
+
+	CUtility::Cls( );
+	printf( "Found %u duplicates while loading file \"%s\". Do you wish to remove and update the file? (y/n)\n", uDuplicates, sFile.c_str( ) );
+	while( true )
+	{
+		switch( CUtility::GetChar( ) )
+		{
+		case 'y':
+			dataset.CheckDuplicates( true );
+			dataset.WriteAll( sFile );
+			return;
+		case 'n':
+			return;
+		case 27:	//Escape
+			throw 1;
+		}
+	}
 }

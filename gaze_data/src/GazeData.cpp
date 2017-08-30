@@ -180,15 +180,20 @@ bool CGazeData::OpenReadRaw( const std::string &sFileRaw, const std::string &sFi
 
 bool CGazeData::ReadAsync( CGazeData &val )
 {
-	val = s_QueueRead.Pop_Front( );
-	if( val.m_uImage != (unsigned int) -1 )
-		return true;
-
-	for( std::vector<pthread_t>::iterator it = s_vecThreadRead.begin( ); it < s_vecThreadRead.end( ); it++ )
+	static unsigned uFinished = 0;
+	for( ; uFinished < s_vecThreadRead.size( ); uFinished++ )
 	{
-		pthread_cancel( *it );
-		pthread_join( *it, nullptr );
+		val = s_QueueRead.Pop_Front( );
+		if( val.m_uImage != (unsigned int) -1 )
+			return true;
 	}
+
+	//All threads finished, join
+	for( auto &thread : s_vecThreadRead )
+		pthread_join( thread, nullptr );
+
+	s_vecThreadRead.clear( );
+	uFinished = 0;
 	return false;
 }
 
@@ -792,7 +797,6 @@ void *CGazeData::ReadThread( void * )
 		}
 	}
 
-	std::this_thread::sleep_for( std::chrono::seconds( 4 ) );
 	s_QueueRead.Emplace_Back( );
 	return nullptr;
 }

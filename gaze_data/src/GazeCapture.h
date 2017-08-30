@@ -47,6 +47,7 @@ private:
 	CGazeCapture( std::string sLine );
 	static void *ReadThread( void *pArgs );
 	static void *WriteThread( void *pArgs );
+	static void CheckDuplicates( CGazeCapture_Set &dataset, const std::string &sFile );
 
 	static std::fstream s_File;
 	static CQueue<CGazeCapture> s_Queue;
@@ -54,6 +55,12 @@ private:
 	
 	static CGazeCapture_Set s_DataSetRead;
 	static CGazeCapture_Set s_DataSetWrite;
+	static CQueue<CGazeData> s_QueueRead;
+	static CQueue<CGazeData> s_QueueWrite;
+	static std::vector<pthread_t> s_vecThreadRead;
+	static std::vector<pthread_t> s_vecThreadWrite;
+	static unsigned s_uNextImage;
+
 	static unsigned int s_uCurrentImage;
 	
 	static const std::regex s_regex_name;
