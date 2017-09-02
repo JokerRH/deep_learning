@@ -291,14 +291,14 @@ bool CData::Export( std::vector<CData> &vecData, const std::wstring &sPath, unsi
 	smLabel.close( );
 
 	//Export validataion data
-	smData.open( sTrainData, std::fstream::out );
+	smData.open( sValData, std::fstream::out );
 	if( !smData.is_open( ) )
 	{
 		std::wcerr << "Unable to open file \"" << sValData << "\" for writing" << std::endl;
 		return false;
 	}
 
-	smLabel.open( sTrainLabel, std::fstream::out );
+	smLabel.open( sValLabel, std::fstream::out );
 	if( !smLabel.is_open( ) )
 	{
 		std::wcerr << "Unable to open file \"" << sValLabel << "\" for writing" << std::endl;
