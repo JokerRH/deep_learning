@@ -245,3 +245,4 @@ ModelManifest.xml
 .fake/
 /gaze_data/raw
 /gaze_data/data
+/gaze_data/raw.zip

@@ -156,9 +156,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Columbia.h" />
+    <ClInclude Include="Custom.h" />
     <ClInclude Include="Data.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="Render\Matrix.h" />
+    <ClInclude Include="Render\Ray.h" />
     <ClInclude Include="Render\Render.h" />
     <ClInclude Include="Render\RenderBox.h" />
     <ClInclude Include="Render\RenderHelper.h" />
@@ -167,17 +169,21 @@
     <ClInclude Include="Render\RenderPlane.h" />
     <ClInclude Include="Render\RenderPoint.h" />
     <ClInclude Include="Render\Vector.h" />
+    <ClInclude Include="Scenery.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Columbia.cpp" />
+    <ClCompile Include="Custom.cpp" />
     <ClCompile Include="Data.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Queue.cpp" />
+    <ClCompile Include="Render\Ray.cpp" />
     <ClCompile Include="Render\RenderBox.cpp" />
     <ClCompile Include="Render\RenderHelper.cpp" />
     <ClCompile Include="Render\RenderLine.cpp" />
     <ClCompile Include="Render\RenderObject.cpp" />
     <ClCompile Include="Render\RenderPlane.cpp" />
+    <ClCompile Include="Scenery.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

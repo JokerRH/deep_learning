@@ -1,4 +1,5 @@
 #include "Data.h"
+#include "Scenery.h"
 #include <iostream>
 #include <wtypes.h>
 #include <Windows.h>
@@ -13,6 +14,8 @@
 #include <opencv2\imgproc.hpp>
 
 #undef LoadImage
+#undef max
+#undef min
 
 const std::wregex CData::s_regLine( LR"a((?:"((?:[^"]|"")*)"\s+|(\S+)\s+)\(\s*([+]?\d+)\s*,\s*([+]?\d+)\)[xX]\(\s*([+]?\d+)\s*,\s*([+]?\d+)\)\s+\(\s*([+]?\d+)\s*,\s*([+]?\d+)\)@\(\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\)\s+\(\s*([+]?\d+)\s*,\s*([+]?\d+)\)@\(\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\)\s+->\(\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\).*)a" );
 cv::CascadeClassifier CData::s_FaceCascade;
@@ -35,14 +38,11 @@ bool CData::Init( void )
 
 bool CData::OpenWrite( const std::wstring &sFile, unsigned uNumThreads )
 {
-	WCHAR *szPath = (WCHAR*) _alloca( ( sFile.size( ) + 1) * sizeof( WCHAR ) );
-	memcpy( (void *) szPath, sFile.c_str( ), ( sFile.size( ) + 1 ) * sizeof( WCHAR ) );
-	PathCchRemoveFileSpec( szPath, ( sFile.size( ) + 1 ) * sizeof( WCHAR ) );
-	s_sPathWrite = std::wstring( szPath );
+	s_sPathWrite = GetPath( sFile );
 
-	if( !CreateDirectory( szPath, nullptr ) && GetLastError( ) != ERROR_ALREADY_EXISTS )
+	if( !CreateDirectory( s_sPathWrite.c_str( ), nullptr ) && GetLastError( ) != ERROR_ALREADY_EXISTS )
 	{
-		std::wcerr << "Unable to create directory \"" << szPath << "\"" << std::endl;
+		std::wcerr << "Unable to create directory \"" << s_sPathWrite << "\"" << std::endl;
 		return false;
 	}
 
@@ -72,7 +72,111 @@ void CData::CloseWrite( void )
 	s_smFileWrite.close( );
 }
 
-CData::CData( const std::wstring &sLine, const std::wstring &sPath, bool fLoadImage )
+std::vector<CData> CData::LoadData( const std::wstring &sFile, unsigned uCount )
+{
+	std::vector<CData> vecData;
+	std::wfstream smFile( sFile, std::wfstream::in );
+	if( !smFile.is_open( ) )
+	{
+		std::wcerr << "Unable to open file \"" << sFile << "\" for reading" << std::endl;
+		return vecData;
+	}
+
+	std::wstring sLine;
+	while( std::getline( smFile, sLine ) )
+	{
+		if( !uCount-- )
+			break;
+
+		try
+		{
+			vecData.emplace_back( sLine, std::wstring( ) );
+		}
+		catch( int )
+		{
+
+		}
+	}
+
+	smFile.close( );
+	return vecData;
+}
+
+void CData::FindFilesRecursively( const std::wstring &sDir, const std::wstring &sPattern, std::vector<std::wstring> &vecsFiles )
+{
+	const WCHAR *lpFolder = sDir.c_str( );
+	const WCHAR *lpFilePattern = sPattern.c_str( );
+	WCHAR szFullPattern[ MAX_PATH ];
+	WIN32_FIND_DATA FindFileData;
+	HANDLE hFindFile;
+
+	//Process subdirectories
+	PathCchCombine( szFullPattern, MAX_PATH, lpFolder, L"*" );
+	hFindFile = FindFirstFile( szFullPattern, &FindFileData );
+	if( hFindFile != INVALID_HANDLE_VALUE )
+	{
+		do
+		{
+			if( FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY && FindFileData.cFileName[ 0 ] != '.' )
+			{
+				//Found subdirectory, process
+				PathCchCombine( szFullPattern, MAX_PATH, lpFolder, FindFileData.cFileName );
+				FindFilesRecursively( szFullPattern, lpFilePattern, vecsFiles );
+			}
+		} while( FindNextFile( hFindFile, &FindFileData ) );
+		FindClose( hFindFile );
+	}
+
+	// Now we are going to look for the matching files
+	PathCchCombine( szFullPattern, MAX_PATH, lpFolder, lpFilePattern );
+	hFindFile = FindFirstFile( szFullPattern, &FindFileData );
+	if( hFindFile != INVALID_HANDLE_VALUE )
+	{
+		do
+		{
+			if( !( FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) )
+			{
+				//Found file
+				PathCchCombine( szFullPattern, MAX_PATH, lpFolder, FindFileData.cFileName );
+				vecsFiles.push_back( szFullPattern );
+			}
+		} while( FindNextFile( hFindFile, &FindFileData ) );
+		FindClose( hFindFile );
+	}
+}
+
+std::wstring CData::GetPath( const std::wstring &sFile )
+{
+	WCHAR *szPath = (WCHAR*) _alloca( ( sFile.size( ) + 1 ) * sizeof( WCHAR ) );
+	memcpy( (void *) szPath, sFile.c_str( ), ( sFile.size( ) + 1 ) * sizeof( WCHAR ) );
+	PathCchRemoveFileSpec( szPath, ( sFile.size( ) + 1 ) * sizeof( WCHAR ) );
+	return std::wstring( szPath );
+}
+
+static cv::Size GetScreenResolution( void )
+{
+	RECT desktop;
+	GetWindowRect( GetDesktopWindow( ), &desktop );
+	return cv::Size( desktop.right, desktop.bottom );
+}
+
+cv::Rect CData::ShowImage( const std::string &sWindow, const cv::Mat &matImage )
+{
+	cv::Mat mat( GetScreenResolution( ), CV_8UC3, cv::Scalar::all( 255 ) );
+
+	double dScale = mat.cols / (double) matImage.cols;
+	if( matImage.rows * dScale > (double) mat.rows )
+		dScale = mat.rows / (double) matImage.rows;
+
+	cv::Size size( (int) ( matImage.cols * dScale ), (int) ( matImage.rows * dScale ) );
+	cv::Rect rect( ( mat.cols - size.width ) / 2, ( mat.rows - size.height ) / 2, size.width, size.height );
+	cv::resize( matImage, mat( rect ), size );
+
+	cv::imshow( sWindow, mat );
+	return rect;
+}
+
+CData::CData( const std::wstring &sLine, const std::wstring &sPath )
 {
 	std::wsmatch match;
 	std::regex_match( sLine, match, s_regLine );
@@ -94,11 +198,27 @@ CData::CData( const std::wstring &sLine, const std::wstring &sPath, bool fLoadIm
 	vec3EyeRight = CVector<3>( { std::stod( match[ 14 ].str( ) ), std::stod( match[ 15 ].str( ) ), std::stod( match[ 16 ].str( ) ) } );
 	vec3GazePoint = CVector<3>( { std::stod( match[ 17 ].str( ) ), std::stod( match[ 18 ].str( ) ), std::stod( match[ 19 ].str( ) ) } );
 
-	if( !fLoadImage )
+	if( sPath.empty( ) )
 		return;
 
 	//Load image
 	LoadImage( sPath );
+}
+
+bool CData::LoadImage( const std::wstring &sPath )
+{
+	WCHAR szFullPattern[ MAX_PATH ];
+	PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), sImage.c_str( ) );
+	std::wstring sImage( szFullPattern );
+
+	matImage = cv::imread( std::string( sImage.begin( ), sImage.end( ) ) );
+	if( matImage.empty( ) )
+	{
+		std::wcerr << "Unable to read image \"" << sImage << "\"" << std::endl;
+		return false;
+	}
+
+	return true;
 }
 
 std::wstring CData::ToString( unsigned int uPrecision ) const
@@ -120,20 +240,72 @@ void CData::WriteAsync( void )
 	s_QueueWrite.Push_Back( *this );
 }
 
-bool CData::LoadImage( const std::wstring &sPath )
+void CData::Show( const std::string & sWindow )
 {
-	WCHAR szFullPattern[ MAX_PATH ];
-	PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), sImage.c_str( ) );
-	std::wstring sImage( szFullPattern );
-
-	matImage = cv::imread( std::string( sImage.begin( ), sImage.end( ) ) );
-	if( matImage.empty( ) )
+	cv::Mat matScreen( GetScreenResolution( ), CV_8UC3, cv::Scalar::all( 255 ) );
+	cv::Rect rectTotal;
 	{
-		std::wcerr << "Unable to read image \"" << sImage << "\"" << std::endl;
-		return false;
+		cv::Size size( matImage.cols * 3, std::max( matImage.cols * 2, matImage.rows ) );
+		double dScale = std::min( (double) matScreen.cols / size.width, (double) matScreen.rows / size.height );
+		size = cv::Size( (int) ( size.width * dScale ), (int) ( size.height * dScale ) );
+		rectTotal = cv::Rect( (int) ( matScreen.cols / 2.0 - size.width / 2.0 ), (int) ( matScreen.rows / 2.0 - size.height / 2.0 ), size.width, size.height );
+	}
+	cv::Rect rectScenery( rectTotal.x, rectTotal.y, (int) ( rectTotal.width * 2 / 3.0 ), (int) ( rectTotal.width * 2 / 3.0 ) );
+	cv::Rect rectImage( rectTotal.x + rectScenery.width, rectTotal.y, rectTotal.width - rectScenery.width, (int) ( (double) ( rectTotal.width - rectScenery.width ) / matImage.cols * matImage.rows ) );
+	
+	//Draw face
+	{
+		cv::Mat matImage = this->matImage.clone( );
+		double dScaleX = (double) rectImage.width / matImage.cols;
+		double dScaleY = (double) rectImage.height / matImage.rows;
+		cv::resize( matImage, matImage, rectImage.size( ) );
+		cv::Rect rectFace( (int) ( rectFace.x * dScaleX ), (int) ( rectFace.y * dScaleY ), (int) ( rectFace.width * dScaleX ), (int) ( rectFace.height * dScaleY ) );
+		cv::Point ptEyeLeft( (int) ( ptEyeLeft.x * dScaleX ), (int) ( ptEyeLeft.y * dScaleY ) );
+		cv::Point ptEyeRight( (int) ( ptEyeRight.x * dScaleX ), (int) ( ptEyeRight.y * dScaleY ) );
+		cv::rectangle( matImage, rectFace, cv::Scalar( 0, 0, 255 ), 2 );
+		cv::circle( matImage, ptEyeLeft + rectFace.tl( ), 1, cv::Scalar( 0, 255, 0 ), -1 );
+		cv::circle( matImage, ptEyeRight + rectFace.tl( ), 1, cv::Scalar( 255, 0, 0 ), -1 );
+		matImage.copyTo( matScreen( rectImage ) );
 	}
 
-	return true;
+	CScenery scenery( *this );
+	scenery.Fit( ).Draw( matScreen( rectScenery ) );
+	cv::imshow( sWindow, matScreen );
+
+	MSG msg;
+	BOOL fReturn;
+	while( true )
+	{
+		if( ( fReturn = GetMessage( &msg, NULL, 0, 0 ) ) == -1 )
+			throw 27;	//Error
+
+		switch( msg.message )
+		{
+		case WM_QUIT:
+			PostQuitMessage( 0 );
+			throw 27;
+		case WM_KEYDOWN:
+		{
+			unsigned uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_CHAR );
+			switch( uKey )
+			{
+			case 13:	//Enter
+				return;
+			case 27:
+				throw 27;
+			default:
+				std::wcout << "Key: " << uKey << std::endl;
+			}
+			break;
+		}
+		}
+
+		if( fReturn > 0 )
+		{
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
+		}
+	}
 }
 
 void *CData::WriteThread( void * )
@@ -151,37 +323,11 @@ void *CData::WriteThread( void * )
 			std::cerr << "Failed to write image to \"" << szFullPattern << "\"" << std::endl;
 			continue;
 		}
+
 		s_smFileWrite << data.ToString( ) << std::endl;
 	}
 
 	return nullptr;
-}
-
-static void GetScreenResolution( unsigned int &uWidth, unsigned int &uHeight )
-{
-	RECT desktop;
-	GetWindowRect( GetDesktopWindow( ), &desktop );
-	uWidth = desktop.right;
-	uHeight = desktop.bottom;
-}
-
-static cv::Rect Show( const std::string &sWindow, const cv::Mat &matImage )
-{
-	unsigned int uWidth;
-	unsigned int uHeight;
-	GetScreenResolution( uWidth, uHeight );
-	cv::Mat mat( uHeight, uWidth, CV_8UC3, cv::Scalar::all( 255 ) );
-
-	double dScale = uWidth / (double) matImage.cols;
-	if( matImage.rows * dScale > (double) uHeight )
-		dScale = uHeight / (double) matImage.rows;
-
-	cv::Size size( (int) ( matImage.cols * dScale ), (int) ( matImage.rows * dScale ) );
-	cv::Rect rect( ( uWidth - size.width ) / 2, ( uHeight - size.height ) / 2, size.width, size.height );
-	cv::resize( matImage, mat( rect ), size );
-
-	cv::imshow( sWindow, mat );
-	return rect;
 }
 
 bool CData::GetEyePos( const cv::Mat &matFace, const std::string &sWindow )
@@ -191,7 +337,7 @@ bool CData::GetEyePos( const cv::Mat &matFace, const std::string &sWindow )
 	cv::Mat matDraw = matFace.clone( );
 	cv::circle( matDraw, ptEyeLeft, 4, cv::Scalar( 0, 255, 0 ), -1 );
 	cv::circle( matDraw, ptEyeRight, 4, cv::Scalar( 255, 0, 0 ), -1 );
-	cv::Rect rect = Show( sWindow, matDraw );
+	cv::Rect rect = ShowImage( sWindow, matDraw );
 
 	MSG msg;
 	BOOL fReturn;
@@ -241,7 +387,7 @@ bool CData::GetEyePos( const cv::Mat &matFace, const std::string &sWindow )
 				matDraw = matFace.clone( );
 				cv::circle( matDraw, ptEyeLeft, 4, cv::Scalar( 0, 255, 0 ), -1 );
 				cv::circle( matDraw, ptEyeRight, 4, cv::Scalar( 255, 0, 0 ), -1 );
-				rect = Show( sWindow, matDraw );
+				rect = ShowImage( sWindow, matDraw );
 				break;
 			}
 		case WM_RBUTTONDOWN:
@@ -263,7 +409,7 @@ bool CData::GetFaceRect( const std::string &sWindow )
 
 	cv::Mat matDraw = matImage.clone( );
 	cv::rectangle( matDraw, rectFace, cv::Scalar( 0, 0, 255 ), 3 );
-	cv::Rect rect = Show( sWindow, matDraw );
+	cv::Rect rect = ShowImage( sWindow, matDraw );
 	bool fOrigin = true;
 
 	MSG msg;
@@ -311,8 +457,7 @@ bool CData::GetFaceRect( const std::string &sWindow )
 
 			matDraw = matImage.clone( );
 			cv::rectangle( matDraw, rectFace, cv::Scalar( 0, 255, 255 ), 1 );
-			cv::Rect rect = Show( sWindow, matDraw );
-			rect = Show( sWindow, matDraw );
+			rect = ShowImage( sWindow, matDraw );
 			break;
 		}
 		case WM_LBUTTONDOWN:
@@ -334,8 +479,7 @@ bool CData::GetFaceRect( const std::string &sWindow )
 
 			matDraw = matImage.clone( );
 			cv::rectangle( matDraw, rectFace, cv::Scalar( 0, 0, 255 ), 1 );
-			cv::Rect rect = Show( sWindow, matDraw );
-			rect = Show( sWindow, matDraw );
+			rect = ShowImage( sWindow, matDraw );
 			break;
 		}
 		case WM_RBUTTONDOWN:
@@ -359,7 +503,7 @@ bool CData::GetFaceRect( const std::string &sWindow )
 	}
 }
 
-bool CData::LoadImage( const std::wstring &sImage, const std::string sWindow )
+bool CData::LoadImage( const std::wstring &sImage, const std::string &sWindow )
 {
 	this->sImage = std::wstring( PathFindFileName( sImage.c_str( ) ) );
 	matImage = cv::imread( std::string( sImage.begin( ), sImage.end( ) ) );
@@ -372,7 +516,7 @@ bool CData::LoadImage( const std::wstring &sImage, const std::string sWindow )
 	//Detect face
 	{
 		cv::Mat matComp;
-		cv::resize( matImage, matComp, cv::Size( 500, 500 ) );
+		cv::resize( matImage, matComp, cv::Size( 500, (int) ( 500.0 / matImage.cols * matImage.rows ) ) );
 		std::vector<cv::Rect> vecFaces;
 		s_FaceCascade.detectMultiScale( matComp, vecFaces, 1.1, 5, CV_HAAR_SCALE_IMAGE, cv::Size( 30, 30 ) );
 		if( !vecFaces.size( ) )
