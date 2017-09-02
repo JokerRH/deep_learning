@@ -38,8 +38,8 @@ CVector<2> CRay::AmplitudeRepresentation( void ) const
 void CRay::Render( cv::Mat &matImage, const cv::Scalar &colorPoint, const cv::Scalar &colorLine, double dLength, int iRadius, int iPointThickness, int iLineThickness ) const
 {
 	CVector<3> vec3Endp = ( *this )( dLength );
-	cv::Point pt1( (int) ( m_vec3Origin[ 0 ] * matImage.cols ), (int) ( m_vec3Origin[ 1 ] * matImage.rows ) );
-	cv::Point pt2( (int) ( vec3Endp[ 0 ] * matImage.cols ), (int) ( vec3Endp[ 1 ] * matImage.rows ) );
+	cv::Point pt1( (int) ( m_vec3Origin[ 0 ] * matImage.cols ), matImage.rows - (int) ( m_vec3Origin[ 1 ] * matImage.rows ) );
+	cv::Point pt2( (int) ( vec3Endp[ 0 ] * matImage.cols ), matImage.rows - (int) ( vec3Endp[ 1 ] * matImage.rows ) );
 	cv::circle( matImage, pt1, iRadius, colorPoint, iPointThickness );
 	cv::line( matImage, pt1, pt2, colorLine, iLineThickness );
 }

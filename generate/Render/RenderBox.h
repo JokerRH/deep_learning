@@ -28,7 +28,8 @@ public:
 	void RenderFrame( cv::Mat &matImage, const cv::Scalar &color, int iThickness = 2 ) const;
 	void RenderContent( cv::Mat &matImage, const cv::Scalar &color ) const;
 	void Transform( const CMatrix<3, 3> &mat );
-	void Shift( const CVector<3> &vec3 );
+	CRenderBox &Shift( const CVector<3> &vec3 );
+	CRenderBox Shifted( const CVector<3> &vec3 ) const;
 	CRenderLine GetLine( unsigned char fPlane, unsigned char fLine ) const;
 	CRenderLine GetLines( unsigned char &fPlane, unsigned char &fLine ) const;
 	CRenderPlane GetPlane( unsigned char fPlane ) const;
@@ -83,6 +84,11 @@ inline void CRenderBox::RenderContent( cv::Mat &matImage, const cv::Scalar &colo
 	unsigned char fPlane = BOX_FRONT | BOX_BACK | BOX_LEFT | BOX_RIGHT | BOX_TOP | BOX_BOTTOM;
 	while( fPlane )
 		GetPlanes( fPlane ).RenderContent( matImage, color );
+}
+
+inline CRenderBox CRenderBox::Shifted( const CVector<3> &vec3 ) const
+{
+	return CRenderBox( *this ).Shift( vec3 );
 }
 
 inline CRenderLine CRenderBox::GetLine( unsigned char fPlane, unsigned char fLine ) const

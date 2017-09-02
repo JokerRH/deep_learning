@@ -14,7 +14,8 @@ public:
 	CVector<3> GetMax( void ) const override;
 	void RenderPoints( cv::Mat &matImage, const cv::Scalar &color, int iRadius = 1, int iThickness = -1 ) const;
 	void Transform( const CMatrix<3, 3> &mat );
-	void Shift( const CVector<3> &vec3 );
+	CRenderPoint &Shift( const CVector<3> &vec3 );
+	CRenderPoint Shifted( const CVector<3> &vec3 ) const;
 	
 	std::string ToString( unsigned int uPrecision = 2 ) const override;
 
@@ -45,7 +46,7 @@ inline CVector<3> CRenderPoint::GetMax( void ) const
 
 inline void CRenderPoint::RenderPoints( cv::Mat &matImage, const cv::Scalar &color, int iRadius, int iThickness ) const
 {
-	cv::circle( matImage, cv::Point( (int) ( m_vec3Point[ 0 ] * matImage.cols ), (int) ( m_vec3Point[ 1 ] * matImage.rows ) ), iRadius, color, iThickness );
+	cv::circle( matImage, cv::Point( (int) ( m_vec3Point[ 0 ] * matImage.cols ), matImage.rows - (int) ( m_vec3Point[ 1 ] * matImage.rows ) ), iRadius, color, iThickness );
 }
 
 inline void CRenderPoint::Transform( const CMatrix<3, 3> &mat )
@@ -53,9 +54,15 @@ inline void CRenderPoint::Transform( const CMatrix<3, 3> &mat )
 	m_vec3Point = mat * m_vec3Point;
 }
 
-inline void CRenderPoint::Shift( const CVector<3> &vec3 )
+inline CRenderPoint &CRenderPoint::Shift( const CVector<3> &vec3 )
 {
 	m_vec3Point += vec3;
+	return *this;
+}
+
+inline CRenderPoint CRenderPoint::Shifted( const CVector<3> &vec3 ) const
+{
+	return CRenderPoint( *this ).Shift( vec3 );
 }
 	
 inline std::string CRenderPoint::ToString( unsigned int uPrecision ) const

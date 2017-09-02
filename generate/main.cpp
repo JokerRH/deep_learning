@@ -5,7 +5,10 @@
 #include <string>
 #include <vector>
 #include <locale>
+#include <Windows.h>
 #include <opencv2\highgui.hpp>
+
+#undef LoadImage
 
 std::wstring StrToWStr( const std::string &str )
 {
@@ -15,6 +18,28 @@ std::wstring StrToWStr( const std::string &str )
 	return std::wstring( &wideStringBuffer[ 0 ], wideStringBuffer.size( ) );
 }
 
+bool CreateCVWindow( const std::string &sWindow )
+{
+	cv::namedWindow( sWindow, cv::WINDOW_FULLSCREEN );
+	cv::moveWindow( sWindow, 0, 0 );
+	cv::setWindowProperty( sWindow, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN );
+
+	HWND hWindow = FindWindow( 0, StrToWStr( sWindow ).c_str( ) );
+	if( !hWindow )
+	{
+		std::cerr << "Unable to get window handle for \"" << sWindow << "\"" << std::endl;
+		return false;
+	}
+
+	SetWindowLong( hWindow, GWL_STYLE, GetWindowLong( hWindow, GWL_STYLE ) & ~( WS_CAPTION | WS_THICKFRAME ) );
+	SetWindowLong( hWindow, GWL_EXSTYLE, GetWindowLong( hWindow, GWL_EXSTYLE ) & ~( WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE ) );
+	MONITORINFO monitor_info;
+	monitor_info.cbSize = sizeof( monitor_info );
+	GetMonitorInfo( MonitorFromWindow( hWindow, MONITOR_DEFAULTTONEAREST ), &monitor_info );
+	SetWindowPos( hWindow, NULL, monitor_info.rcMonitor.left, monitor_info.rcMonitor.top, monitor_info.rcMonitor.right - monitor_info.rcMonitor.left, monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED );
+	return true;
+}
+
 int main( int argc, char **argv )
 {
 	if( argc >= 3 )
@@ -22,16 +47,19 @@ int main( int argc, char **argv )
 		if( !_stricmp( argv[ 1 ], "show" ) )
 		{
 			std::vector<CData> vecData = CData::LoadData( StrToWStr( argv[ 2 ] ), 4 );
-			std::wstring sPath = CData::GetPath( StrToWStr( argv[ 2 ] ) );
 			std::wcout << "Loaded " << vecData.size( ) << " instances" << std::endl;
+
+			if( !CreateCVWindow( "Window" ) )
+			{
+				system( "PAUSE" );
+				return EXIT_FAILURE;
+			}
 
 			try
 			{
-				cv::namedWindow( "Window", cv::WINDOW_FULLSCREEN );
-				cv::setWindowProperty( "Window", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN );
 				for( CData data : vecData )
 				{
-					data.LoadImage( sPath );
+					data.LoadImage( );
 					data.Show( "Window" );
 				}
 			}
@@ -147,6 +175,29 @@ int main( int argc, char **argv )
 
 			cv::destroyAllWindows( );
 			CData::CloseWrite( );
+			std::wcout << "Done." << std::endl;
+			system( "PAUSE" );
+			return EXIT_SUCCESS;
+		}
+	}
+	if( argc >= 5 )
+	{
+		if( !_stricmp( argv[ 1 ], "exp" ) )
+		{
+			std::vector<CData> vecData;
+			for( unsigned u = 4; u < (unsigned) argc; u++ )
+			{
+				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ) );
+				std::wcout << "Loaded " << vecTemp.size( ) << " instances from \"" << argv[ u ] << "\"" << std::endl;
+				vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
+			}
+			std::wcout << "Loaded " << vecData.size( ) << " instances\n" << std::endl;
+			if( !CData::Export( vecData, StrToWStr( argv[ 3 ] ), std::stoul( argv[ 2 ] ) ) )
+			{
+				system( "PAUSE" );
+				return EXIT_FAILURE;
+			}
+
 			std::wcout << "Done." << std::endl;
 			system( "PAUSE" );
 			return EXIT_SUCCESS;

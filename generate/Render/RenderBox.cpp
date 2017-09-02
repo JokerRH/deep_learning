@@ -49,7 +49,7 @@ void CRenderBox::Transform( const CMatrix<3, 3> &mat )
 	m_avec3Points[ 7 ] = mat * m_avec3Points[ 7 ];
 }
 
-void CRenderBox::Shift( const CVector<3> &vec3 )
+CRenderBox &CRenderBox::Shift( const CVector<3> &vec3 )
 {
 	m_avec3Points[ 0 ] += vec3;
 	m_avec3Points[ 1 ] += vec3;
@@ -59,6 +59,7 @@ void CRenderBox::Shift( const CVector<3> &vec3 )
 	m_avec3Points[ 5 ] += vec3;
 	m_avec3Points[ 6 ] += vec3;
 	m_avec3Points[ 7 ] += vec3;
+	return *this;
 }
 
 #define BOX( plane, a, b, c, d )\

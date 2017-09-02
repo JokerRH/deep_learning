@@ -1,5 +1,7 @@
 #include "Data.h"
 #include "Scenery.h"
+#include "Render\RenderHelper.h"
+#include "Render\Ray.h"
 #include <iostream>
 #include <wtypes.h>
 #include <Windows.h>
@@ -9,9 +11,15 @@
 #include <regex>
 #include <Pathcch.h>
 #include <malloc.h>
+#include <algorithm>
+#include <random>
 #include <opencv2\imgcodecs.hpp>
 #include <opencv2\highgui.hpp>
 #include <opencv2\imgproc.hpp>
+#ifndef _USE_MATH_DEFINES
+#	define _USE_MATH_DEFINES
+#endif
+#include <math.h>
 
 #undef LoadImage
 #undef max
@@ -90,7 +98,7 @@ std::vector<CData> CData::LoadData( const std::wstring &sFile, unsigned uCount )
 
 		try
 		{
-			vecData.emplace_back( sLine, std::wstring( ) );
+			vecData.emplace_back( sLine, GetPath( sFile ), false );
 		}
 		catch( int )
 		{
@@ -176,7 +184,160 @@ cv::Rect CData::ShowImage( const std::string &sWindow, const cv::Mat &matImage )
 	return rect;
 }
 
-CData::CData( const std::wstring &sLine, const std::wstring &sPath )
+bool CData::Export( std::vector<CData> &vecData, const std::wstring &sPath, unsigned uValBatchSize, double dTrainValRatio )
+{
+	{
+		double dBatchCount = vecData.size( ) * ( 1 - dTrainValRatio ) / uValBatchSize;
+		dBatchCount = round( dBatchCount );
+		dTrainValRatio = 1 - dBatchCount * uValBatchSize / vecData.size( );
+	}
+
+	std::random_device rng;
+	std::mt19937 urng( rng( ) );
+	std::shuffle( vecData.begin( ), vecData.end( ), urng );
+	const std::vector<CData> vecTrain( vecData.begin( ), vecData.begin( ) + (int) ( vecData.size( ) * dTrainValRatio ) );
+	const std::vector<CData> vecVal( vecData.begin( ) + (int) ( vecData.size( ) * dTrainValRatio ), vecData.end( ) );
+
+	std::wcout << "Exporting to \"" << sPath << "\"" << std::endl;
+	std::wcout << "Training data  : " << vecTrain.size( ) << std::endl;
+	std::wcout << "Validation data: " << vecVal.size( ) << std::endl;
+
+	std::wstring sTrain;
+	std::wstring sTrainData;
+	std::wstring sTrainLabel;
+	std::wstring sVal;
+	std::wstring sValData;
+	std::wstring sValLabel;
+	WCHAR szFullPattern[ MAX_PATH ];
+	PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"train" );
+	sTrain = std::wstring( szFullPattern );
+	PathCchCombine( szFullPattern, MAX_PATH, sTrain.c_str( ), L"data.txt" );
+	sTrainData = std::wstring( szFullPattern );
+	PathCchCombine( szFullPattern, MAX_PATH, sTrain.c_str( ), L"label.csv" );
+	sTrainLabel = std::wstring( szFullPattern );
+	
+	PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"val" );
+	sVal = std::wstring( szFullPattern );
+	PathCchCombine( szFullPattern, MAX_PATH, sVal.c_str( ), L"data.txt" );
+	sValData = std::wstring( szFullPattern );
+	PathCchCombine( szFullPattern, MAX_PATH, sVal.c_str( ), L"label.csv" );
+	sValLabel = std::wstring( szFullPattern );
+
+	//Create export directory
+	if( !CreateDirectory( sPath.c_str( ), nullptr ) && GetLastError( ) != ERROR_ALREADY_EXISTS )
+	{
+		std::wcerr << "Unable to create directory \"" << sPath << "\"" << std::endl;
+		return false;
+	}
+
+	//Create train directory
+	if( !CreateDirectory( sTrain.c_str( ), nullptr ) && GetLastError( ) != ERROR_ALREADY_EXISTS )
+	{
+		std::wcerr << "Unable to create directory \"" << s_sPathWrite << "\"" << std::endl;
+		return false;
+	}
+
+	//Create val directory
+	if( !CreateDirectory( sVal.c_str( ), nullptr ) && GetLastError( ) != ERROR_ALREADY_EXISTS )
+	{
+		std::wcerr << "Unable to create directory \"" << s_sPathWrite << "\"" << std::endl;
+		return false;
+	}
+
+	//Export train data
+	std::fstream smData( sTrainData, std::fstream::out );
+	if( !smData.is_open( ) )
+	{
+		std::wcerr << "Unable to open file \"" << sTrainData << "\" for writing" << std::endl;
+		return false;
+	}
+
+	std::fstream smLabel( sTrainLabel, std::fstream::out );
+	if( !smLabel.is_open( ) )
+	{
+		std::wcerr << "Unable to open file \"" << sTrainLabel << "\" for writing" << std::endl;
+		smData.close( );
+		return false;
+	}
+
+	std::uniform_real_distribution<double> disScale( 0.9, 1.1 );
+	std::uniform_real_distribution<double> disOffset( -0.05, 0.05 );
+
+	unsigned uCurrent = 0;
+	unsigned uTotal = (unsigned) vecTrain.size( );
+	std::wcout << "Exporting training data" << std::endl;
+	wprintf( L"%3.0f%% (%u / %u)", (double) uCurrent / uTotal * 100, uCurrent, uTotal );
+	fflush( stdout );
+	uCurrent++;
+	for( CData data : vecTrain )
+	{
+		data.LoadImage( );
+		data.ScaleFace( CVector<2>( { disScale( urng ), disScale( urng ) } ), CVector<2>( { disOffset( urng ), disOffset( urng ) } ) );
+		PathCchCombine( szFullPattern, MAX_PATH, sTrain.c_str( ), data.sImage.c_str( ) );
+		if( !cv::imwrite( std::string( szFullPattern, szFullPattern + wcslen( szFullPattern ) ), data.matImage( data.rectFace ) ) )
+		{
+			std::wcerr << "Failed to write image to \"" << szFullPattern << "\"" << std::endl;
+			continue;
+		}
+		smData << std::string( data.sImage.begin( ), data.sImage.end( ) ) << " 1" << std::endl;
+		smLabel << data.ToCSV( ) << std::endl;
+		wprintf( L"\r%3.0f%% (%u / %u)", (double) uCurrent / uTotal * 100, uCurrent, uTotal );
+		fflush( stdout );
+		uCurrent++;
+	}
+	std::wcout << std::endl;
+
+	smData.close( );
+	smLabel.close( );
+
+	//Export validataion data
+	smData.open( sTrainData, std::fstream::out );
+	if( !smData.is_open( ) )
+	{
+		std::wcerr << "Unable to open file \"" << sValData << "\" for writing" << std::endl;
+		return false;
+	}
+
+	smLabel.open( sTrainLabel, std::fstream::out );
+	if( !smLabel.is_open( ) )
+	{
+		std::wcerr << "Unable to open file \"" << sValLabel << "\" for writing" << std::endl;
+		smData.close( );
+		return false;
+	}
+
+	uCurrent = 0;
+	uTotal = (unsigned) vecVal.size( );
+	std::wcout << "Exporting validation data" << std::endl;
+	wprintf( L"%3.0f%% (%u / %u)", (double) uCurrent / uTotal * 100, uCurrent, uTotal );
+	fflush( stdout );
+	uCurrent++;
+	for( CData data : vecVal )
+	{
+		data.LoadImage( );
+		data.ScaleFace( CVector<2>( { disScale( urng ), disScale( urng ) } ), CVector<2>( { disOffset( urng ), disOffset( urng ) } ) );
+		PathCchCombine( szFullPattern, MAX_PATH, sVal.c_str( ), data.sImage.c_str( ) );
+		if( !cv::imwrite( std::string( szFullPattern, szFullPattern + wcslen( szFullPattern ) ), data.matImage( data.rectFace ) ) )
+		{
+			std::wcerr << "Failed to write image to \"" << szFullPattern << "\"" << std::endl;
+			continue;
+		}
+		smData << std::string( data.sImage.begin( ), data.sImage.end( ) ) << " 1" << std::endl;
+		smLabel << data.ToCSV( ) << std::endl;
+		wprintf( L"\r%3.0f%% (%u / %u)", (double) uCurrent / uTotal * 100, uCurrent, uTotal );
+		fflush( stdout );
+		uCurrent++;
+	}
+	std::wcout << std::endl;
+
+	smData.close( );
+	smLabel.close( );
+
+	return false;
+}
+
+CData::CData( const std::wstring &sLine, const std::wstring &sPath, bool fLoadImage ) :
+	sRootPath( sPath )
 {
 	std::wsmatch match;
 	std::regex_match( sLine, match, s_regLine );
@@ -198,17 +359,17 @@ CData::CData( const std::wstring &sLine, const std::wstring &sPath )
 	vec3EyeRight = CVector<3>( { std::stod( match[ 14 ].str( ) ), std::stod( match[ 15 ].str( ) ), std::stod( match[ 16 ].str( ) ) } );
 	vec3GazePoint = CVector<3>( { std::stod( match[ 17 ].str( ) ), std::stod( match[ 18 ].str( ) ), std::stod( match[ 19 ].str( ) ) } );
 
-	if( sPath.empty( ) )
+	if( !fLoadImage )
 		return;
 
 	//Load image
-	LoadImage( sPath );
+	LoadImage( );
 }
 
-bool CData::LoadImage( const std::wstring &sPath )
+bool CData::LoadImage( void )
 {
 	WCHAR szFullPattern[ MAX_PATH ];
-	PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), sImage.c_str( ) );
+	PathCchCombine( szFullPattern, MAX_PATH, sRootPath.c_str( ), sImage.c_str( ) );
 	std::wstring sImage( szFullPattern );
 
 	matImage = cv::imread( std::string( sImage.begin( ), sImage.end( ) ) );
@@ -232,6 +393,21 @@ std::wstring CData::ToString( unsigned int uPrecision ) const
 	out << " (" << ptEyeLeft.x << ", " << ptEyeLeft.y << ")@(" << vec3EyeLeft[ 0 ] << ", " << vec3EyeLeft[ 1 ] << ", " << vec3EyeLeft[ 2 ] << ")";
 	out << " (" << ptEyeRight.x << ", " << ptEyeRight.y << ")@(" << vec3EyeRight[ 0 ] << ", " << vec3EyeRight[ 1 ] << ", " << vec3EyeRight[ 2 ] << ")";
 	out << " ->(" << vec3GazePoint[ 0 ] << ", " << vec3GazePoint[ 1 ] << ", " << vec3GazePoint[ 2 ] << ")";
+	return out.str( );
+}
+
+std::string CData::ToCSV( unsigned int uPrecision ) const
+{
+	std::ostringstream out;
+	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	out.precision( uPrecision );
+
+	CVector<2> vec2EyeLeft( CRay( vec3EyeLeft, vec3GazePoint - vec3EyeLeft ).AmplitudeRepresentation( ) );
+	CVector<2> vec2EyeRight( CRay( vec3EyeRight, vec3GazePoint - vec3EyeRight ).AmplitudeRepresentation( ) );
+
+	out << vec2EyeLeft[ 0 ] << "," << vec2EyeLeft[ 1 ] << "," << vec2EyeRight[ 0 ] << "," << vec2EyeRight[ 1 ] << ",";
+	out << (double) ptEyeLeft.x / rectFace.width << "," << (double) ptEyeLeft.y / rectFace.height << ",";
+	out << (double) ptEyeRight.x / rectFace.width << "," << (double) ptEyeRight.y / rectFace.height;
 	return out.str( );
 }
 
@@ -272,6 +448,9 @@ void CData::Show( const std::string & sWindow )
 	scenery.Fit( ).Draw( matScreen( rectScenery ) );
 	cv::imshow( sWindow, matScreen );
 
+	bool fDrag = false;
+	cv::Point ptLastPos;
+
 	MSG msg;
 	BOOL fReturn;
 	while( true )
@@ -282,6 +461,7 @@ void CData::Show( const std::string & sWindow )
 		switch( msg.message )
 		{
 		case WM_QUIT:
+			std::wcout << "Quit message" << std::endl;
 			PostQuitMessage( 0 );
 			throw 27;
 		case WM_KEYDOWN:
@@ -289,13 +469,121 @@ void CData::Show( const std::string & sWindow )
 			unsigned uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_CHAR );
 			switch( uKey )
 			{
+			case 0:
+				uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_VSC );
+				switch( uKey )
+				{
+				case 71:	//Pos1
+					scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, M_PI * 0.125, 0 ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				case 72:	//Arrow_Up
+					scenery.Shift( CVector<3>( { 0, 0.1, 0 } ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				case 73:	//Img_Up
+					scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, 0, M_PI * 0.125 ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				case 75:	//Arrow_Left
+					scenery.Shift( CVector<3>( { -0.1, 0, 0 } ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				case 77:	//Arrow_Right
+					scenery.Shift( CVector<3>( { 0.1, 0, 0 } ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				case 79:	//Home
+					scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, -M_PI * 0.125, 0 ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				case 80:	//Arrow_Down
+					scenery.Shift( CVector<3>( { 0, -0.1, 0 } ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				case 81:	//Img_Down
+					scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, 0, -M_PI * 0.125 ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				case 82:	//Insert
+					scenery.Transform( CRenderHelper::GetRotationMatrixRad( M_PI * 0.125, 0, 0 ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				case 83:	//Delete
+					scenery.Transform( CRenderHelper::GetRotationMatrixRad( -M_PI * 0.125, 0, 0 ) ).Draw( matScreen( rectScenery ) );
+					cv::imshow( sWindow, matScreen );
+					break;
+				default:
+					std::wcout << "VSC Key: " << uKey << std::endl;
+				}
+				break;
 			case 13:	//Enter
 				return;
 			case 27:
 				throw 27;
+			case 43:	//Numpad+
+				scenery.Transform( CRenderHelper::GetTransformationMatrix( 1.1 ) ).Draw( matScreen( rectScenery ) );
+				cv::imshow( sWindow, matScreen );
+				break;
+			case 45:	//Numpad-
+				scenery.Transform( CRenderHelper::GetTransformationMatrix( 1 / 1.1 ) ).Draw( matScreen( rectScenery ) );
+				cv::imshow( sWindow, matScreen );
+				break;
+			case 50:	//Numpad_2
+				scenery = CScenery( *this );
+				scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, M_PI, M_PI ) ).Fit( false ).Draw( matScreen( rectScenery ) );
+				cv::imshow( sWindow, matScreen );
+				break;
+			case 56:	//Numpad_8
+				scenery = CScenery( *this );
+				scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, M_PI, M_PI / 2 ) ).Fit( false ).Draw( matScreen( rectScenery ) );
+				cv::imshow( sWindow, matScreen );
+				break;
+			case 70:	//'f'
+				scenery.Fit( false ).Draw( matScreen( rectScenery ) );
+				cv::imshow( sWindow, matScreen );
+				break;
+			case 90:	//'z'
+				scenery = CScenery( *this );
+				scenery.Fit( false ).Draw( matScreen( rectScenery ) );
+				cv::imshow( sWindow, matScreen );
+				break;
 			default:
 				std::wcout << "Key: " << uKey << std::endl;
 			}
+			break;
+		}
+		case WM_LBUTTONDOWN:
+			ptLastPos = cv::Point( GET_X_LPARAM( msg.lParam ), GET_Y_LPARAM( msg.lParam ) );
+			if( !rectScenery.contains( ptLastPos ) )
+				break;
+
+			fDrag = true;
+			break;
+		case WM_LBUTTONUP:
+		{
+			if( !fDrag )
+				break;
+
+			cv::Point pt( GET_X_LPARAM( msg.lParam ), GET_Y_LPARAM( msg.lParam ) );
+			ptLastPos = pt - ptLastPos;
+			scenery.Transform( CRenderHelper::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 ) );
+			scenery.Draw( matScreen( rectScenery ) );
+			cv::imshow( sWindow, matScreen );
+			fDrag = false;
+			break;
+		}
+		case WM_MOUSEMOVE:
+		{
+			if( !fDrag )
+				break;
+
+			cv::Point pt( GET_X_LPARAM( msg.lParam ), GET_Y_LPARAM( msg.lParam ) );
+			ptLastPos = pt - ptLastPos;
+			scenery.Transform( CRenderHelper::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 ) );
+			scenery.Draw( matScreen( rectScenery ) );
+			cv::imshow( sWindow, matScreen );
+			ptLastPos = pt;
 			break;
 		}
 		}
@@ -308,6 +596,21 @@ void CData::Show( const std::string & sWindow )
 	}
 }
 
+void CData::ScaleFace( const CVector<2> &vec2Scale, const CVector<2> &vec2Shift )
+{
+	cv::Point ptTL( (int) ( rectFace.x + matImage.cols * vec2Shift[ 0 ] ), (int) ( rectFace.y + matImage.rows * vec2Shift[ 1 ] ) );
+	cv::Point ptBR( (int) ( rectFace.x + rectFace.width * vec2Scale[ 0 ] ), (int) ( rectFace.y + rectFace.height * vec2Scale[ 1 ] ) );
+
+	ptEyeLeft += rectFace.tl( );
+	ptEyeRight += rectFace.tl( );
+	int iBuffer = (int) ( rectFace.width * 0.1 );
+	ptTL = cv::Point( std::max( std::min( { ptTL.x, ptEyeLeft.x - iBuffer, ptEyeRight.x - iBuffer } ), 0 ), std::max( std::min( { ptTL.y, ptEyeLeft.y - iBuffer, ptEyeRight.y - iBuffer } ), 0 ) );
+	ptBR = cv::Point( std::min( std::max( { ptBR.x, ptEyeLeft.x + iBuffer, ptEyeRight.x + iBuffer } ), matImage.cols ), std::min( std::max( { ptBR.y, ptEyeLeft.y + iBuffer, ptEyeRight.y + iBuffer } ), matImage.rows ) );
+	rectFace = cv::Rect( ptTL, ptBR );
+	ptEyeLeft -= rectFace.tl( );
+	ptEyeRight -= rectFace.tl( );
+}
+
 void *CData::WriteThread( void * )
 {
 	WCHAR szFullPattern[ MAX_PATH ];
@@ -317,11 +620,14 @@ void *CData::WriteThread( void * )
 		if( data.matImage.empty( ) )
 			break;
 
-		PathCchCombine( szFullPattern, MAX_PATH, s_sPathWrite.c_str( ), data.sImage.c_str( ) );
-		if( !cv::imwrite( std::string( szFullPattern, szFullPattern + wcslen( szFullPattern ) ), data.matImage ) )
+		if( data.fWriteImage )
 		{
-			std::cerr << "Failed to write image to \"" << szFullPattern << "\"" << std::endl;
-			continue;
+			PathCchCombine( szFullPattern, MAX_PATH, s_sPathWrite.c_str( ), data.sImage.c_str( ) );
+			if( !cv::imwrite( std::string( szFullPattern, szFullPattern + wcslen( szFullPattern ) ), data.matImage ) )
+			{
+				std::cerr << "Failed to write image to \"" << szFullPattern << "\"" << std::endl;
+				continue;
+			}
 		}
 
 		s_smFileWrite << data.ToString( ) << std::endl;

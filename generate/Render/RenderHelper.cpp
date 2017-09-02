@@ -46,9 +46,9 @@ CMatrix<3, 3> CRenderHelper::GetRotationMatrixRad( double dX, double dY, double 
 
 CMatrix<3, 3> CRenderHelper::GetTransformationMatrix( CVector<3> vec3X, CVector<3> vec3Y, CVector<3> vec3Z )
 {
-	vec3X.MakeUnitVector( );
-	vec3Y.MakeUnitVector( );
-	vec3Z.MakeUnitVector( );
+	vec3X.Normalize( );
+	vec3Y.Normalize( );
+	vec3Z.Normalize( );
 
 	return CMatrix<3, 3>(
 	{

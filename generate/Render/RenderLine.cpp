@@ -26,8 +26,9 @@ void CRenderLine::Transform( const CMatrix<3, 3> &mat )
 	m_avec3Points[ 1 ] = mat * m_avec3Points[ 1 ];
 }
 
-void CRenderLine::Shift( const CVector<3> &vec3 )
+CRenderLine &CRenderLine::Shift( const CVector<3> &vec3 )
 {
 	m_avec3Points[ 0 ] += vec3;
 	m_avec3Points[ 1 ] += vec3;
+	return *this;
 }

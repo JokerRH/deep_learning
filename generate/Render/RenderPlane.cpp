@@ -22,14 +22,12 @@ CVector<3> CRenderPlane::GetMax( void ) const
 
 void CRenderPlane::RenderContent( cv::Mat &matImage, const cv::Scalar &color ) const
 {
-	unsigned int uWidth = matImage.cols;
-	unsigned int uHeight = matImage.rows;
 	cv::Point aPoints[ 4 ] =
 	{
-		cv::Point( (int) ( m_avec3Points[ 0 ][ 0 ] * uWidth ), (int) ( m_avec3Points[ 0 ][ 1 ] * uHeight ) ),
-		cv::Point( (int) ( m_avec3Points[ 1 ][ 0 ] * uWidth ), (int) ( m_avec3Points[ 1 ][ 1 ] * uHeight ) ),
-		cv::Point( (int) ( m_avec3Points[ 2 ][ 0 ] * uWidth ), (int) ( m_avec3Points[ 2 ][ 1 ] * uHeight ) ),
-		cv::Point( (int) ( m_avec3Points[ 3 ][ 0 ] * uWidth ), (int) ( m_avec3Points[ 3 ][ 1 ] * uHeight ) ),
+		cv::Point( (int) ( m_avec3Points[ 0 ][ 0 ] * matImage.cols ), matImage.rows - (int) ( m_avec3Points[ 0 ][ 1 ] * matImage.rows ) ),
+		cv::Point( (int) ( m_avec3Points[ 1 ][ 0 ] * matImage.cols ), matImage.rows - (int) ( m_avec3Points[ 1 ][ 1 ] * matImage.rows ) ),
+		cv::Point( (int) ( m_avec3Points[ 2 ][ 0 ] * matImage.cols ), matImage.rows - (int) ( m_avec3Points[ 2 ][ 1 ] * matImage.rows ) ),
+		cv::Point( (int) ( m_avec3Points[ 3 ][ 0 ] * matImage.cols ), matImage.rows - (int) ( m_avec3Points[ 3 ][ 1 ] * matImage.rows ) ),
 	};
 	fillConvexPoly( matImage, aPoints, 4, color );
 }
@@ -42,12 +40,13 @@ void CRenderPlane::Transform( const CMatrix<3, 3> &mat )
 	m_avec3Points[ 3 ] = mat * m_avec3Points[ 3 ];
 }
 
-void CRenderPlane::Shift( const CVector<3> &vec3 )
+CRenderPlane &CRenderPlane::Shift( const CVector<3> &vec3 )
 {
 	m_avec3Points[ 0 ] += vec3;
 	m_avec3Points[ 1 ] += vec3;
 	m_avec3Points[ 2 ] += vec3;
 	m_avec3Points[ 3 ] += vec3;
+	return *this;
 }
 
 std::array<unsigned char, 2> CRenderPlane::GetLineIndices( unsigned char &fLine ) const

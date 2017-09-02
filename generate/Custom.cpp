@@ -81,15 +81,17 @@ CCustom::CCustom( const fileformat &data, const std::string & sWindow )
 	if( !LoadImage( data.sImage, sWindow ) )
 		throw 0;
 
-	CVector<2> vec2EyeLeft( { (double) ptEyeLeft.x, (double) ptEyeLeft.y } );
-	CVector<2> vec2EyeRight( { (double) ptEyeRight.x, (double) ptEyeRight.y } );
+	CVector<2> vec2EyeLeft( { (double) rectFace.x + ptEyeLeft.x, (double) rectFace.y + ptEyeLeft.y } );
+	CVector<2> vec2EyeRight( { (double) rectFace.x + ptEyeRight.x, (double) rectFace.y + ptEyeRight.y } );
 	const double dPixelIPD = ( vec2EyeLeft - vec2EyeRight ).Abs( );
 	const double dDistFact = 0.066 / dPixelIPD;
 	const double dDistance = ( CVector<2>( { (double) matImage.cols, (double) matImage.rows } ).Abs( ) / dPixelIPD ) * ( 0.033 / tan( data.dFOV * M_PI / ( 2 * 180 ) ) );
 
-	CVector<2> vec2Center( { rectFace.width / 2.0, rectFace.height / 2.0 } );
+	CVector<2> vec2Center( { matImage.cols / 2.0, matImage.rows / 2.0 } );
 	vec2EyeLeft = ( vec2EyeLeft - vec2Center ) * dDistFact;
 	vec2EyeRight = ( vec2EyeRight - vec2Center ) * dDistFact;
+	vec2EyeLeft[ 1 ] = -vec2EyeLeft[ 1 ];
+	vec2EyeRight[ 1 ] = -vec2EyeRight[ 1 ];
 	vec3EyeLeft = CVector<3>( { vec2EyeLeft[ 0 ], vec2EyeLeft[ 1 ], dDistance } );
 	vec3EyeRight = CVector<3>( { vec2EyeRight[ 0 ], vec2EyeRight[ 1 ], dDistance } );
 }

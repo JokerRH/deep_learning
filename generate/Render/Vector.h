@@ -38,7 +38,6 @@ public:
 	CVector<uRows> Normalized( void ) const;
 	CVector<uRows> &Normalize( void );
 	CVector<uRows> UnitVector( void ) const;
-	CVector<uRows> &MakeUnitVector( void );
 	CVector<3> CrossProduct( const CVector<3> &other );
 	CVector<3> &MakeCrossProduct( const CVector<3> &other );
 	std::string ToString( unsigned int uPrecision = 2 ) const;
@@ -230,13 +229,6 @@ template<unsigned int uRows>
 CVector<uRows> CVector<uRows>::UnitVector( void ) const
 {
 	return ( *this ) / Abs( );
-}
-
-template<unsigned int uRows>
-CVector<uRows> &CVector<uRows>::MakeUnitVector( void )
-{
-	( *this ) /= Abs( );
-	return *this;
 }
 
 template<>
