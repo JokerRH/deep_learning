@@ -202,6 +202,54 @@ int main( int argc, char **argv )
 			system( "PAUSE" );
 			return EXIT_SUCCESS;
 		}
+		else if( !_stricmp( argv[ 1 ], "imp" ) )
+		{
+			std::vector<CData> vecData;
+			for( unsigned u = 3; u < (unsigned) argc; u++ )
+			{
+				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ) );
+				std::wcout << "Loaded " << vecTemp.size( ) << " instances from \"" << argv[ u ] << "\"" << std::endl;
+				vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
+			}
+			std::wcout << "Loaded " << vecData.size( ) << " instances\n" << std::endl;
+
+			std::vector<CData> vecImport = CData::Import( StrToWStr( argv[ 2 ] ) );
+			std::wcout << "Imported " << vecImport.size( ) << " instances" << std::endl;
+
+			if( !CreateCVWindow( "Window" ) )
+			{
+				system( "PAUSE" );
+				return EXIT_FAILURE;
+			}
+
+			try
+			{
+				for( CData import : vecImport )
+				{
+					CData data = import.ImportLoad( vecData );
+					if( !data.IsValid( ) )
+						continue;
+
+					import.Show( "Window" );
+				}
+			}
+			catch( int i )
+			{
+				cv::destroyAllWindows( );
+
+				if( i != 27 )
+				{
+					system( "PAUSE" );
+					return EXIT_FAILURE;
+				}
+				return EXIT_SUCCESS;
+			}
+
+			cv::destroyAllWindows( );
+			std::wcout << "Done." << std::endl;
+			system( "PAUSE" );
+			return EXIT_SUCCESS;
+		}
 	}
 
 	std::wcout << "Invalid parameters" << std::endl;

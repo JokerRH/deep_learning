@@ -13,6 +13,7 @@
 #include <malloc.h>
 #include <algorithm>
 #include <random>
+#include <string>
 #include <opencv2\imgcodecs.hpp>
 #include <opencv2\highgui.hpp>
 #include <opencv2\imgproc.hpp>
@@ -336,6 +337,108 @@ bool CData::Export( std::vector<CData> &vecData, const std::wstring &sPath, unsi
 	return false;
 }
 
+std::vector<CData> CData::Import( const std::wstring &sPath )
+{
+	std::vector<CData> vecData;
+
+	std::wstring sData;
+	std::wstring sLabel;
+	{
+		WCHAR szFullPattern[ MAX_PATH ];
+		PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"data.txt" );
+		sData = std::wstring( szFullPattern );
+		PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"label.csv" );
+		sLabel = std::wstring( szFullPattern );
+	}
+
+	std::fstream smData( sData, std::fstream::in );
+	if( !smData.is_open( ) )
+	{
+		std::wcerr << "Unable to open data file \"" << sData << "\" for reading" << std::endl;
+		return vecData;
+	}
+
+	std::fstream smLabel( sLabel, std::fstream::in );
+	if( !smData.is_open( ) )
+	{
+		std::wcerr << "Unable to open label file \"" << sData << "\" for reading" << std::endl;
+		smData.close( );
+		return vecData;
+	}
+
+	const std::regex regData( R"a((?:"((?:[^"]|"")*)"\s+|(\S+)\s+)\d+.*)a" );
+	const std::regex regLabel( R"a(([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+))).*)a" );
+
+	std::string sLine;
+	while( std::getline( smData, sLine ) )
+	{
+		CData data;
+		std::smatch match;
+		std::regex_match( sLine, match, regData );
+		if( !match.size( ) )
+			continue;
+
+		if( match[ 1 ].matched )
+			data.sImage = StrToWStr( std::regex_replace( match[ 1 ].str( ), std::regex( "\"\"" ), "\"" ) );
+		else
+			data.sImage = StrToWStr( match[ 2 ].str( ) );
+
+		data.sRootPath = sPath;
+
+		if( !std::getline( smLabel, sLine ) )
+		{
+			std::wcout << "Warning: Label file ended before data file was fully processed" << std::endl;
+			break;
+		}
+
+		std::regex_match( sLine, match, regLabel );
+		if( !match.size( ) )
+			continue;
+
+		data.vec3EyeLeft = CRay( CVector<3>( { 0 } ), CVector<3>( { 0, 0, -1 } ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) ).m_vec3Dir;
+		data.vec3EyeRight = CRay( CVector<3>( { 0 } ), CVector<3>( { 0, 0, -1 } ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) ).m_vec3Dir;
+		unsigned uPitch = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 5 ].str( ) ) );
+		unsigned uYaw = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 6 ].str( ) ) );
+		data.ptEyeLeft = cv::Point( reinterpret_cast<int &>( uPitch ), reinterpret_cast<int &>( uYaw ) );
+		uPitch = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 7 ].str( ) ) );
+		uYaw = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 8 ].str( ) ) );
+		data.ptEyeRight = cv::Point( reinterpret_cast<int &>( uPitch ), reinterpret_cast<int &>( uYaw ) );
+
+		vecData.push_back( data );
+	}
+
+	smLabel.close( );
+	smData.close( );
+	return vecData;
+}
+
+std::wstring CData::StrToWStr( const std::string &str )
+{
+	const std::ctype<wchar_t> &ctype = std::use_facet<std::ctype<wchar_t>>( std::locale( ) );
+	std::vector<wchar_t> wideStringBuffer( str.length( ) );
+	ctype.widen( str.data( ), str.data( ) + str.length( ), &wideStringBuffer[ 0 ] );
+	return std::wstring( &wideStringBuffer[ 0 ], wideStringBuffer.size( ) );
+}
+
+cv::Rect CData::FindTemplate( const cv::Mat &matImage, const cv::Mat &matTemplate )
+{
+	//Create the result matrix
+	cv::Mat matResult( matImage.cols - matTemplate.cols + 1, matImage.rows - matTemplate.rows + 1, CV_32FC1 );
+
+	//Do the Matching and Normalize
+	cv::matchTemplate( matImage, matTemplate, matResult, CV_TM_SQDIFF );
+	cv::normalize( matResult, matResult, 0, 1, cv::NORM_MINMAX, -1, cv::Mat( ) );
+
+	//Localizing the best match with minMaxLoc
+	double dMinVal;
+	double dMaxVal;
+	cv::Point ptMinLoc;
+	cv::Point ptMaxLoc;
+	cv::minMaxLoc( matResult, &dMinVal, &dMaxVal, &ptMinLoc, &ptMaxLoc, cv::Mat( ) );
+
+	return cv::Rect( ptMinLoc, cv::Point( ptMinLoc.x + matTemplate.cols, ptMinLoc.y + matTemplate.rows ) );
+}
+
 CData::CData( const std::wstring &sLine, const std::wstring &sPath, bool fLoadImage ) :
 	sRootPath( sPath )
 {
@@ -380,6 +483,38 @@ bool CData::LoadImage( void )
 	}
 
 	return true;
+}
+
+CData CData::ImportLoad( const std::vector<CData> &vecData )
+{
+	std::vector<CData>::const_iterator it = std::find_if( vecData.begin( ), vecData.end( ), [ & ]( const CData &data )
+	{
+		return this->sImage == data.sImage;
+	} );
+
+	if( it == vecData.end( ) )
+	{
+		std::wcout << "Warning: Imported image \"" << sImage << "\" not found in dataset" << std::endl;
+		return CData( );
+	}
+
+	CData data( *it );
+	if( !data.LoadImage( ) || !LoadImage( ) )
+		return CData( );
+
+	rectFace = FindTemplate( data.matImage, matImage );
+	ptEyeLeft = cv::Point( (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeLeft.x ) / std::numeric_limits<unsigned>::max( ) * matImage.cols ), (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeLeft.y ) / std::numeric_limits<unsigned>::max( ) * matImage.rows ) );
+	ptEyeRight = cv::Point( (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeRight.x ) / std::numeric_limits<unsigned>::max( ) * matImage.cols ), (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeRight.y ) / std::numeric_limits<unsigned>::max( ) * matImage.rows ) );
+	matImage = data.matImage.clone( );
+
+	CRay rayEyeLeft( data.vec3EyeLeft, vec3EyeLeft );
+	CRay rayEyeRight( data.vec3EyeRight, vec3EyeRight );
+	vec3EyeLeft = data.vec3EyeLeft;
+	vec3EyeRight = data.vec3EyeRight;
+
+	CVector<2> vec2Gaze = rayEyeLeft.PointOfShortestDistance( rayEyeRight );
+	vec3GazePoint = ( rayEyeLeft( vec2Gaze[ 0 ] ) + rayEyeRight( vec2Gaze[ 1 ] ) ) / 2.0;
+	return data;
 }
 
 std::wstring CData::ToString( unsigned int uPrecision ) const
@@ -617,7 +752,7 @@ void *CData::WriteThread( void * )
 	while( true )
 	{
 		CData data = s_QueueWrite.Pop_Front( );
-		if( data.matImage.empty( ) )
+		if( !data.IsValid( ) )
 			break;
 
 		if( data.fWriteImage )
