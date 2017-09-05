@@ -5,7 +5,7 @@ const std::regex CGazeCapture_Set::s_regName( R"a(name=([\s\S]*).*)a" );
 const std::regex CGazeCapture_Set::s_regDist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm.*)a" );
 const std::regex CGazeCapture_Set::s_regDataPath( R"a(data=([\s\S]*).*)a" );
 const std::regex CGazeCapture_Set::s_regData( R"a(data:.*)a" );
-const std::regex CGazeCapture_Set::gazecapture::s_regLine( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)\s+(\S+)?.*)a" );
+const std::regex CGazeCapture_Set::gazecapture::s_regLine( R"a((\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+(\d+)\s+((?:\d+(?:\.\d+)?)|(?:\.\d+))\s+\(((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+)),\s+((?:(?:\+|-|)\d+(?:\.\d+)?)|(?:(?:\+|-|)\.\d+))\)\s+(?:([^"]\S*)|(?:"((?:[^"]|"")*)"))?.*)a" );
 
 const std::regex CGazeData_Set::s_regex_name( R"a(name=([\s\S]*).*)a" );
 const std::regex CGazeData_Set::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm.*)a" );
@@ -42,8 +42,10 @@ CGazeCapture_Set::gazecapture::gazecapture( std::string sLine )
 	vec3Gaze = CVector<3>( { std::stod( match[ 9 ].str( ) ), std::stod( match[ 10 ].str( ) ), std::stod( match[ 11 ].str( ) ) } );
 	if( match[ 12 ].matched )
 		sImage = match[ 12 ].str( );
+	else if( match[ 13 ].matched )
+		sImage = std::regex_replace( match[ 13 ].str( ), std::regex( R"a("")a" ), "\"" );
 	else
-		sImage = nullptr;
+		sImage = std::string( );
 }
 
 std::string CGazeCapture_Set::gazecapture::ToString( unsigned int uPrecision ) const
@@ -67,7 +69,7 @@ std::string CGazeCapture_Set::gazecapture::ToString( unsigned int uPrecision ) c
 
 	out << " " << uImage << " " << dFOV;
 	out << " (" << vec3Gaze[ 0 ] << ", " << vec3Gaze[ 1 ] << ", " << vec3Gaze[ 2 ] << ")";
-	out << " " << sImage;
+	out << " \"" << std::regex_replace( sImage, std::regex( R"a(")a" ), "\"\"" ) << "\"";
 	return out.str( );
 }
 
@@ -158,12 +160,13 @@ CGazeCapture_Set::gazecapture *CGazeCapture_Set::GetNext( void )
 {
 	gazecapture *pData = nullptr;
 	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-	pthread_spin_lock( &m_spinIterator );
-	if( m_itData < vecData.end( ) )
-	{
-		pData = &( *m_itData );
-		m_itData++;
-	}
+		pthread_spin_lock( &m_spinIterator );
+		if( m_itData < vecData.end( ) )
+		{
+			pData = &( *m_itData );
+			m_itData++;
+			m_uRead++;
+		}
 	pthread_cleanup_pop( 1 );
 
 	return pData;
@@ -397,12 +400,13 @@ CGazeData_Set::gazedata *CGazeData_Set::GetNext( void )
 {
 	gazedata *pData = nullptr;
 	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-	pthread_spin_lock( &m_spinIterator );
-	if( m_itData < vecData.end( ) )
-	{
-		pData = &( *m_itData );
-		m_itData++;
-	}
+		pthread_spin_lock( &m_spinIterator );
+		if( m_itData < vecData.end( ) )
+		{
+			pData = &( *m_itData );
+			m_itData++;
+			m_uRead++;
+		}
 	pthread_cleanup_pop( 1 );
 
 	return pData;

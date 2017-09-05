@@ -1,5 +1,6 @@
 #include "Columbia.h"
 #include "Custom.h"
+#include "GazeData.h"
 #include <stdlib.h>
 #include <iostream>
 #include <string>
@@ -192,7 +193,7 @@ int main( int argc, char **argv )
 				vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
 			}
 			std::wcout << "Loaded " << vecData.size( ) << " instances\n" << std::endl;
-			if( !CData::Export( vecData, StrToWStr( argv[ 3 ] ), std::stoul( argv[ 2 ] ) ) )
+			if( !CGazeData::Export( vecData, StrToWStr( argv[ 3 ] ), std::stoul( argv[ 2 ] ) ) )
 			{
 				system( "PAUSE" );
 				return EXIT_FAILURE;
@@ -213,7 +214,7 @@ int main( int argc, char **argv )
 			}
 			std::wcout << "Loaded " << vecData.size( ) << " instances\n" << std::endl;
 
-			std::vector<CData> vecImport = CData::Import( StrToWStr( argv[ 2 ] ) );
+			std::vector<CGazeData> vecImport = CGazeData::LoadData( StrToWStr( argv[ 2 ] ) );
 			std::wcout << "Imported " << vecImport.size( ) << " instances" << std::endl;
 
 			if( !CreateCVWindow( "Window" ) )
@@ -224,9 +225,9 @@ int main( int argc, char **argv )
 
 			try
 			{
-				for( CData import : vecImport )
+				for( CGazeData import : vecImport )
 				{
-					CData data = import.ImportLoad( vecData );
+					CData data = import.MergeReference( vecData );
 					if( !data.IsValid( ) )
 						continue;
 

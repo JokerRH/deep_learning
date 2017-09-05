@@ -90,14 +90,26 @@ int ProcessDataset( const char *szSrc, const char *szDst )
 	if( !CGazeData::OpenWrite( std::string( szDst ) ) )
 		return EXIT_SUCCESS;
 
-	namedWindow( "Window", CV_WINDOW_NORMAL );
-	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
-
 	try
 	{
 		CGazeData data;
+		unsigned uTotal;
+		unsigned uCurrent;
+		CUtility::Cls( );
+		{
+			unsigned uProcessed;
+			CGazeCapture::s_DataSetRead.GetCount( uTotal, uCurrent );
+			CGazeData::s_DataSetRead.GetCount( uProcessed, uCurrent );
+			uTotal -= uProcessed;
+			uCurrent = 0;
+		}
 		while( CGazeData::ReadAsync( data ) )
+		{
+			printf( "\r%3.0f%% (%u/%u)", uCurrent / (double) uTotal * 100, uCurrent, uTotal );
+			fflush( stdout );
+			uCurrent++;
 			data.WriteAsync( );
+		}
 	}
 	catch( int i )
 	{
@@ -185,10 +197,17 @@ int ImportDataset( const char *szPath, const char *szRaw )
 
 int LoadCGDataset( const char *szCGDPath, const char *szFile )
 {
-	std::vector<std::string> vecFiles = CUtility::GetFilesInDir( szCGDPath );
-	for( const auto &str: vecFiles )
-		printf( "found file \"%s\"\n", str.c_str( ) );
+	if( !CGazeCapture::ImportCGD( szCGDPath, szFile ) )
+		return EXIT_FAILURE;
 		
+	if( !CGazeCapture::OpenWrite( szFile ) )
+		return EXIT_FAILURE;
+		
+	CGazeCapture val;
+	while( CGazeCapture::ReadAsync( val ) )
+		val.WriteAsync( );
+		
+	CGazeCapture::CloseWrite( );
 	return EXIT_SUCCESS;
 }
 
@@ -266,6 +285,13 @@ int main(int argc, char **argv)
 
 	g_Config = CConfig( "./config.cfg" );
 
+	if( argc > 1 && !CUtility::Stricmp( argv[ 1 ], "-nq" ) )
+	{
+		CUtility::fNoQuery = true;
+		argv++;
+		argc--;
+	}
+
 	if( argc == 2 )
 	{
 		if( !CUtility::Stricmp( argv[ 1 ], "test" ) )
@@ -310,3 +336,4 @@ int main(int argc, char **argv)
 	(void) getchar( );
 	return EXIT_FAILURE;
 }
+

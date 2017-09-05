@@ -20,10 +20,7 @@ public:
 	static void FindFilesRecursively( const std::wstring &sDir, const std::wstring &sPattern, std::vector<std::wstring> &vecsFiles );
 	static std::wstring GetPath( const std::wstring &sFile );
 	static cv::Rect ShowImage( const std::string &sWindow, const cv::Mat &matDraw );
-	static bool Export( std::vector<CData> &vecData, const std::wstring &sPath, unsigned uValBatchSize, double dTrainValRatio = 2.0 / 3.0 );
-	static std::vector<CData> Import( const std::wstring &sPath );
 	static std::wstring StrToWStr( const std::string &str );
-	static cv::Rect FindTemplate( const cv::Mat &matImage, const cv::Mat &matTemplate );
 
 	CData( void ) = default;
 	CData( const std::wstring &sFile, const std::wstring &sPath, bool fLoadImage = true );
@@ -31,13 +28,12 @@ public:
 	CData( CData &&other ) = default;
 	CData &operator=( const CData &other ) = default;
 	CData &operator=( CData &&other ) = default;
+	virtual ~CData( void ) = default;
 
 	bool LoadImage( void );
-	CData ImportLoad( const std::vector<CData> &vecData );
 	std::wstring ToString( unsigned int uPrecision = std::numeric_limits< double >::max_digits10 ) const;
-	std::string ToCSV( unsigned int uPrecision = std::numeric_limits< double >::max_digits10 ) const;
 	void WriteAsync( void );
-	void Show( const std::string &sWindow );
+	void Show( const std::string &sWindow, const CData &dataref = CData( ) );
 	void ScaleFace( const CVector<2> &vec2Scale, const CVector<2> &vec2Shift );
 	bool IsValid( void );
 	CMatrix<3, 3> GetFaceTransformation( void ) const;
