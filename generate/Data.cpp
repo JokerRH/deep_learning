@@ -185,258 +185,12 @@ cv::Rect CData::ShowImage( const std::string &sWindow, const cv::Mat &matImage )
 	return rect;
 }
 
-bool CData::Export( std::vector<CData> &vecData, const std::wstring &sPath, unsigned uValBatchSize, double dTrainValRatio )
-{
-	{
-		double dBatchCount = vecData.size( ) * ( 1 - dTrainValRatio ) / uValBatchSize;
-		dBatchCount = round( dBatchCount );
-		dTrainValRatio = 1 - dBatchCount * uValBatchSize / vecData.size( );
-	}
-
-	std::random_device rng;
-	std::mt19937 urng( rng( ) );
-	std::shuffle( vecData.begin( ), vecData.end( ), urng );
-	const std::vector<CData> vecTrain( vecData.begin( ), vecData.begin( ) + (int) ( vecData.size( ) * dTrainValRatio ) );
-	const std::vector<CData> vecVal( vecData.begin( ) + (int) ( vecData.size( ) * dTrainValRatio ), vecData.end( ) );
-
-	std::wcout << "Exporting to \"" << sPath << "\"" << std::endl;
-	std::wcout << "Training data  : " << vecTrain.size( ) << std::endl;
-	std::wcout << "Validation data: " << vecVal.size( ) << std::endl;
-
-	std::wstring sTrain;
-	std::wstring sTrainData;
-	std::wstring sTrainLabel;
-	std::wstring sVal;
-	std::wstring sValData;
-	std::wstring sValLabel;
-	WCHAR szFullPattern[ MAX_PATH ];
-	PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"train" );
-	sTrain = std::wstring( szFullPattern );
-	PathCchCombine( szFullPattern, MAX_PATH, sTrain.c_str( ), L"data.txt" );
-	sTrainData = std::wstring( szFullPattern );
-	PathCchCombine( szFullPattern, MAX_PATH, sTrain.c_str( ), L"label.csv" );
-	sTrainLabel = std::wstring( szFullPattern );
-	
-	PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"val" );
-	sVal = std::wstring( szFullPattern );
-	PathCchCombine( szFullPattern, MAX_PATH, sVal.c_str( ), L"data.txt" );
-	sValData = std::wstring( szFullPattern );
-	PathCchCombine( szFullPattern, MAX_PATH, sVal.c_str( ), L"label.csv" );
-	sValLabel = std::wstring( szFullPattern );
-
-	//Create export directory
-	if( !CreateDirectory( sPath.c_str( ), nullptr ) && GetLastError( ) != ERROR_ALREADY_EXISTS )
-	{
-		std::wcerr << "Unable to create directory \"" << sPath << "\"" << std::endl;
-		return false;
-	}
-
-	//Create train directory
-	if( !CreateDirectory( sTrain.c_str( ), nullptr ) && GetLastError( ) != ERROR_ALREADY_EXISTS )
-	{
-		std::wcerr << "Unable to create directory \"" << s_sPathWrite << "\"" << std::endl;
-		return false;
-	}
-
-	//Create val directory
-	if( !CreateDirectory( sVal.c_str( ), nullptr ) && GetLastError( ) != ERROR_ALREADY_EXISTS )
-	{
-		std::wcerr << "Unable to create directory \"" << s_sPathWrite << "\"" << std::endl;
-		return false;
-	}
-
-	//Export train data
-	std::fstream smData( sTrainData, std::fstream::out );
-	if( !smData.is_open( ) )
-	{
-		std::wcerr << "Unable to open file \"" << sTrainData << "\" for writing" << std::endl;
-		return false;
-	}
-
-	std::fstream smLabel( sTrainLabel, std::fstream::out );
-	if( !smLabel.is_open( ) )
-	{
-		std::wcerr << "Unable to open file \"" << sTrainLabel << "\" for writing" << std::endl;
-		smData.close( );
-		return false;
-	}
-
-	std::uniform_real_distribution<double> disScale( 0.9, 1.1 );
-	std::uniform_real_distribution<double> disOffset( -0.05, 0.05 );
-
-	unsigned uCurrent = 0;
-	unsigned uTotal = (unsigned) vecTrain.size( );
-	std::wcout << "Exporting training data" << std::endl;
-	wprintf( L"%3.0f%% (%u / %u)", (double) uCurrent / uTotal * 100, uCurrent, uTotal );
-	fflush( stdout );
-	uCurrent++;
-	for( CData data : vecTrain )
-	{
-		data.LoadImage( );
-		data.ScaleFace( CVector<2>( { disScale( urng ), disScale( urng ) } ), CVector<2>( { disOffset( urng ), disOffset( urng ) } ) );
-		PathCchCombine( szFullPattern, MAX_PATH, sTrain.c_str( ), data.sImage.c_str( ) );
-		if( !cv::imwrite( std::string( szFullPattern, szFullPattern + wcslen( szFullPattern ) ), data.matImage( data.rectFace ) ) )
-		{
-			std::wcerr << "Failed to write image to \"" << szFullPattern << "\"" << std::endl;
-			continue;
-		}
-		smData << std::string( data.sImage.begin( ), data.sImage.end( ) ) << " 1" << std::endl;
-		smLabel << data.ToCSV( ) << std::endl;
-		wprintf( L"\r%3.0f%% (%u / %u)", (double) uCurrent / uTotal * 100, uCurrent, uTotal );
-		fflush( stdout );
-		uCurrent++;
-	}
-	std::wcout << std::endl;
-
-	smData.close( );
-	smLabel.close( );
-
-	//Export validataion data
-	smData.open( sValData, std::fstream::out );
-	if( !smData.is_open( ) )
-	{
-		std::wcerr << "Unable to open file \"" << sValData << "\" for writing" << std::endl;
-		return false;
-	}
-
-	smLabel.open( sValLabel, std::fstream::out );
-	if( !smLabel.is_open( ) )
-	{
-		std::wcerr << "Unable to open file \"" << sValLabel << "\" for writing" << std::endl;
-		smData.close( );
-		return false;
-	}
-
-	uCurrent = 0;
-	uTotal = (unsigned) vecVal.size( );
-	std::wcout << "Exporting validation data" << std::endl;
-	wprintf( L"%3.0f%% (%u / %u)", (double) uCurrent / uTotal * 100, uCurrent, uTotal );
-	fflush( stdout );
-	uCurrent++;
-	for( CData data : vecVal )
-	{
-		data.LoadImage( );
-		data.ScaleFace( CVector<2>( { disScale( urng ), disScale( urng ) } ), CVector<2>( { disOffset( urng ), disOffset( urng ) } ) );
-		PathCchCombine( szFullPattern, MAX_PATH, sVal.c_str( ), data.sImage.c_str( ) );
-		if( !cv::imwrite( std::string( szFullPattern, szFullPattern + wcslen( szFullPattern ) ), data.matImage( data.rectFace ) ) )
-		{
-			std::wcerr << "Failed to write image to \"" << szFullPattern << "\"" << std::endl;
-			continue;
-		}
-		smData << std::string( data.sImage.begin( ), data.sImage.end( ) ) << " 1" << std::endl;
-		smLabel << data.ToCSV( ) << std::endl;
-		wprintf( L"\r%3.0f%% (%u / %u)", (double) uCurrent / uTotal * 100, uCurrent, uTotal );
-		fflush( stdout );
-		uCurrent++;
-	}
-	std::wcout << std::endl;
-
-	smData.close( );
-	smLabel.close( );
-
-	return false;
-}
-
-std::vector<CData> CData::Import( const std::wstring &sPath )
-{
-	std::vector<CData> vecData;
-
-	std::wstring sData;
-	std::wstring sLabel;
-	{
-		WCHAR szFullPattern[ MAX_PATH ];
-		PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"data.txt" );
-		sData = std::wstring( szFullPattern );
-		PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"label.csv" );
-		sLabel = std::wstring( szFullPattern );
-	}
-
-	std::fstream smData( sData, std::fstream::in );
-	if( !smData.is_open( ) )
-	{
-		std::wcerr << "Unable to open data file \"" << sData << "\" for reading" << std::endl;
-		return vecData;
-	}
-
-	std::fstream smLabel( sLabel, std::fstream::in );
-	if( !smData.is_open( ) )
-	{
-		std::wcerr << "Unable to open label file \"" << sData << "\" for reading" << std::endl;
-		smData.close( );
-		return vecData;
-	}
-
-	const std::regex regData( R"a((?:"((?:[^"]|"")*)"\s+|(\S+)\s+)\d+.*)a" );
-	const std::regex regLabel( R"a(([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+))).*)a" );
-
-	std::string sLine;
-	while( std::getline( smData, sLine ) )
-	{
-		CData data;
-		std::smatch match;
-		std::regex_match( sLine, match, regData );
-		if( !match.size( ) )
-			continue;
-
-		if( match[ 1 ].matched )
-			data.sImage = StrToWStr( std::regex_replace( match[ 1 ].str( ), std::regex( "\"\"" ), "\"" ) );
-		else
-			data.sImage = StrToWStr( match[ 2 ].str( ) );
-
-		data.sRootPath = sPath;
-
-		if( !std::getline( smLabel, sLine ) )
-		{
-			std::wcout << "Warning: Label file ended before data file was fully processed" << std::endl;
-			break;
-		}
-
-		std::regex_match( sLine, match, regLabel );
-		if( !match.size( ) )
-			continue;
-
-		data.vec3EyeLeft = CRay( CVector<3>( { 0 } ), CVector<3>( { 0, 0, -1 } ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) ).m_vec3Dir;
-		data.vec3EyeRight = CRay( CVector<3>( { 0 } ), CVector<3>( { 0, 0, -1 } ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) ).m_vec3Dir;
-		unsigned uPitch = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 5 ].str( ) ) );
-		unsigned uYaw = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 6 ].str( ) ) );
-		data.ptEyeLeft = cv::Point( reinterpret_cast<int &>( uPitch ), reinterpret_cast<int &>( uYaw ) );
-		uPitch = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 7 ].str( ) ) );
-		uYaw = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 8 ].str( ) ) );
-		data.ptEyeRight = cv::Point( reinterpret_cast<int &>( uPitch ), reinterpret_cast<int &>( uYaw ) );
-
-		vecData.push_back( data );
-	}
-
-	smLabel.close( );
-	smData.close( );
-	return vecData;
-}
-
 std::wstring CData::StrToWStr( const std::string &str )
 {
 	const std::ctype<wchar_t> &ctype = std::use_facet<std::ctype<wchar_t>>( std::locale( ) );
 	std::vector<wchar_t> wideStringBuffer( str.length( ) );
 	ctype.widen( str.data( ), str.data( ) + str.length( ), &wideStringBuffer[ 0 ] );
 	return std::wstring( &wideStringBuffer[ 0 ], wideStringBuffer.size( ) );
-}
-
-cv::Rect CData::FindTemplate( const cv::Mat &matImage, const cv::Mat &matTemplate )
-{
-	//Create the result matrix
-	cv::Mat matResult( matImage.cols - matTemplate.cols + 1, matImage.rows - matTemplate.rows + 1, CV_32FC1 );
-
-	//Do the Matching and Normalize
-	cv::matchTemplate( matImage, matTemplate, matResult, CV_TM_SQDIFF );
-	cv::normalize( matResult, matResult, 0, 1, cv::NORM_MINMAX, -1, cv::Mat( ) );
-
-	//Localizing the best match with minMaxLoc
-	double dMinVal;
-	double dMaxVal;
-	cv::Point ptMinLoc;
-	cv::Point ptMaxLoc;
-	cv::minMaxLoc( matResult, &dMinVal, &dMaxVal, &ptMinLoc, &ptMaxLoc, cv::Mat( ) );
-
-	return cv::Rect( ptMinLoc, cv::Point( ptMinLoc.x + matTemplate.cols, ptMinLoc.y + matTemplate.rows ) );
 }
 
 CData::CData( const std::wstring &sLine, const std::wstring &sPath, bool fLoadImage ) :
@@ -485,38 +239,6 @@ bool CData::LoadImage( void )
 	return true;
 }
 
-CData CData::ImportLoad( const std::vector<CData> &vecData )
-{
-	std::vector<CData>::const_iterator it = std::find_if( vecData.begin( ), vecData.end( ), [ & ]( const CData &data )
-	{
-		return this->sImage == data.sImage;
-	} );
-
-	if( it == vecData.end( ) )
-	{
-		std::wcout << "Warning: Imported image \"" << sImage << "\" not found in dataset" << std::endl;
-		return CData( );
-	}
-
-	CData data( *it );
-	if( !data.LoadImage( ) || !LoadImage( ) )
-		return CData( );
-
-	rectFace = FindTemplate( data.matImage, matImage );
-	ptEyeLeft = cv::Point( (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeLeft.x ) / std::numeric_limits<unsigned>::max( ) * matImage.cols ), (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeLeft.y ) / std::numeric_limits<unsigned>::max( ) * matImage.rows ) );
-	ptEyeRight = cv::Point( (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeRight.x ) / std::numeric_limits<unsigned>::max( ) * matImage.cols ), (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeRight.y ) / std::numeric_limits<unsigned>::max( ) * matImage.rows ) );
-	matImage = data.matImage.clone( );
-
-	CRay rayEyeLeft( data.vec3EyeLeft, vec3EyeLeft );
-	CRay rayEyeRight( data.vec3EyeRight, vec3EyeRight );
-	vec3EyeLeft = data.vec3EyeLeft;
-	vec3EyeRight = data.vec3EyeRight;
-
-	CVector<2> vec2Gaze = rayEyeLeft.PointOfShortestDistance( rayEyeRight );
-	vec3GazePoint = ( rayEyeLeft( vec2Gaze[ 0 ] ) + rayEyeRight( vec2Gaze[ 1 ] ) ) / 2.0;
-	return data;
-}
-
 std::wstring CData::ToString( unsigned int uPrecision ) const
 {
 	std::wostringstream out;
@@ -531,27 +253,12 @@ std::wstring CData::ToString( unsigned int uPrecision ) const
 	return out.str( );
 }
 
-std::string CData::ToCSV( unsigned int uPrecision ) const
-{
-	std::ostringstream out;
-	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
-	out.precision( uPrecision );
-
-	CVector<2> vec2EyeLeft( CRay( vec3EyeLeft, vec3GazePoint - vec3EyeLeft ).AmplitudeRepresentation( ) );
-	CVector<2> vec2EyeRight( CRay( vec3EyeRight, vec3GazePoint - vec3EyeRight ).AmplitudeRepresentation( ) );
-
-	out << vec2EyeLeft[ 0 ] << "," << vec2EyeLeft[ 1 ] << "," << vec2EyeRight[ 0 ] << "," << vec2EyeRight[ 1 ] << ",";
-	out << (double) ptEyeLeft.x / rectFace.width << "," << (double) ptEyeLeft.y / rectFace.height << ",";
-	out << (double) ptEyeRight.x / rectFace.width << "," << (double) ptEyeRight.y / rectFace.height;
-	return out.str( );
-}
-
 void CData::WriteAsync( void )
 {
 	s_QueueWrite.Push_Back( *this );
 }
 
-void CData::Show( const std::string & sWindow )
+void CData::Show( const std::string &sWindow, const CData &dataref )
 {
 	cv::Mat matScreen( GetScreenResolution( ), CV_8UC3, cv::Scalar::all( 255 ) );
 	cv::Rect rectTotal;

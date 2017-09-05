@@ -11,6 +11,7 @@
 //`pkg-config --cflags gtk+-2.0`
 //`pkg-config --libs gtk+-2.0`
 
+bool CUtility::fNoQuery = false;
 std::vector<std::string> CUtility::s_vecFiles;
 
 unsigned char CUtility::WaitKey( unsigned int uMilliseconds )
@@ -26,6 +27,9 @@ void CUtility::Cls( void )
 
 unsigned char CUtility::GetChar( void )
 {
+	if( fNoQuery )
+		return 10;
+
 	unsigned char buf = 0;
 	struct termios old = { 0 };
 	if( tcgetattr( 0, &old ) < 0 )

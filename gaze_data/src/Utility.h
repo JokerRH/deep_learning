@@ -25,6 +25,8 @@ public:
 	static void ShowCursor( bool fShow, const char *szWindow );
 	
 	static double GetFactor( const std::string &s );
+	
+	static bool fNoQuery;
 
 private:
 	CUtility( void ) = delete;

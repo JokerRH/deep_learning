@@ -25,6 +25,7 @@ public:
 
 	static std::vector<CGazeData> GetGazeData( CGazeCapture &capture );
 	static double GetDistance( double dMeterDif, double dPixelDif, double dPixelDiagonal, double dTanFOV );
+	static double GetTanFOV( double dMeterDif, double dPixelDif, double dPixelDiagonal, double dDistance );
 	static double GetPosition( double dDistance, double dPixelDif, double dPixelDiagonal, double dTanFOV );
 
 	CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double dTanFOV, unsigned int uImage );
@@ -44,6 +45,9 @@ public:
 	std::string ToString( unsigned int uPrecvecDaision = std::numeric_limits< double >::max_digits10 ) const;
 	void WriteImage( const std::string &sPath ) const;
 	CGazeData_Set::gazedata ToData( void ) const;
+	
+	static CGazeData_Set s_DataSetRead;
+	static CGazeData_Set s_DataSetWrite;
 
 private:
 	CGazeData( const CGazeData_Set &set, const CGazeData_Set::gazedata &data );
@@ -61,8 +65,6 @@ private:
 	CPoint m_ptEyeRight;
 	unsigned int m_uImage;
 
-	static CGazeData_Set s_DataSetRead;
-	static CGazeData_Set s_DataSetWrite;
 	static CQueue<CGazeData> s_QueueRead;
 	static CQueue<CGazeData> s_QueueWrite;
 	static std::vector<pthread_t> s_vecThreadRead;

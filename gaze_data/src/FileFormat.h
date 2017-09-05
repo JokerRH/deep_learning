@@ -16,7 +16,7 @@ public:
 	struct gazecapture
 	{
 		gazecapture( std::string sLine );
-		gazecapture( time_t time, unsigned uImage, double dFOV, const CVector<3> &vec3Gaze, const std::string &sImage = nullptr );
+		gazecapture( time_t time, unsigned uImage, double dFOV, const CVector<3> &vec3Gaze, const std::string &sImage = std::string( ) );
 		std::string ToString( unsigned uPrecision = std::numeric_limits< double >::max_digits10 ) const;
 
 		time_t time;
@@ -47,6 +47,7 @@ public:
 	void Sort( void );
 	unsigned CheckDuplicates( bool fRemove );
 	void Shuffle( void );
+	void GetCount( unsigned &uTotal, unsigned &uCurrent );
 
 	bool WriteHeader( const std::string &sFile ) const;
 	bool WriteAll( const std::string &sFile ) const;
@@ -61,6 +62,7 @@ private:
 	pthread_spinlock_t m_spinIterator;
 	std::vector<gazecapture>::iterator m_itData;
 	std::fstream m_FileWrite;
+	unsigned int m_uRead;
 
 	static const std::regex s_regName;
 	static const std::regex s_regDist;
@@ -111,6 +113,7 @@ public:
 	void Sort( void );
 	unsigned CheckDuplicates( bool fRemove );
 	void Shuffle( void );
+	void GetCount( unsigned &uTotal, unsigned &uCurrent );
 
 	bool WriteHeader( const std::string &sFile ) const;
 	bool WriteAll( const std::string &sFile ) const;
@@ -126,6 +129,7 @@ private:
 	pthread_spinlock_t m_spinIterator;
 	std::vector<gazedata>::iterator m_itData;
 	std::fstream m_FileWrite;
+	unsigned int m_uRead;
 
 	static const std::regex s_regex_name;
 	static const std::regex s_regex_dist;
@@ -201,6 +205,7 @@ inline void CGazeCapture_Set::ResetIterator( void )
 	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
 		pthread_spin_lock( &m_spinIterator );
 		m_itData = vecData.begin( );
+		m_uRead = 0;
 	pthread_cleanup_pop( 1 );
 }
 
@@ -226,6 +231,15 @@ inline void CGazeCapture_Set::Sort( void )
 inline void CGazeCapture_Set::Shuffle( void )
 {
 	std::random_shuffle( vecData.begin( ), vecData.end( ) );
+}
+
+inline void CGazeCapture_Set::GetCount( unsigned &uTotal, unsigned &uCurrent )
+{
+	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
+		pthread_spin_lock( &m_spinIterator );
+		uTotal = vecData.size( );
+		m_uRead = uCurrent;
+	pthread_cleanup_pop( 1 );
 }
 
 //===========================================================================
@@ -298,8 +312,9 @@ inline CGazeData_Set &CGazeData_Set::operator=( CGazeData_Set &&other )
 inline void CGazeData_Set::ResetIterator( void )
 {
 	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-	pthread_spin_lock( &m_spinIterator );
-	m_itData = vecData.begin( );
+		pthread_spin_lock( &m_spinIterator );
+		m_itData = vecData.begin( );
+		m_uRead = 0;
 	pthread_cleanup_pop( 1 );
 }
 
@@ -325,4 +340,13 @@ inline void CGazeData_Set::Sort( void )
 inline void CGazeData_Set::Shuffle( void )
 {
 	std::random_shuffle( vecData.begin( ), vecData.end( ) );
+}
+
+inline void CGazeData_Set::GetCount( unsigned &uTotal, unsigned &uCurrent )
+{
+	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
+		pthread_spin_lock( &m_spinIterator );
+		uTotal = vecData.size( );
+		m_uRead = uCurrent;
+	pthread_cleanup_pop( 1 );
 }

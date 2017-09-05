@@ -21,6 +21,18 @@ CScenery::CScenery( const CData &data ) :
 	m_GazeLeft( data.vec3EyeLeft, data.vec3GazePoint - data.vec3EyeLeft ),
 	m_GazeRight( data.vec3EyeRight, data.vec3GazePoint - data.vec3EyeRight )
 {
+	//Check if data is GazeData
+	try
+	{
+		CGazeData gazedata = dynamic_cast( data );
+		m_GazeLeft = gazedata.rayEyeLeft;
+		m_GazeRight = gazedata.rayEyeRight;
+	}
+	catch( std::bad_cast )
+	{
+		
+	}
+	
 	//Transform and scale Face
 	CVector<3> vec3EyesX = m_GazeLeft.m_vec3Origin - m_GazeRight.m_vec3Origin;
 	CVector<3> vec3EyesZ( { 0, 0, -1 } );
@@ -82,4 +94,14 @@ void CScenery::Draw( cv::Mat &matImage ) const
 	m_Camera.Shifted( vec3Shift ).RenderPoints( matImage, cv::Scalar( 255, 0, 255 ), 3 );
 	m_GazeLeft.Shifted( vec3Shift ).Render( matImage, cv::Scalar( 0, 255, 255 ), cv::Scalar( 0, 255, 0 ) );
 	m_GazeRight.Shifted( vec3Shift ).Render( matImage, cv::Scalar( 0, 255, 255 ), cv::Scalar( 0, 255, 0 ) );
+}
+
+CMatrix<3, 3> CScenery::GetTransformation( void )
+{
+	return CRenderHelper::GetTransformationMatrix( m_Right.m_vec3Dir, m_Up.m_vec3Dir, m_Forward.m_vec3Dir );
+}
+
+CVector<3, 3> CScenery::GetShift( void )
+{
+	return m_Camera.m_vec3Point;
 }

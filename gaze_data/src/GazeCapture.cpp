@@ -24,16 +24,13 @@
 
 using namespace cv;
 
-std::fstream CGazeCapture::s_File;
-CQueue<CGazeCapture> CGazeCapture::s_Queue( 10 );
-pthread_t CGazeCapture::s_Thread;
-
 CGazeCapture_Set CGazeCapture::s_DataSetRead;
 CGazeCapture_Set CGazeCapture::s_DataSetWrite;
-double CGazeCapture::s_dEyeDistance;
-std::string CGazeCapture::s_sName;
-std::string CGazeCapture::s_sDataPath;
-unsigned int CGazeCapture::s_uCurrentImage;
+CQueue<CGazeCapture> CGazeCapture::s_QueueRead( 100 );
+CQueue<CGazeCapture> CGazeCapture::s_QueueWrite( 25 );
+std::vector<pthread_t> CGazeCapture::s_vecThreadRead;
+std::vector<pthread_t> CGazeCapture::s_vecThreadWrite;
+unsigned CGazeCapture::s_uNextImage;
 
 const std::regex CGazeCapture::s_regex_name( R"a(name=([\s\S]*).*)a" );
 const std::regex CGazeCapture::s_regex_dist( R"a(dist=((?:\d+(?:\.\d+)?)|(?:\.\d+))cm.*)a" );
@@ -58,6 +55,12 @@ bool CGazeCapture::OpenWrite( const std::string &sFile )
 		dEyeDistance = std::stod( str ) / 100;
 		
 		s_DataSetWrite = CGazeCapture_Set( std::vector<CGazeCapture_Set::gazecapture>( ), sName, dEyeDistance, CUtility::GetPath( sFile ) + CUtility::GetFileName( sFile ) + "/" );
+		
+		if( !CUtility::CreateFolder( s_DataSetWrite.sDataPath ) )
+			return false;
+	
+		if( !s_DataSetWrite.WriteHeader( sFile ) )
+			return false;
 	}
 	
 	s_DataSetWrite.Sort( );
@@ -93,15 +96,16 @@ bool CGazeCapture::OpenWrite( const std::string &sFile )
 
 void CGazeCapture::CloseWrite( void )
 {
-	for( std::vector<pthread_t>::iterator it = s_vecThreadWrite.begin( ); it < s_vecThreadWrite.end( ); it++ )
-	{
-		pthread_cancel( *it );
-		pthread_join( *it, nullptr );
-	}
+	for( unsigned u = 0; u < s_vecThreadWrite.size( ); u++ )
+		s_QueueWrite.Emplace_Back( );	//Signal threads to stop
+
+	for( auto &thread: s_vecThreadWrite )
+		pthread_join( thread, nullptr );
+
 	s_DataSetWrite.CloseWrite( );
 }
 
-bool CGazeCapture::OpenRead( const std::string &sFile )
+bool CGazeCapture::OpenRead( const std::string &sFile, bool fThreaded )
 {
 	if( !CUtility::Exists( sFile ) )
 	{
@@ -132,6 +136,9 @@ bool CGazeCapture::OpenRead( const std::string &sFile )
 		{
 		case 141:	//Numpad enter
 		case 10:	//Enter
+			if( !fThreaded )
+				return true;
+
 			s_vecThreadRead.emplace_back( );
 			pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadThread, nullptr );
 			return true;
@@ -160,6 +167,25 @@ bool CGazeCapture::ReadAsync( CGazeCapture &val )
 	return false;
 }
 
+bool CGazeCapture::Read( CGazeCapture &val )
+{
+	CGazeCapture_Set::gazecapture *pData;
+	while( ( pData = s_DataSetRead.GetNext( ) ) )
+	{
+		try
+		{
+			val = CGazeCapture( s_DataSetRead, *pData );
+			return true;
+		}
+		catch( int )
+		{
+
+		}
+	}
+	
+	return false;
+}
+
 void CGazeCapture::WriteAsync( void )
 {
 	s_QueueWrite.Push_Back( *this );
@@ -168,32 +194,78 @@ void CGazeCapture::WriteAsync( void )
 bool CGazeCapture::ImportCGD( const std::string &sCGDPath, const std::string &sFile )
 {
 	std::vector<std::string> vecFiles = CUtility::GetFilesInDir( sCGDPath );
-	const std::regex regFile( R"a(\d+_\d+m_([+-]?\d+)P_([+-]?\d+)V_([+-]?\d+)H.jpg)a" );
+	const std::regex regFile( R"a(\d+_\d+m_([+-]?\d+)P_([+-]?\d+)V_([+-]?\d+)H)a" );
 	std::smatch match;
 	std::vector<CGazeCapture_Set::gazecapture> vecData;
-	unsigned uImage = 0;
+	s_uNextImage = 0;
+	
+	if( !sFile.empty( ) )
+	{
+		s_DataSetRead = CGazeCapture_Set::LoadList( sFile );
+		s_DataSetRead.Sort( );
+		s_uNextImage = s_DataSetRead.vecData.back( ).uImage + 1;
+	}
+	
+	unsigned uTotal = 0;
 	for( const auto &sFile: vecFiles )
 	{
 		std::string str( CUtility::GetFileName( sFile ) );
 		std::regex_match( str, match, regFile );
 		if( !match.size( ) )
 			continue;
+		
+		uTotal++;
+		if( std::find_if( s_DataSetRead.vecData.begin( ), s_DataSetRead.vecData.end( ), [sFile]( const CGazeCapture_Set::gazecapture &capture )
+			{
+				return capture.sImage == sFile;
+			} ) != s_DataSetRead.vecData.end( ) )
+			continue;	//Already loaded
 
-		if( std::stod( match[ 1 ].str( ) ) != 0.0 )
-			continue; //Ignore side view
-
-		vecData.emplace_back( time( nullptr ), uImage++, 0, CVector<3>( {
+		vecData.emplace_back( time( nullptr ), s_uNextImage++, 0, CVector<3>( {
 			atan( std::stod( match[ 3 ].str( ) ) ) / 2.5,
 			atan( std::stod( match[ 2 ].str( ) ) ) / 2.5,
 			-0.5,
-		} ), str );
+		} ), sFile );
+	}
+	
+	unsigned uProcessed = s_DataSetRead.vecData.size( );
+	s_DataSetRead = CGazeCapture_Set(
+		vecData,
+		"Various",
+		6.6,
+		"/dev/null"
+	);
+	
+	CUtility::Cls( );
+	printf( "Dataset     : Columbian Gaze Dataset\n" );
+	printf( "Data path   : %s\n", sCGDPath.c_str( ) );
+	printf( "Total       : %u\n", uTotal );
+	printf( "Processed   : %u\n", uProcessed );
+	printf( "Images      : %u\n", (unsigned) s_DataSetRead.vecData.size( ) );
+	printf( "Next image  : %u\n", s_uNextImage );
+	unsigned char cKey;
+	while( true )
+	{
+		cKey = CUtility::GetChar( );
+		switch( cKey )
+		{
+		case 141:	//Numpad enter
+		case 10:	//Enter
+			for( unsigned u = 0; u < 4; u++ )
+			{
+				s_vecThreadRead.emplace_back( );
+				pthread_create( &s_vecThreadRead.back( ), nullptr, ReadThread, nullptr );
+			}
+			return true;
+		case 27:	//Escape
+			return false;
+		}
 	}
 }
 
 CGazeCapture::CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3> vec3ScreenTL, CVector<3> vec3ScreenDim ) :
 	m_imgGaze( "Image_Gaze" ),
-	m_vec3Point( { 0 } ),
-	m_uImage( s_uCurrentImage++ )
+	m_vec3Point( { 0 } )
 {
 	{
 		unsigned int uWidth;
@@ -232,64 +304,70 @@ CGazeCapture::CGazeCapture( CBaseCamera &camera, const char *szWindow, CVector<3
 		}
 	}
 
+	m_uImage = s_uNextImage++;
 	camera.TakePicture( m_imgGaze );
 }
 
-std::string CGazeCapture::ToString( unsigned int uPrecision ) const
+void CGazeCapture::WriteImage( const std::string &sPath ) const
 {
-	std::ostringstream out;
-	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
-	out.precision( uPrecision );
+	imwrite( sPath + "img_" + std::to_string( m_uImage ) + ".jpg", m_imgGaze.matImage );
+}
 
-	//Write date
+CGazeCapture_Set::gazecapture CGazeCapture::ToData( void ) const
+{
+	return CGazeCapture_Set::gazecapture(
+		m_imgGaze.timestamp,
+		m_uImage,
+		m_imgGaze.dFOV,
+		m_vec3Point,
+		sImagePath
+	);
+}
+
+CGazeCapture::CGazeCapture( const CGazeCapture_Set &set, const CGazeCapture_Set::gazecapture &data ) :
+	m_vec3Point( data.vec3Gaze ),
+	m_uImage( data.uImage ),
+	sImagePath( data.sImage )
+{
+	std::string str = data.sImage;
+	if( str.empty( ) )
+		str = set.sDataPath + "img_" + std::to_string( m_uImage ) + ".jpg";
+#if 0
+	else do
 	{
-		struct tm *timeinfo = localtime( &m_imgGaze.timestamp );
-		char szDate[ 20 ];
-		strftime( szDate, 20, "%F %T", timeinfo ); //YYYY-MM-DD HH:MM:SS
-		out << szDate;
-	}
-	
-	out << " " << m_uImage << " " << m_imgGaze.dFOV << " (" << m_vec3Point[ 0 ] << ", " << m_vec3Point[ 1 ] << ", " << m_vec3Point[ 2 ] << ")";
-	return out.str( );
-}
+		const std::regex regFile( R"a((\d+_\d+m_)([+-]?\d+)(P_[+-]?\d+V_[+-]?\d+H.jpg))a" );
+		std::smatch match;
+		std::regex_match( data.sImage, match, regFile );
+		if( !match.size( ) )
+			break;
+		
+		//This is an image from the Columbian gaze dataset, check for parent
+		if( std::stoi( match[ 2 ].str( ) ) == 0 )
+			break;	//This is a parent image
+		
+		std::string sParent = match[ 1 ].str( ) + "0" + match[ 3 ].str( );
+		auto it = std::find_if( set.vecData.begin( ), set.vecData.end( ), [sParent]( const CGazeCapture_Set::gazecapture &other )
+			{
+				return other.sImage == sParent;
+			} );
+		
+		if( it == set.vecData.end( ) )
+		{
+			printf( "Warning: parent image \"%s\" not found\n", sParent.c_str( ) );
+			break;
+		}
+		
+		m_uParent = it->uImage;
+	} while( 0 );
+#endif
 
-void CGazeCapture::WriteImage( void ) const
-{
-	imwrite( s_sDataPath + "img_" + std::to_string( m_uImage ) + ".jpg", m_imgGaze.matImage );
-}
-
-CGazeCapture::CGazeCapture( std::string sLine )
-{
-	std::smatch match;
-	std::replace( sLine.begin( ), sLine.end( ), '\r', ' ' );
-	std::regex_match( sLine, match, s_regex_line );
-	if( !match.size( ) )
-		throw 0;
-
-	m_vec3Point = CVector<3>( { std::stod( match[ 9 ].str( ) ), std::stod( match[ 10 ].str( ) ), std::stod( match[ 11 ].str( ) ) } );
-	double dFOV = std::stod( match[ 8 ].str( ) );
-	
-	m_uImage = std::stoul( match[ 7 ].str( ) );
-	
-	struct tm timeinfo = { 0 };
-	timeinfo.tm_sec = std::stoi( match[ 6 ].str( ) );
-	timeinfo.tm_min = std::stoi( match[ 5 ].str( ) );
-	timeinfo.tm_hour = std::stoi( match[ 4 ].str( ) );
-	timeinfo.tm_mday = std::stoi( match[ 3 ].str( ) );
-	timeinfo.tm_mon = std::stoi( match[ 2 ].str( ) ) - 1;
-	timeinfo.tm_year = std::stoi( match[ 1 ].str( ) ) - 1900;
-	
-	//Load image
-	std::string str = s_sDataPath + "img_" + std::to_string( m_uImage ) + ".jpg";
-	
 	cv::Mat matImage = imread( str.c_str( ), CV_LOAD_IMAGE_COLOR );
 	if( matImage.empty( ) )
 	{
-		printf( "Test\n" );
 		fprintf( stderr, "Warning: Could not open or find the image \"%s\"\n", str.c_str( ) );
-		throw 1;
+		throw 0;
 	}
-	m_imgGaze = CImage( matImage, dFOV, mktime( &timeinfo ), "Image_Gaze" );
+	m_imgGaze = CImage( matImage, data.dFOV, data.time, "Image_Gaze" );
 }
 
 void *CGazeCapture::ReadThread( void * )
@@ -317,9 +395,14 @@ void *CGazeCapture::WriteThread( void * )
 	while( true )
 	{
 		data = s_QueueWrite.Pop_Front( );
+		if( data.m_uImage == (unsigned) -1 )
+			break;
+
 		s_DataSetWrite.Write( data.ToData( ) );
 		data.WriteImage( s_DataSetWrite.sDataPath );
 	}
+	
+	return nullptr;
 }
 
 void CGazeCapture::CheckDuplicates( CGazeCapture_Set &dataset, const std::string &sFile )

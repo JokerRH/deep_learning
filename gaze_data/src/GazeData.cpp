@@ -87,11 +87,12 @@ bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
 
 void CGazeData::CloseWrite( void )
 {
-	for( std::vector<pthread_t>::iterator it = s_vecThreadWrite.begin( ); it < s_vecThreadWrite.end( ); it++ )
-	{
-		pthread_cancel( *it );
-		pthread_join( *it, nullptr );
-	}
+	for( unsigned u = 0; u < s_vecThreadWrite.size( ); u++ )
+		s_QueueWrite.Emplace_Back( );	//Signal threads to stop
+
+	for( auto &thread: s_vecThreadWrite )
+		pthread_join( thread, nullptr );
+
 	s_DataSetWrite.CloseWrite( );
 }
 
@@ -141,20 +142,32 @@ bool CGazeData::OpenReadRaw( const std::string &sFileRaw, const std::string &sFi
 	if( !CGazeCapture::OpenRead( sFileRaw ) )
 		return false;
 
-	s_DataSetRead = CGazeData_Set::LoadList( sFile );
-	s_DataSetRead.Sort( );
-	CheckDuplicates( s_DataSetRead, sFile );
-	if( s_DataSetRead.vecData.size( ) )
-		s_uNextImage = s_DataSetRead.vecData.back( ).uImage + 1;
+	s_uNextImage = 0;
+	if( !sFile.empty( ) && CUtility::Exists( sFile ) )
+	{
+		s_DataSetRead = CGazeData_Set::LoadList( sFile );
+		s_DataSetRead.Sort( );
+		CheckDuplicates( s_DataSetRead, sFile );
+		if( s_DataSetRead.vecData.size( ) )
+			s_uNextImage = s_DataSetRead.vecData.back( ).uImage + 1;
+	}
 	else
-		s_uNextImage = 0;
+	{
+		s_DataSetRead = CGazeData_Set(
+			std::vector<CGazeData_Set::gazedata>( ),
+			CGazeCapture::s_DataSetRead.sName,
+			CGazeCapture::s_DataSetRead.dEyeDistance,
+			"/dev/null",
+			CGazeCapture::s_DataSetRead.sDataPath
+		);
+	}
 
 	CUtility::Cls( );
 	printf( "Name        : %s\n", s_DataSetRead.sName.c_str( ) );
 	printf( "Eye distance: %4.2fcm\n", s_DataSetRead.dEyeDistance * 100 );
 	printf( "Data path   : %s\n", s_DataSetRead.sDataPath.c_str( ) );
 	printf( "Raw path    : %s\n", s_DataSetRead.sRawPath.c_str( ) );
-	printf( "Proc path   : %s\n", CGazeCapture::s_sDataPath.c_str( ) );
+	//printf( "Proc path   : %s\n", CGazeCapture::s_sDataPath.c_str( ) );
 	printf( "Images      : %u\n", (unsigned) s_DataSetRead.vecData.size( ) );
 	printf( "Next image  : %u\n", s_uNextImage );
 	unsigned char cKey;
@@ -165,10 +178,11 @@ bool CGazeData::OpenReadRaw( const std::string &sFileRaw, const std::string &sFi
 		{
 		case 141:	//Numpad enter
 		case 10:	//Enter
-			s_vecThreadRead.emplace_back( );
-			s_vecThreadRead.emplace_back( );
-			pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadRawThread, nullptr );
-			pthread_create( &s_vecThreadRead[ 1 ], nullptr, ReadRawThread, nullptr );
+			for( unsigned u = 0; u < 2; u++ )
+			{
+				s_vecThreadRead.emplace_back( );
+				pthread_create( &s_vecThreadRead.back( ), nullptr, ReadRawThread, nullptr );
+			}
 			return true;
 		case 27:	//Escape
 			return false;
@@ -445,6 +459,12 @@ double CGazeData::GetDistance( double dMeterDif, double dPixelDif, double dPixel
 	return ( dPixelDiagonal / dPixelDif ) * ( dMeterDif / dTanFOV );
 }
 
+double CGazeData::GetTanFOV( double dMeterDif, double dPixelDif, double dPixelDiagonal, double dDistance )
+{
+	dMeterDif /= 2;
+	return ( dPixelDiagonal / dPixelDif ) * ( dMeterDif / dDistance );
+}
+
 double CGazeData::GetPosition( double dDistance, double dPixelDif, double dPixelDiagonal, double dTanFOV )
 {
 	//tan( a ) = g1 / d <=> g1 = tan( a ) * d
@@ -475,7 +495,14 @@ CGazeData::CGazeData( CLandmark &landmark, const CVector<3> &vec3Point, double d
 		dPixelDif = ( vec2EyeRight - vec2EyeLeft ).Abs( );
 	}
 	double dPixelDiagonal = sqrt( dWidth * dWidth + dHeight * dHeight );
-	double dDistance = GetDistance( s_DataSetRead.dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
+	double dDistance;
+	if( dTanFOV != 0.0 )
+		dDistance = GetDistance( s_DataSetRead.dEyeDistance, dPixelDif, dPixelDiagonal, dTanFOV );
+	else
+	{
+		dDistance = 2.0;	//Columbian Gaze Dataset
+		dTanFOV = GetTanFOV( s_DataSetRead.dEyeDistance, dPixelDif, dPixelDiagonal, dDistance );
+	}
 
 	CVector<3> vec3EyeLeft(
 	{
@@ -807,15 +834,20 @@ void *CGazeData::WriteThread( void * )
 	while( true )
 	{
 		data = s_QueueWrite.Pop_Front( );
+		if( data.m_uImage == (unsigned) -1 )
+			break;
+
 		s_DataSetWrite.Write( data.ToData( ) );
 		data.WriteImage( s_DataSetWrite.sDataPath );
 	}
+	
+	return nullptr;
 }
 
 void *CGazeData::ReadRawThread( void * )
 {
 	CGazeCapture capture;
-	while( CGazeCapture::ReadAsync( capture ) )
+	while( CGazeCapture::Read( capture ) )
 	{
 		if( std::find_if( s_DataSetRead.vecData.begin( ), s_DataSetRead.vecData.end( ), [capture]( const CGazeData_Set::gazedata &data )
 			{
