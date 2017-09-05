@@ -7,12 +7,12 @@
 #endif
 #include <math.h>
 
-CRay::CRay( const CVector<3> &vec3Origin, const CVector<3> &vec3Fwd, CVector<2> vec2Amp ) :
+CRay::CRay( const CVector<3> &vec3Origin, const CMatrix<3, 3> &matTransform, CVector<2> vec2Amp ) :
 	m_vec3Origin( vec3Origin ),
-	m_vec3Dir( vec3Fwd )
+	m_vec3Dir( { 0, 0, 1 } )
 {
 	vec2Amp *= M_PI / 2;
-	m_vec3Dir = CRenderHelper::GetRotationMatrixRad( vec2Amp[ 0 ], vec2Amp[ 1 ], 0 ) * m_vec3Dir;
+	m_vec3Dir = matTransform * CRenderHelper::GetRotationMatrixRad( vec2Amp[ 0 ], vec2Amp[ 1 ], 0 ) * m_vec3Dir;
 }
 
 CVector<2> CRay::PointOfShortestDistance( const CRay &other ) const
@@ -24,12 +24,13 @@ CVector<2> CRay::PointOfShortestDistance( const CRay &other ) const
 	return mat.Invert( ) * vec2Const;
 }
 
-CVector<2> CRay::AmplitudeRepresentation( void ) const
+CVector<2> CRay::AmplitudeRepresentation( const CMatrix<3, 3> &matTransform ) const
 {
 	CVector<2> vec2Angles( { 0 } );
+	CVector<3> vec3Dir = matTransform * m_vec3Dir;
 	
-	vec2Angles[ 0 ] = -atan( m_vec3Dir[ 1 ] / m_vec3Dir[ 2 ] );																//Pitch
-	vec2Angles[ 1 ] = -atan( m_vec3Dir[ 0 ] / sqrt( m_vec3Dir[ 1 ] * m_vec3Dir[ 1 ] + m_vec3Dir[ 2 ] * m_vec3Dir[ 2 ] ) );	//Yaw
+	vec2Angles[ 0 ] = -atan( vec3Dir[ 1 ] / vec3Dir[ 2 ] );															//Pitch
+	vec2Angles[ 1 ] = -atan( vec3Dir[ 0 ] / sqrt( vec3Dir[ 1 ] * vec3Dir[ 1 ] + vec3Dir[ 2 ] * vec3Dir[ 2 ] ) );	//Yaw
 	
 	vec2Angles /= M_PI / 2;
 	return vec2Angles;

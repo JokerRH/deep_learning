@@ -395,8 +395,8 @@ std::vector<CData> CData::Import( const std::wstring &sPath )
 		if( !match.size( ) )
 			continue;
 
-		data.vec3EyeLeft = CRay( CVector<3>( { 0 } ), CVector<3>( { 0, 0, -1 } ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) ).m_vec3Dir;
-		data.vec3EyeRight = CRay( CVector<3>( { 0 } ), CVector<3>( { 0, 0, -1 } ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) ).m_vec3Dir;
+		data.vec3EyeLeft = CRay( CVector<3>( { 0 } ), CMatrix<3, 3>::Unit( ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) ).m_vec3Dir;
+		data.vec3EyeRight = CRay( CVector<3>( { 0 } ), CMatrix<3, 3>::Unit( ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) ).m_vec3Dir;
 		unsigned uPitch = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 5 ].str( ) ) );
 		unsigned uYaw = (unsigned) ( std::numeric_limits<unsigned>::max( ) * std::stod( match[ 6 ].str( ) ) );
 		data.ptEyeLeft = cv::Point( reinterpret_cast<int &>( uPitch ), reinterpret_cast<int &>( uYaw ) );
@@ -507,10 +507,13 @@ CData CData::ImportLoad( const std::vector<CData> &vecData )
 	ptEyeRight = cv::Point( (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeRight.x ) / std::numeric_limits<unsigned>::max( ) * matImage.cols ), (int) ( ( double ) reinterpret_cast<unsigned &>( ptEyeRight.y ) / std::numeric_limits<unsigned>::max( ) * matImage.rows ) );
 	matImage = data.matImage.clone( );
 
-	CRay rayEyeLeft( data.vec3EyeLeft, vec3EyeLeft );
-	CRay rayEyeRight( data.vec3EyeRight, vec3EyeRight );
+	CVector<3> vec3DirLeft = vec3EyeLeft;
+	CVector<3> vec3DirRight = vec3EyeRight;
 	vec3EyeLeft = data.vec3EyeLeft;
 	vec3EyeRight = data.vec3EyeRight;
+	CMatrix<3, 3> matFaceTransform( std::move( GetFaceTransformation( ).Invert( ) ) );
+	CRay rayEyeLeft( data.vec3EyeLeft, matFaceTransform * vec3DirLeft );
+	CRay rayEyeRight( data.vec3EyeRight, matFaceTransform * vec3DirRight );
 
 	CVector<2> vec2Gaze = rayEyeLeft.PointOfShortestDistance( rayEyeRight );
 	vec3GazePoint = ( rayEyeLeft( vec2Gaze[ 0 ] ) + rayEyeRight( vec2Gaze[ 1 ] ) ) / 2.0;
@@ -537,8 +540,8 @@ std::string CData::ToCSV( unsigned int uPrecision ) const
 	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
 	out.precision( uPrecision );
 
-	CVector<2> vec2EyeLeft( CRay( vec3EyeLeft, vec3GazePoint - vec3EyeLeft ).AmplitudeRepresentation( ) );
-	CVector<2> vec2EyeRight( CRay( vec3EyeRight, vec3GazePoint - vec3EyeRight ).AmplitudeRepresentation( ) );
+	CVector<2> vec2EyeLeft( CRay( vec3EyeLeft, vec3GazePoint - vec3EyeLeft ).AmplitudeRepresentation( GetFaceTransformation( ) ) );
+	CVector<2> vec2EyeRight( CRay( vec3EyeRight, vec3GazePoint - vec3EyeRight ).AmplitudeRepresentation( GetFaceTransformation( ) ) );
 
 	out << vec2EyeLeft[ 0 ] << "," << vec2EyeLeft[ 1 ] << "," << vec2EyeRight[ 0 ] << "," << vec2EyeRight[ 1 ] << ",";
 	out << (double) ptEyeLeft.x / rectFace.width << "," << (double) ptEyeLeft.y / rectFace.height << ",";
@@ -744,6 +747,14 @@ void CData::ScaleFace( const CVector<2> &vec2Scale, const CVector<2> &vec2Shift 
 	rectFace = cv::Rect( ptTL, ptBR );
 	ptEyeLeft -= rectFace.tl( );
 	ptEyeRight -= rectFace.tl( );
+}
+
+CMatrix<3, 3> CData::GetFaceTransformation( void ) const
+{
+	CVector<3> vec3EyesX = vec3EyeLeft - vec3EyeRight;
+	CVector<3> vec3EyesZ( { 0, 0, -1 } );
+	CVector<3> vec3EyesY = vec3EyesX.CrossProduct( vec3EyesZ );
+	return CRenderHelper::GetTransformationMatrix( vec3EyesX.Normalized( ), vec3EyesY.Normalized( ), vec3EyesZ );
 }
 
 void *CData::WriteThread( void * )

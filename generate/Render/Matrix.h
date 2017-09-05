@@ -12,6 +12,7 @@ template<unsigned int uRows, unsigned int uCols>
 class CMatrix
 {
 public:
+	static CMatrix<uRows, uCols> Unit( void );
 	CMatrix( const std::array<double, uCols * uRows> &adValues );
 	CMatrix( const CMatrix<uRows, uCols> &other );
 	CMatrix<uRows, uCols> &operator=( const CMatrix<uRows, uCols> &other );
@@ -25,6 +26,8 @@ public:
 	CVector<uRows> operator*( const CVector<uCols> &other ) const;
 	CMatrix<uRows, uCols> operator*( const double &other ) const;
 	CMatrix<uRows, uCols> &operator*=( const double &other );
+	CMatrix<uRows, uCols> operator/( const double &other ) const;
+	CMatrix<uRows, uCols> &operator/=( const double &other );
 	template<unsigned int uCols2>
 	CMatrix<uRows, uCols2> operator*( const CMatrix<uCols, uCols2> &other ) const;
 	template<unsigned int uCols2>
@@ -38,6 +41,18 @@ private:
 	CMatrix( void );
 	double m_adValues[ uCols * uRows ];
 };
+
+template<unsigned int uRows, unsigned int uCols>
+inline CMatrix<uRows, uCols> CMatrix<uRows, uCols>::Unit( void )
+{
+	static_assert( uRows == uCols, "Unit matrix must be square" );
+
+	std::array<double, uCols * uRows> adValues = { 0 };
+	for( unsigned u = 0; u < uRows; u++ )
+		adValues[ u * uRows + u ] = 1;
+
+	return CMatrix<uRows, uCols>( adValues );
+}
 
 template<unsigned int uRows, unsigned int uCols>
 inline CMatrix<uRows, uCols>::CMatrix( const std::array<double, uCols * uRows> &adValues )
@@ -77,10 +92,18 @@ inline double CMatrix<2, 2>::Determinant( void ) const
 	return m_adValues[ 0 ] * m_adValues[ 3 ] - m_adValues[ 1 ] * m_adValues[ 2 ];
 }
 
+template<>
+inline double CMatrix<3, 3>::Determinant( void ) const
+{
+	return m_adValues[ 0 ] * ( m_adValues[ 4 ] * m_adValues[ 8 ] - m_adValues[ 5 ] * m_adValues[ 7 ] )	//A11 * ( A22 * A33 - A23 * A32 )
+		- m_adValues[ 1 ] * ( m_adValues[ 3 ] * m_adValues[ 8 ] - m_adValues[ 5 ] * m_adValues[ 6 ] )	//A12 * ( A21 * A33 - A23 * A31 )
+		+ m_adValues[ 2 ] * ( m_adValues[ 3 ] * m_adValues[ 7 ] - m_adValues[ 4 ] * m_adValues[ 6 ] );	//A13 * ( A21 * A32 - A22 * A31 )
+}
+
 template<unsigned int uRows, unsigned int uCols>
 inline double CMatrix<uRows, uCols>::Determinant( void ) const
 {
-	assert( false );
+	static_assert( false, "Not yet implemented" );
 	return 0.0;
 }
 
@@ -114,7 +137,7 @@ template<unsigned int uRows, unsigned int uCols>
 inline CMatrix<uRows, uCols> CMatrix<uRows, uCols>::operator*( const double &other ) const
 {
 	std::array<double, uCols * uRows> adValues;
-	for( unsigned int u = 0; u < uRows; u++ )
+	for( unsigned int u = 0; u < uRows * uCols; u++ )
 		adValues[ u ] = m_adValues[ u ] * other;
 
 	return CMatrix<uRows, uCols>( adValues );
@@ -123,8 +146,27 @@ inline CMatrix<uRows, uCols> CMatrix<uRows, uCols>::operator*( const double &oth
 template<unsigned int uRows, unsigned int uCols>
 inline CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::operator*=( const double & other )
 {
-	for( unsigned int u = 0; u < uRows; u++ )
+	for( unsigned int u = 0; u < uRows * uCols; u++ )
 		m_adValues[ u ] *= other;
+
+	return *this;
+}
+
+template<unsigned int uRows, unsigned int uCols>
+inline CMatrix<uRows, uCols> CMatrix<uRows, uCols>::operator/( const double &other ) const
+{
+	std::array<double, uCols * uRows> adValues;
+	for( unsigned int u = 0; u < uRows * uCols; u++ )
+		adValues[ u ] = m_adValues[ u ] / other;
+
+	return CMatrix<uRows, uCols>( adValues );
+}
+
+template<unsigned int uRows, unsigned int uCols>
+inline CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::operator/=( const double & other )
+{
+	for( unsigned int u = 0; u < uRows * uCols; u++ )
+		m_adValues[ u ] /= other;
 
 	return *this;
 }
@@ -168,10 +210,26 @@ inline CMatrix<2, 2> CMatrix<2, 2>::Inverse( void ) const
 	return CMatrix<2, 2>( adValues );
 }
 
+template<>
+inline CMatrix<3, 3> CMatrix<3, 3>::Inverse( void ) const
+{
+	std::array<double, 3 * 3> adValues;
+	adValues[ 0 ] = CMatrix<2, 2>( { m_adValues[ 4 ], m_adValues[ 5 ], m_adValues[ 7 ], m_adValues[ 8 ] } ).Determinant( );
+	adValues[ 1 ] = CMatrix<2, 2>( { m_adValues[ 2 ], m_adValues[ 1 ], m_adValues[ 8 ], m_adValues[ 7 ] } ).Determinant( );
+	adValues[ 2 ] = CMatrix<2, 2>( { m_adValues[ 1 ], m_adValues[ 2 ], m_adValues[ 4 ], m_adValues[ 5 ] } ).Determinant( );
+	adValues[ 3 ] = CMatrix<2, 2>( { m_adValues[ 5 ], m_adValues[ 3 ], m_adValues[ 8 ], m_adValues[ 6 ] } ).Determinant( );
+	adValues[ 4 ] = CMatrix<2, 2>( { m_adValues[ 0 ], m_adValues[ 2 ], m_adValues[ 6 ], m_adValues[ 8 ] } ).Determinant( );
+	adValues[ 5 ] = CMatrix<2, 2>( { m_adValues[ 2 ], m_adValues[ 0 ], m_adValues[ 5 ], m_adValues[ 3 ] } ).Determinant( );
+	adValues[ 6 ] = CMatrix<2, 2>( { m_adValues[ 3 ], m_adValues[ 4 ], m_adValues[ 6 ], m_adValues[ 7 ] } ).Determinant( );
+	adValues[ 7 ] = CMatrix<2, 2>( { m_adValues[ 1 ], m_adValues[ 0 ], m_adValues[ 7 ], m_adValues[ 6 ] } ).Determinant( );
+	adValues[ 8 ] = CMatrix<2, 2>( { m_adValues[ 0 ], m_adValues[ 1 ], m_adValues[ 3 ], m_adValues[ 4 ] } ).Determinant( );
+	return CMatrix<3, 3>( adValues ) / this->Determinant( );
+}
+
 template<unsigned int uRows, unsigned int uCols>
 inline CMatrix<uRows, uCols> CMatrix<uRows, uCols>::Inverse( void ) const
 {
-	assert( false );
+	static_assert( false, "Not yet implemented" );
 	return CMatrix<uRows, uCols>( );
 }
 
@@ -190,7 +248,7 @@ inline CMatrix<2, 2>& CMatrix<2, 2>::Invert( void )
 template<unsigned int uRows, unsigned int uCols>
 inline CMatrix<uRows, uCols>& CMatrix<uRows, uCols>::Invert( void )
 {
-	assert( false );
+	static_assert( false, "Not yet implemented" );
 	return *this;
 }
 
@@ -202,16 +260,16 @@ inline std::string CMatrix<uRows, uCols>::ToString( unsigned int uPrecision ) co
 	out.precision( uPrecision );
 
 	unsigned int u = 0;
-	out << "((" << m_adValues[ u++ ];
-	for( ; u < uCols; )
-		out << ", " << m_adValues[ u++ ];
+	out << "((" << m_adValues[ u ];
+	for( u++; u < uCols; u++ )
+		out << ", " << m_adValues[ u ];
 
 	out << ")";
 	for( unsigned int uCol, uRow = 1; uRow < uRows; uRow++ )
 	{
-		out << ", (" << m_adValues[ u++ ];
-		for( uCol = 1; uCol < uCols; uCol++ )
-			out << ", " << m_adValues[ u++ ];
+		out << ", (" << m_adValues[ u ];
+		for( u++, uCol = 1; uCol < uCols; u++, uCol++ )
+			out << ", " << m_adValues[ u ];
 
 		out << ")";
 	}

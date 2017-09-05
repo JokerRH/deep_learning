@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Render\Vector.h"
+#include "Render\Matrix.h"
 #include "Queue.h"
 #include <limits>
 #include <pthread.h>
@@ -39,6 +40,7 @@ public:
 	void Show( const std::string &sWindow );
 	void ScaleFace( const CVector<2> &vec2Scale, const CVector<2> &vec2Shift );
 	bool IsValid( void );
+	CMatrix<3, 3> GetFaceTransformation( void ) const;
 
 	cv::Mat matImage;
 	cv::Rect rectFace;
