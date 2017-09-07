@@ -7,6 +7,7 @@
 #include <sstream>
 #include "Vector.h"
 
+class CTransformation;
 template<unsigned int uRows, unsigned int uCols>
 class CMatrix
 {
@@ -38,9 +39,11 @@ public:
 	friend std::wostream &operator<<( std::wostream &smOut, const CMatrix<uRows, uCols> &mat );
 	std::wstring ToString( unsigned int uPrecision = 2 ) const;
 
-private:
+protected:
 	CMatrix( void );
 	std::array<double, uCols * uRows> m_adValues;
+
+	friend CTransformation;
 };
 
 template<unsigned int uRows, unsigned int uCols>

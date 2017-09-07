@@ -165,7 +165,7 @@
     <ClInclude Include="Render\Ray.h" />
     <ClInclude Include="Render\Render.h" />
     <ClInclude Include="Render\RenderBox.h" />
-    <ClInclude Include="Render\RenderHelper.h" />
+    <ClInclude Include="Render\Transformation.h" />
     <ClInclude Include="Render\RenderLine.h" />
     <ClInclude Include="Render\RenderObject.h" />
     <ClInclude Include="Render\RenderPlane.h" />
@@ -182,7 +182,7 @@
     <ClCompile Include="Queue.cpp" />
     <ClCompile Include="Render\Ray.cpp" />
     <ClCompile Include="Render\RenderBox.cpp" />
-    <ClCompile Include="Render\RenderHelper.cpp" />
+    <ClCompile Include="Render\Transformation.cpp" />
     <ClCompile Include="Render\RenderLine.cpp" />
     <ClCompile Include="Render\RenderObject.cpp" />
     <ClCompile Include="Render\RenderPlane.cpp" />

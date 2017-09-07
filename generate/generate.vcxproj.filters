@@ -33,13 +33,7 @@
     <ClInclude Include="Render\RenderBox.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
-    <ClInclude Include="Render\RenderHelper.h">
-      <Filter>Header Files\Render</Filter>
-    </ClInclude>
     <ClInclude Include="Render\RenderLine.h">
-      <Filter>Header Files\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="Render\RenderObject.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
     <ClInclude Include="Render\RenderPlane.h">
@@ -69,12 +63,15 @@
     <ClInclude Include="GazeData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Render\RenderObject.h">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Transformation.h">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Render\RenderBox.cpp">
-      <Filter>Source Files\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="Render\RenderHelper.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
     <ClCompile Include="Render\RenderLine.cpp">
@@ -109,6 +106,9 @@
     </ClCompile>
     <ClCompile Include="GazeData.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Transformation.cpp">
+      <Filter>Source Files\Render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
