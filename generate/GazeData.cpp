@@ -1,5 +1,13 @@
 #include "GazeData.h"
 #include "Render\Matrix.h"
+#include <random>
+#include <iostream>
+#include <Windows.h>
+#include <Pathcch.h>
+#include <opencv2\imgcodecs.hpp>
+#include <opencv2\imgproc.hpp>
+
+#undef LoadImage
 
 const std::regex CGazeData::s_regData( R"a((?:"((?:[^"]|"")*)"\s+|(\S+)\s+)\d+.*)a" );
 const std::regex CGazeData::s_regLabel( R"a(([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+))).*)a" );
@@ -219,7 +227,7 @@ std::vector<CGazeData> CGazeData::LoadData( const std::wstring &sPath )
 	std::string sDataLine;
 	std::string sLabelLine;
 	while( std::getline( smData, sDataLine ) && std::getline( smLabel, sLabelLine ) )
-		vecData.emplace_back( sDataLine, sLabelLine );
+		vecData.emplace_back( sDataLine, sLabelLine, sPath );
 
 	smLabel.close( );
 	smData.close( );
@@ -232,8 +240,8 @@ cv::Rect CGazeData::FindTemplate( const cv::Mat &matImage, const cv::Mat &matTem
 	double dScale = 720.0 / matImage.cols;
 	cv::Mat matImageS;
 	cv::Mat matTemplateS;
-	cv::resize( matImage, matImageS, cv::Size( 720, matImage.rows * dScale ) );
-	cv::resize( matTemplate, matTemplateS, cv::Size( matTemplate.cols * dScale, matTemplate.rows * dScale ) );
+	cv::resize( matImage, matImageS, cv::Size( 720, (int) ( matImage.rows * dScale ) ) );
+	cv::resize( matTemplate, matTemplateS, cv::Size( (int) ( matTemplate.cols * dScale ), (int) ( matTemplate.rows * dScale ) ) );
 	
 	//Create the result matrix
 	cv::Mat matResult( matImageS.cols - matTemplateS.cols + 1, matImageS.rows - matTemplateS.rows + 1, CV_32FC1 );
@@ -250,7 +258,7 @@ cv::Rect CGazeData::FindTemplate( const cv::Mat &matImage, const cv::Mat &matTem
 	cv::minMaxLoc( matResult, &dMinVal, &dMaxVal, &ptMinLoc, &ptMaxLoc, cv::Mat( ) );
 	
 	ptMinLoc = cv::Point( (int) ( ptMinLoc.x / dScale ), (int) ( ptMinLoc.y / dScale ) );
-	return cv::Rect( ptMinLoc, cv::Point( (int) ( ptMinLoc.x + matTemplateS.cols / dScale ), (int) ( ptMinLoc.y + matTemplateS.rows / dScale ) );
+	return cv::Rect( ptMinLoc, cv::Point( (int) ( ptMinLoc.x + matTemplateS.cols / dScale ), (int) ( ptMinLoc.y + matTemplateS.rows / dScale ) ) );
 }
 
 CGazeData::CGazeData( const CData &data ) :
@@ -261,7 +269,7 @@ CGazeData::CGazeData( const CData &data ) :
 	
 }
 
-CGazeData::CGazeData( const std::string &sData, const std::string &sLabel )
+CGazeData::CGazeData( const std::string &sData, const std::string &sLabel, const std::wstring &sPath )
 {
 	std::smatch match;
 	std::regex_match( sData, match, s_regData );
@@ -279,10 +287,10 @@ CGazeData::CGazeData( const std::string &sData, const std::string &sLabel )
 	if( !match.size( ) )
 		throw 1;
 
-	rayEyeLeft = CRay( CVector<3>( { -1, 0, 0 } ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) );
-	rayEyeRight = CRay( CVector<3>( { 1, 0, 0 } ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) );
-	vec3EyeLeft = CVector( { std::stod( match[ 5 ].str( ) ), std::stod( match[ 6 ].str( ) ) } );
-	vec3EyeRight = CVector( { std::stod( match[ 7 ].str( ) ), std::stod( match[ 8 ].str( ) ) } );
+	rayEyeLeft = CRay( CVector<3>( { -0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) );
+	rayEyeRight = CRay( CVector<3>( { 0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) );
+	vec3EyeLeft = CVector<3>( { std::stod( match[ 5 ].str( ) ), std::stod( match[ 6 ].str( ) ) } );
+	vec3EyeRight = CVector<3>( { std::stod( match[ 7 ].str( ) ), std::stod( match[ 8 ].str( ) ) } );
 }
 
 CData CGazeData::MergeReference( const std::vector<CData> &vecData )
@@ -313,7 +321,7 @@ CData CGazeData::MergeReference( const std::vector<CData> &vecData )
 	vec3EyeRight = data.vec3EyeRight;
 
 	//Rays are in local space of the face, transform to global space
-	CMatrix<3, 3> matTransform = GetFaceTransform( ).Invert( );
+	CMatrix<3, 3> matTransform = GetFaceTransformation( ).Invert( );
 	rayEyeLeft = matTransform * rayEyeLeft;
 	rayEyeRight = matTransform * rayEyeRight;
 	
@@ -328,15 +336,15 @@ CData CGazeData::MergeReference( const std::vector<CData> &vecData )
 	return data;
 }
 	
-std::string CGazeData::ToString( unsigned uPrecision = std::numeric_limits<double>::max_digits10 ) const
+std::string CGazeData::ToString( unsigned uPrecision ) const
 {
 	std::ostringstream out;
 	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
 	out.precision( uPrecision );
 
-	CMatrix<3, 3> matTransform = GetFaceTransform( );
-	CVector<2> vec2EyeLeft( rayEyeLeft.AmplitudeRepresentation( ) );
-	CVector<2> vec2EyeRight( rayEyeRight.AmplitudeRepresentation( ) );
+	CMatrix<3, 3> matTransform = GetFaceTransformation( );
+	CVector<2> vec2EyeLeft( ( matTransform * rayEyeLeft ).AmplitudeRepresentation( ) );
+	CVector<2> vec2EyeRight( ( matTransform * rayEyeRight ).AmplitudeRepresentation( ) );
 
 	out << vec2EyeLeft[ 0 ] << "," << vec2EyeLeft[ 1 ] << "," << vec2EyeRight[ 0 ] << "," << vec2EyeRight[ 1 ] << ",";
 	out << (double) ptEyeLeft.x / rectFace.width << "," << (double) ptEyeLeft.y / rectFace.height << ",";

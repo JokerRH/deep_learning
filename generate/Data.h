@@ -36,6 +36,8 @@ public:
 	void Show( const std::string &sWindow, const CData &dataref = CData( ) );
 	void ScaleFace( const CVector<2> &vec2Scale, const CVector<2> &vec2Shift );
 	bool IsValid( void );
+
+	CVector<3> GetFacePosition( void ) const;
 	CMatrix<3, 3> GetFaceTransformation( void ) const;
 
 	cv::Mat matImage;

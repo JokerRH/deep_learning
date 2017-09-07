@@ -159,6 +159,7 @@
     <ClInclude Include="Columbia.h" />
     <ClInclude Include="Custom.h" />
     <ClInclude Include="Data.h" />
+    <ClInclude Include="GazeData.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="Render\Matrix.h" />
     <ClInclude Include="Render\Ray.h" />
@@ -176,6 +177,7 @@
     <ClCompile Include="Columbia.cpp" />
     <ClCompile Include="Custom.cpp" />
     <ClCompile Include="Data.cpp" />
+    <ClCompile Include="GazeData.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Queue.cpp" />
     <ClCompile Include="Render\Ray.cpp" />

@@ -19,8 +19,6 @@ public:
 	CScenery Shifted( const CVector<3> &vec3Shift ) const;
 	CScenery &Fit( bool fShift = true );
 	void Draw( cv::Mat &matImage ) const;
-	CMatrix<3, 3> GetTransformation( void );
-	CVector<3, 3> GetShift( void );
 
 private:
 	CRenderPoint m_Camera;

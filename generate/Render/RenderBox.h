@@ -3,6 +3,7 @@
 #include "Vector.h"
 #include "Matrix.h"
 #include "RenderObject.h"
+#include <sstream>
 #include <opencv2\core.hpp>
 
 class CRenderLine;
@@ -35,7 +36,8 @@ public:
 	CRenderPlane GetPlane( unsigned char fPlane ) const;
 	CRenderPlane GetPlanes( unsigned char &fPlane ) const;
 	
-	std::string ToString( unsigned int uPrecision = 2 ) const override;
+	friend std::wostream &operator<<( std::wostream &smOut, const CRenderBox &box );
+	std::wstring ToString( unsigned int uPrecision = 2 ) const override;
 
 //private:
 	std::array<unsigned char, 2> GetLineIndices( unsigned char &fPlane, unsigned char &fLine ) const;
@@ -123,7 +125,18 @@ inline CRenderPlane CRenderBox::GetPlanes( unsigned char &fPlane ) const
 	} );
 }
 
-inline std::string CRenderBox::ToString( unsigned int uPrecision ) const
+inline std::wostream &operator<<( std::wostream &smOut, const CRenderBox &box )
 {
-	return m_avec3Points[ 0 ].ToString( uPrecision ) + ", " + m_avec3Points[ 1 ].ToString( uPrecision ) + ", " + m_avec3Points[ 2 ].ToString( uPrecision ) + ", " + m_avec3Points[ 3 ].ToString( uPrecision ) + ", " + m_avec3Points[ 4 ].ToString( uPrecision ) + ", " + m_avec3Points[ 5 ].ToString( uPrecision ) + ", " + m_avec3Points[ 6 ].ToString( uPrecision ) + ", " + m_avec3Points[ 7 ].ToString( uPrecision );
+	smOut << box.m_avec3Points[ 0 ] << ", " << box.m_avec3Points[ 1 ] << ", " << box.m_avec3Points[ 2 ] << ", " << box.m_avec3Points[ 3 ] << ", " << box.m_avec3Points[ 4 ] << ", " << box.m_avec3Points[ 5 ] << ", " << box.m_avec3Points[ 6 ] << ", " << box.m_avec3Points[ 7 ];
+	return smOut;
+}
+
+inline std::wstring CRenderBox::ToString( unsigned int uPrecision ) const
+{
+	std::wostringstream smOut;
+	smOut.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	smOut.precision( uPrecision );
+
+	operator<<( smOut, *this );
+	return smOut.str( );
 }

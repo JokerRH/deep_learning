@@ -1,5 +1,6 @@
 #include "Scenery.h"
 #include "Render\RenderHelper.h"
+#include "GazeData.h"
 
 CScenery::CScenery( const CData &data ) :
 	m_Camera( CVector<3>( { 0 } ) ),
@@ -24,7 +25,7 @@ CScenery::CScenery( const CData &data ) :
 	//Check if data is GazeData
 	try
 	{
-		CGazeData gazedata = dynamic_cast( data );
+		const CGazeData gazedata = dynamic_cast<const CGazeData &>( data );
 		m_GazeLeft = gazedata.rayEyeLeft;
 		m_GazeRight = gazedata.rayEyeRight;
 	}
@@ -94,14 +95,4 @@ void CScenery::Draw( cv::Mat &matImage ) const
 	m_Camera.Shifted( vec3Shift ).RenderPoints( matImage, cv::Scalar( 255, 0, 255 ), 3 );
 	m_GazeLeft.Shifted( vec3Shift ).Render( matImage, cv::Scalar( 0, 255, 255 ), cv::Scalar( 0, 255, 0 ) );
 	m_GazeRight.Shifted( vec3Shift ).Render( matImage, cv::Scalar( 0, 255, 255 ), cv::Scalar( 0, 255, 0 ) );
-}
-
-CMatrix<3, 3> CScenery::GetTransformation( void )
-{
-	return CRenderHelper::GetTransformationMatrix( m_Right.m_vec3Dir, m_Up.m_vec3Dir, m_Forward.m_vec3Dir );
-}
-
-CVector<3, 3> CScenery::GetShift( void )
-{
-	return m_Camera.m_vec3Point;
 }

@@ -2,6 +2,7 @@
 
 #include "RenderObject.h"
 #include "Matrix.h"
+#include <sstream>
 #include <opencv2\core.hpp>
 
 class CRenderLine;
@@ -28,7 +29,8 @@ public:
 	CRenderLine GetLine( unsigned char fLine ) const;
 	CRenderLine GetLines( unsigned char &fLine ) const;
 	
-	std::string ToString( unsigned int uPrecision = 2 ) const override;
+	friend std::wostream &operator<<( std::wostream &smOut, const CRenderPlane &plane );
+	std::wstring ToString( unsigned int uPrecision = 2 ) const override;
 
 private:
 	std::array<unsigned char, 2> GetLineIndices( unsigned char &fLine ) const;
@@ -81,7 +83,18 @@ inline CRenderLine CRenderPlane::GetLines( unsigned char &fLine ) const
 	} );
 }
 
-inline std::string CRenderPlane::ToString( unsigned int uPrecision ) const
+inline std::wostream &operator<<( std::wostream &smOut, const CRenderPlane &plane )
 {
-	return m_avec3Points[ 0 ].ToString( uPrecision ) + ", " + m_avec3Points[ 1 ].ToString( uPrecision ) + ", " + m_avec3Points[ 2 ].ToString( uPrecision ) + ", " + m_avec3Points[ 3 ].ToString( uPrecision );
+	smOut << plane.m_avec3Points[ 0 ] << ", " << plane.m_avec3Points[ 1 ] << ", " << plane.m_avec3Points[ 2 ] << ", " << plane.m_avec3Points[ 3 ];
+	return smOut;
+}
+
+inline std::wstring CRenderPlane::ToString( unsigned int uPrecision ) const
+{
+	std::wostringstream smOut;
+	smOut.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	smOut.precision( uPrecision );
+
+	operator<<( smOut, *this );
+	return smOut.str( );
 }

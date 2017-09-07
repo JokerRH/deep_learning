@@ -2,6 +2,7 @@
 
 #include "RenderObject.h"
 #include "Matrix.h"
+#include <sstream>
 #include <opencv2/imgproc/imgproc.hpp>
 
 class CRenderLine : public CRenderObject
@@ -16,7 +17,8 @@ public:
 	CRenderLine &Shift( const CVector<3> &vec3 );
 	CRenderLine Shifted( const CVector<3> &vec3 ) const;
 	
-	std::string ToString( unsigned int uPrecision = 2 ) const override;
+	friend std::wostream &operator<<( std::wostream &smOut, const CRenderLine &line );
+	std::wstring ToString( unsigned int uPrecision = 2 ) const override;
 
 private:
 	CVector<3> m_avec3Points[ 2 ];
@@ -49,7 +51,18 @@ inline CRenderLine CRenderLine::Shifted( const CVector<3> &vec3 ) const
 	return CRenderLine( *this ).Shift( vec3 );
 }
 
-inline std::string CRenderLine::ToString( unsigned int uPrecision ) const
+inline std::wostream &operator<<( std::wostream &smOut, const CRenderLine &line )
 {
-	return m_avec3Points[ 0 ].ToString( uPrecision ) + ", " + m_avec3Points[ 1 ].ToString( uPrecision );
+	smOut << line.m_avec3Points[ 0 ] << ", " << line.m_avec3Points[ 1 ];
+	return smOut;
+}
+
+inline std::wstring CRenderLine::ToString( unsigned int uPrecision ) const
+{
+	std::wostringstream smOut;
+	smOut.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	smOut.precision( uPrecision );
+
+	operator<<( smOut, *this );
+	return smOut.str( );
 }

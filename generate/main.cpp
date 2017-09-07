@@ -41,8 +41,16 @@ bool CreateCVWindow( const std::string &sWindow )
 	return true;
 }
 
+#include "Render\Matrix.h"
 int main( int argc, char **argv )
 {
+	CMatrix<4, 4> mat( { 3, 0, 2, -1, 1, 2, 0, -2, 4, 0, 6, -3, 5, 0, 2, 0 } );
+	std::wcout << mat << std::endl;
+	std::wcout << "Determinant: " << mat.Determinant( ) << std::endl;
+	std::wcout << mat.Inverse( ) << std::endl;
+	system( "PAUSE" );
+	return 0;
+
 	if( argc >= 3 )
 	{
 		if( !_stricmp( argv[ 1 ], "show" ) )

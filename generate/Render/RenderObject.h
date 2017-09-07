@@ -18,5 +18,5 @@ public:
 	CVector<3> GetDim( void ) const;
 	CRenderBox GetBox( void ) const;
 	
-	virtual std::string ToString( unsigned int uPrecision = 2 ) const = 0;
+	virtual std::wstring ToString( unsigned int uPrecision = 2 ) const = 0;
 };

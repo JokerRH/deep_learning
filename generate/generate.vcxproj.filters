@@ -66,6 +66,9 @@
     <ClInclude Include="Render\Ray.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
+    <ClInclude Include="GazeData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Render\RenderBox.cpp">
@@ -103,6 +106,9 @@
     </ClCompile>
     <ClCompile Include="Render\Ray.cpp">
       <Filter>Source Files\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="GazeData.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

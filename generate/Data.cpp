@@ -453,12 +453,21 @@ void CData::ScaleFace( const CVector<2> &vec2Scale, const CVector<2> &vec2Shift 
 	ptEyeRight -= rectFace.tl( );
 }
 
+CVector<3> CData::GetFacePosition( void ) const
+{
+	return ( vec3EyeLeft + vec3EyeRight ) / 2.0;
+}
+
 CMatrix<3, 3> CData::GetFaceTransformation( void ) const
 {
 	CVector<3> vec3EyesX = vec3EyeLeft - vec3EyeRight;
-	CVector<3> vec3EyesZ( { 0, 0, -1 } );
-	CVector<3> vec3EyesY = vec3EyesX.CrossProduct( vec3EyesZ );
-	return CRenderHelper::GetTransformationMatrix( vec3EyesX.Normalized( ), vec3EyesY.Normalized( ), vec3EyesZ );
+	double dScale = vec3EyesX.Abs( );
+	vec3EyesX /= dScale;
+	CVector<3> vec3EyesY = vec3EyesX.CrossProduct( CVector<3>( { 0, 0, -1 } ) ).Normalize( );
+	CVector<3> vec3EyesZ = vec3EyesX.CrossProduct( vec3EyesY ).Normalize( );
+
+	std::wcout << "X: " << vec3EyesX.ToString( ) << "; Y: " << "X: " << vec3EyesY.ToString( ) << "; Z: " << vec3EyesZ.ToString( ) << std::endl;
+	return CRenderHelper::GetTransformationMatrix( vec3EyesX, vec3EyesY, vec3EyesZ ) * CRenderHelper::GetTransformationMatrix( dScale );
 }
 
 void *CData::WriteThread( void * )

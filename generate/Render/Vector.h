@@ -40,7 +40,10 @@ public:
 	CVector<uRows> UnitVector( void ) const;
 	CVector<3> CrossProduct( const CVector<3> &other );
 	CVector<3> &MakeCrossProduct( const CVector<3> &other );
-	std::string ToString( unsigned int uPrecision = 2 ) const;
+
+	template<unsigned int uRows>
+	friend std::wostream &operator<<( std::wostream& smOut, const CVector<uRows> &dt );
+	std::wstring ToString( unsigned int uPrecision = 2 ) const;
 	double Angle( const CVector<3> &other ) const;
 
 private:
@@ -255,19 +258,26 @@ inline CVector<3> &CVector<3>::MakeCrossProduct( const CVector<3> &other )
 }
 
 template<unsigned int uRows>
-inline std::string CVector<uRows>::ToString( unsigned int uPrecision ) const
+inline std::wostream &operator<<( std::wostream& smOut, const CVector<uRows> &vec )
 {
-	std::ostringstream out;
-	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
-	out.precision( uPrecision );
-
 	unsigned int u = 0;
-	out << "(" << m_adValues[ u++ ];
+	smOut << "(" << vec.m_adValues[ u++ ];
 	for( ; u < uRows; u++ )
-		out << ", " << m_adValues[ u ];
+		smOut << ", " << vec.m_adValues[ u ];
 
-	out << ")";
-	return out.str( );
+	smOut << ")";
+	return smOut;
+}
+
+template<unsigned int uRows>
+inline std::wstring CVector<uRows>::ToString( unsigned int uPrecision ) const
+{
+	std::wostringstream smOut;
+	smOut.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	smOut.precision( uPrecision );
+
+	operator<<( smOut, *this );
+	return smOut.str( );
 }
 
 template<unsigned int uRows>

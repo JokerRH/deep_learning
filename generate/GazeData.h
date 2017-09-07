@@ -5,13 +5,13 @@
 class CGazeData : public CData
 {
 public:
-	static bool CGazeData::Export( std::vector<CData> &vecData, const std::wstring &sPath, unsigned uValBatchSize, double dTrainValRatio );
+	static bool CGazeData::Export( std::vector<CData> &vecData, const std::wstring &sPath, unsigned uValBatchSize, double dTrainValRatio = 2.0 / 3.0 );
 	static std::vector<CGazeData> LoadData( const std::wstring &sPath );
 	static cv::Rect FindTemplate( const cv::Mat &matImage, const cv::Mat &matTemplate );
 
 	CGazeData( const CData &data );
-	CGazeData( const std::string &sData, const std::string &sLabel );
-	~CGazeData( void ) = default override;
+	CGazeData( const std::string &sData, const std::string &sLabel, const std::wstring &sPath );
+	~CGazeData( void ) override = default;
 
 	CData MergeReference( const std::vector<CData> &vecData );
 	
@@ -23,4 +23,4 @@ public:
 private:
 	static const std::regex s_regData;
 	static const std::regex s_regLabel;
-}
+};
