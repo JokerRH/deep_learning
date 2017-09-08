@@ -350,24 +350,6 @@ std::string CGazeData::ToString( unsigned uPrecision ) const
 	CVector<2> vec2EyeLeft( ( matTransform * rayEyeLeft ).AmplitudeRepresentation( ) );
 	CVector<2> vec2EyeRight( ( matTransform * rayEyeRight ).AmplitudeRepresentation( ) );
 
-#if 1
-	CRay rayRef( matTransform * rayEyeLeft );
-	rayRef.m_vec3Dir.Normalize( );
-	CVector<2> vec2( rayRef.AmplitudeRepresentation( ) );
-	std::wcout << "Amp: " << vec2 << std::endl;
-	CRay rayTest( CVector<3>( { 0.5, 0, 0 } ), vec2 );
-	std::wcout << "Ref: " << rayRef << std::endl;
-	std::wcout << "Test: " << rayTest << std::endl;
-#else
-	CRay rayRef( CVector<3>( { 0.5, 0, 0 } ), CVector<3>( { 1, 1, 1 } ) );
-	rayRef.m_vec3Dir.Normalize( );
-	CVector<2> vec2( rayRef.AmplitudeRepresentation( ) );
-	std::wcout << "Amp: " << vec2 << std::endl;
-	CRay rayTest( CVector<3>( { 0.5, 0, 0 } ), CVector<2>( { 0.5, 0 } ) );
-	std::wcout << "Ref: " << rayRef << std::endl;
-	std::wcout << "Test: " << rayTest << std::endl;
-#endif
-
 	out << vec2EyeLeft[ 0 ] << "," << vec2EyeLeft[ 1 ] << "," << vec2EyeRight[ 0 ] << "," << vec2EyeRight[ 1 ] << ",";
 	out << (double) ptEyeLeft.x / rectFace.width << "," << (double) ptEyeLeft.y / rectFace.height << ",";
 	out << (double) ptEyeRight.x / rectFace.width << "," << (double) ptEyeRight.y / rectFace.height;

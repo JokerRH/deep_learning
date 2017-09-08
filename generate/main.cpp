@@ -189,7 +189,7 @@ int main( int argc, char **argv )
 			std::vector<CData> vecData;
 			for( unsigned u = 4; u < (unsigned) argc; u++ )
 			{
-				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ), 4 );
+				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ) );
 				std::wcout << "Loaded " << vecTemp.size( ) << " instances from \"" << argv[ u ] << "\"" << std::endl;
 				vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
 			}

@@ -475,7 +475,6 @@ CTransformation CData::GetFaceTransformation( void ) const
 	CVector<3> vec3EyesY = vec3EyesX.CrossProduct( CVector<3>( { 0, 0, -1 } ) ).Normalize( );
 	CVector<3> vec3EyesZ = vec3EyesY.CrossProduct( vec3EyesX ).Normalize( );
 
-	std::wcout << "X: " << vec3EyesX.ToString( ) << "; Y: " << "X: " << vec3EyesY.ToString( ) << "; Z: " << vec3EyesZ.ToString( ) << std::endl;
 	return CTransformation::GetTRSMatrix( ( vec3EyeLeft + vec3EyeRight ) / 2.0, vec3EyesX, vec3EyesY, vec3EyesZ, dScale );
 }
 
