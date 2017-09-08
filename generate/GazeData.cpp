@@ -1,5 +1,6 @@
 #include "GazeData.h"
 #include "Render\Matrix.h"
+#include "Render\Transformation.h"
 #include <random>
 #include <iostream>
 #include <Windows.h>
@@ -287,8 +288,8 @@ CGazeData::CGazeData( const std::string &sData, const std::string &sLabel, const
 	if( !match.size( ) )
 		throw 1;
 
-	rayEyeLeft = CRay( CVector<3>( { -0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) );
-	rayEyeRight = CRay( CVector<3>( { 0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) );
+	rayEyeLeft = CRay( CVector<3>( { 0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) );
+	rayEyeRight = CRay( CVector<3>( { -0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) );
 	vec3EyeLeft = CVector<3>( { std::stod( match[ 5 ].str( ) ), std::stod( match[ 6 ].str( ) ) } );
 	vec3EyeRight = CVector<3>( { std::stod( match[ 7 ].str( ) ), std::stod( match[ 8 ].str( ) ) } );
 }
@@ -321,7 +322,7 @@ CData CGazeData::MergeReference( const std::vector<CData> &vecData )
 	vec3EyeRight = data.vec3EyeRight;
 
 	//Rays are in local space of the face, transform to global space
-	CMatrix<3, 3> matTransform = GetFaceTransformation( ).Invert( );
+	CTransformation matTransform( GetFaceTransformation( ) );
 	rayEyeLeft = matTransform * rayEyeLeft;
 	rayEyeRight = matTransform * rayEyeRight;
 	
@@ -342,9 +343,30 @@ std::string CGazeData::ToString( unsigned uPrecision ) const
 	out.setf( std::ios_base::fixed, std::ios_base::floatfield );
 	out.precision( uPrecision );
 
-	CMatrix<3, 3> matTransform = GetFaceTransformation( );
+	std::wcout.setf( std::ios_base::fixed, std::ios_base::floatfield );
+	std::wcout.precision( 6 );
+
+	CTransformation matTransform( GetFaceTransformation( ).Invert( ) );
 	CVector<2> vec2EyeLeft( ( matTransform * rayEyeLeft ).AmplitudeRepresentation( ) );
 	CVector<2> vec2EyeRight( ( matTransform * rayEyeRight ).AmplitudeRepresentation( ) );
+
+#if 1
+	CRay rayRef( matTransform * rayEyeLeft );
+	rayRef.m_vec3Dir.Normalize( );
+	CVector<2> vec2( rayRef.AmplitudeRepresentation( ) );
+	std::wcout << "Amp: " << vec2 << std::endl;
+	CRay rayTest( CVector<3>( { 0.5, 0, 0 } ), vec2 );
+	std::wcout << "Ref: " << rayRef << std::endl;
+	std::wcout << "Test: " << rayTest << std::endl;
+#else
+	CRay rayRef( CVector<3>( { 0.5, 0, 0 } ), CVector<3>( { 1, 1, 1 } ) );
+	rayRef.m_vec3Dir.Normalize( );
+	CVector<2> vec2( rayRef.AmplitudeRepresentation( ) );
+	std::wcout << "Amp: " << vec2 << std::endl;
+	CRay rayTest( CVector<3>( { 0.5, 0, 0 } ), CVector<2>( { 0.5, 0 } ) );
+	std::wcout << "Ref: " << rayRef << std::endl;
+	std::wcout << "Test: " << rayTest << std::endl;
+#endif
 
 	out << vec2EyeLeft[ 0 ] << "," << vec2EyeLeft[ 1 ] << "," << vec2EyeRight[ 0 ] << "," << vec2EyeRight[ 1 ] << ",";
 	out << (double) ptEyeLeft.x / rectFace.width << "," << (double) ptEyeLeft.y / rectFace.height << ",";

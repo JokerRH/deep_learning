@@ -2,6 +2,7 @@
 
 #include "RenderObject.h"
 #include "Matrix.h"
+#include "Transformation.h"
 #include <sstream>
 #include <opencv2\core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -14,9 +15,8 @@ public:
 	CVector<3> GetMin( void ) const override;
 	CVector<3> GetMax( void ) const override;
 	void RenderPoints( cv::Mat &matImage, const cv::Scalar &color, int iRadius = 1, int iThickness = -1 ) const;
-	void Transform( const CMatrix<3, 3> &mat );
-	CRenderPoint &Shift( const CVector<3> &vec3 );
-	CRenderPoint Shifted( const CVector<3> &vec3 ) const;
+	friend CRenderPoint operator*( const CTransformation &matTransform, const CRenderPoint &point );
+	CRenderPoint &operator*=( const CTransformation &matTransform );
 	
 	friend std::wostream &operator<<( std::wostream &smOut, const CRenderPoint &point );
 	std::wstring ToString( unsigned int uPrecision = 2 ) const override;
@@ -48,23 +48,18 @@ inline CVector<3> CRenderPoint::GetMax( void ) const
 
 inline void CRenderPoint::RenderPoints( cv::Mat &matImage, const cv::Scalar &color, int iRadius, int iThickness ) const
 {
-	cv::circle( matImage, cv::Point( (int) ( m_vec3Point[ 0 ] * matImage.cols ), matImage.rows - (int) ( m_vec3Point[ 1 ] * matImage.rows ) ), iRadius, color, iThickness );
+	cv::circle( matImage, cv::Point( (int) ( ( m_vec3Point[ 0 ] + 0.5 ) * matImage.cols ), matImage.rows - (int) ( ( m_vec3Point[ 1 ] + 0.5 ) * matImage.rows ) ), iRadius, color, iThickness );
 }
 
-inline void CRenderPoint::Transform( const CMatrix<3, 3> &mat )
+inline CRenderPoint operator*( const CTransformation &matTransform, const CRenderPoint &point )
 {
-	m_vec3Point = mat * m_vec3Point;
+	return CRenderPoint( matTransform * point.m_vec3Point );
 }
 
-inline CRenderPoint &CRenderPoint::Shift( const CVector<3> &vec3 )
+inline CRenderPoint &CRenderPoint::operator*=( const CTransformation &matTransform )
 {
-	m_vec3Point += vec3;
+	m_vec3Point *= matTransform;
 	return *this;
-}
-
-inline CRenderPoint CRenderPoint::Shifted( const CVector<3> &vec3 ) const
-{
-	return CRenderPoint( *this ).Shift( vec3 );
 }
 
 inline std::wostream &operator<<( std::wostream &smOut, const CRenderPoint &point )

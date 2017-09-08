@@ -37,31 +37,6 @@ CRenderBox::CRenderBox( const CVector<3> &vec3Min, const CVector<3> &vec3Max ) :
 	m_avec3Points[ 6 ] = vec3Max - vec3DimZ;
 }
 
-void CRenderBox::Transform( const CMatrix<3, 3> &mat )
-{
-	m_avec3Points[ 0 ] = mat * m_avec3Points[ 0 ];
-	m_avec3Points[ 1 ] = mat * m_avec3Points[ 1 ];
-	m_avec3Points[ 2 ] = mat * m_avec3Points[ 2 ];
-	m_avec3Points[ 3 ] = mat * m_avec3Points[ 3 ];
-	m_avec3Points[ 4 ] = mat * m_avec3Points[ 4 ];
-	m_avec3Points[ 5 ] = mat * m_avec3Points[ 5 ];
-	m_avec3Points[ 6 ] = mat * m_avec3Points[ 6 ];
-	m_avec3Points[ 7 ] = mat * m_avec3Points[ 7 ];
-}
-
-CRenderBox &CRenderBox::Shift( const CVector<3> &vec3 )
-{
-	m_avec3Points[ 0 ] += vec3;
-	m_avec3Points[ 1 ] += vec3;
-	m_avec3Points[ 2 ] += vec3;
-	m_avec3Points[ 3 ] += vec3;
-	m_avec3Points[ 4 ] += vec3;
-	m_avec3Points[ 5 ] += vec3;
-	m_avec3Points[ 6 ] += vec3;
-	m_avec3Points[ 7 ] += vec3;
-	return *this;
-}
-
 #define BOX( plane, a, b, c, d )\
 	if( fPlane & plane )\
 	{\

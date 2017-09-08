@@ -30,10 +30,10 @@ public:
 	CMatrix<uRows, uCols> &operator/=( const double &other );
 	template<unsigned int uCols2>
 	CMatrix<uRows, uCols2> operator*( const CMatrix<uCols, uCols2> &other ) const;
-	template<unsigned int uCols2>
 	CMatrix<uRows, uCols> &operator*=( const CMatrix<uCols, uRows> &other );
 	CMatrix<uRows, uCols> Inverse( void ) const;
 	CMatrix<uRows, uCols> &Invert( void );
+	CMatrix<uCols, uRows> Transposed( void ) const;
 
 	template<unsigned int uRows, unsigned int uCols>
 	friend std::wostream &operator<<( std::wostream &smOut, const CMatrix<uRows, uCols> &mat );
@@ -195,26 +195,25 @@ template<unsigned int uRows, unsigned int uCols>
 template<unsigned int uCols2>
 CMatrix<uRows, uCols2> CMatrix<uRows, uCols>::operator*( const CMatrix<uCols, uCols2> &other ) const
 {
-	CMatrix<uRows, uCols2> mat( { 0 } );
+	std::array<double, uRows * uCols2> adValues = { 0 };
 	for( unsigned int uCol2 = 0; uCol2 < uCols2; uCol2++ )
 		for( unsigned int uRow = 0; uRow < uRows; uRow++ )
 			for( unsigned int uCol = 0; uCol < uCols; uCol++ )
-				mat[ uRow ][ uCol2 ] += ( *this )[ uRow ][ uCol ] * other[ uCol ][ uCol2 ];
+				adValues[ uRow * uRows + uCol2 ] += m_adValues[ uRow * uRows + uCol ] * other.m_adValues[ uCol * uCols + uCol2 ];
 
-	return mat;
+	return CMatrix<uRows, uCols2>( adValues );
 }
 
 template<unsigned int uRows, unsigned int uCols>
-template<unsigned int uCols2>
 CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::operator*=( const CMatrix<uCols, uRows> &other )
 {
-	CMatrix<uRows, uCols2> mat( { 0 } );
-	for( unsigned int uCol2 = 0; uCol2 < uCols2; uCol2++ )
+	std::array<double, uRows * uCols> adValues = { 0 };
+	for( unsigned int uCol2 = 0; uCol2 < uRows; uCol2++ )
 		for( unsigned int uRow = 0; uRow < uRows; uRow++ )
 			for( unsigned int uCol = 0; uCol < uCols; uCol++ )
-				mat[ uRow ][ uCol2 ] += ( *this )[ uRow ][ uCol ] * other[ uCol ][ uCol2 ];
+				adValues[ uRow * uRows + uCol2 ] += m_adValues[ uRow * uRows + uCol ] * other.m_adValues[ uCol * uCols + uCol2 ];
 
-	Swap( mat );
+	m_adValues = adValues;
 	return *this;
 }
 
@@ -331,8 +330,8 @@ inline CMatrix<4, 4> &CMatrix<4, 4>::Invert( void )
 	adValues[ 13 ] = B( 1, 1, 3, 2, 4, 3 ) + B( 1, 2, 3, 3, 4, 1 ) + B( 1, 3, 3, 1, 4, 2 );
 	adValues[ 14 ] = B( 1, 1, 2, 3, 4, 2 ) + B( 1, 2, 2, 1, 4, 3 ) + B( 1, 3, 2, 2, 4, 1 );
 	adValues[ 15 ] = B( 1, 1, 2, 2, 3, 3 ) + B( 1, 2, 2, 3, 3, 1 ) + B( 1, 3, 2, 1, 3, 2 );
-	m_adValues = adValues;
 	double dDeterminant = Determinant( );
+	m_adValues = adValues;
 	for( double &d : m_adValues )
 		d /= dDeterminant;
 	return *this;
@@ -344,6 +343,17 @@ inline CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::Invert( void )
 {
 	static_assert( false, "Not yet implemented" );
 	return *this;
+}
+
+template<unsigned int uRows, unsigned int uCols>
+CMatrix<uCols, uRows> CMatrix<uRows, uCols>::Transposed( void ) const
+{
+	std::array<double, uRows * uCols> adValues;
+	for( unsigned uCol = 0; uCol < uCols; uCol++ )
+		for( unsigned uRow = 0; uRow < uRows; uRow++ )
+			adValues[ uCol * uCols + uRow ] = m_adValues[ uRow * uRows + uCol ];
+
+	return CMatrix<uCols, uRows>( adValues );
 }
 
 template<unsigned int uRows, unsigned int uCols>

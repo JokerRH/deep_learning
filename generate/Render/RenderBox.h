@@ -3,6 +3,7 @@
 #include "Vector.h"
 #include "Matrix.h"
 #include "RenderObject.h"
+#include "Transformation.h"
 #include <sstream>
 #include <opencv2\core.hpp>
 
@@ -28,9 +29,10 @@ public:
 	CVector<3> GetMax( void ) const override;
 	void RenderFrame( cv::Mat &matImage, const cv::Scalar &color, int iThickness = 2 ) const;
 	void RenderContent( cv::Mat &matImage, const cv::Scalar &color ) const;
-	void Transform( const CMatrix<3, 3> &mat );
-	CRenderBox &Shift( const CVector<3> &vec3 );
-	CRenderBox Shifted( const CVector<3> &vec3 ) const;
+	
+	friend CRenderBox operator*( const CTransformation &matTransform, const CRenderBox &box );
+	CRenderBox &operator*=( const CTransformation &matTransform );
+
 	CRenderLine GetLine( unsigned char fPlane, unsigned char fLine ) const;
 	CRenderLine GetLines( unsigned char &fPlane, unsigned char &fLine ) const;
 	CRenderPlane GetPlane( unsigned char fPlane ) const;
@@ -88,9 +90,22 @@ inline void CRenderBox::RenderContent( cv::Mat &matImage, const cv::Scalar &colo
 		GetPlanes( fPlane ).RenderContent( matImage, color );
 }
 
-inline CRenderBox CRenderBox::Shifted( const CVector<3> &vec3 ) const
+inline CRenderBox operator*( const CTransformation &matTransform, const CRenderBox &box )
 {
-	return CRenderBox( *this ).Shift( vec3 );
+	return CRenderBox( { matTransform * box.m_avec3Points[ 0 ], matTransform * box.m_avec3Points[ 1 ], matTransform * box.m_avec3Points[ 2 ], matTransform * box.m_avec3Points[ 3 ], matTransform * box.m_avec3Points[ 4 ], matTransform * box.m_avec3Points[ 5 ], matTransform * box.m_avec3Points[ 6 ], matTransform * box.m_avec3Points[ 7 ] } );
+}
+
+inline CRenderBox &CRenderBox::operator*=( const CTransformation &matTransform )
+{
+	m_avec3Points[ 0 ] *= matTransform;
+	m_avec3Points[ 1 ] *= matTransform;
+	m_avec3Points[ 2 ] *= matTransform;
+	m_avec3Points[ 3 ] *= matTransform;
+	m_avec3Points[ 4 ] *= matTransform;
+	m_avec3Points[ 5 ] *= matTransform;
+	m_avec3Points[ 6 ] *= matTransform;
+	m_avec3Points[ 7 ] *= matTransform;
+	return *this;
 }
 
 inline CRenderLine CRenderBox::GetLine( unsigned char fPlane, unsigned char fLine ) const

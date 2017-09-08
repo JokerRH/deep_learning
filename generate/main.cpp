@@ -44,13 +44,6 @@ bool CreateCVWindow( const std::string &sWindow )
 #include "Render\Matrix.h"
 int main( int argc, char **argv )
 {
-	CMatrix<4, 4> mat( { 3, 0, 2, -1, 1, 2, 0, -2, 4, 0, 6, -3, 5, 0, 2, 0 } );
-	std::wcout << mat << std::endl;
-	std::wcout << "Determinant: " << mat.Determinant( ) << std::endl;
-	std::wcout << mat.Inverse( ) << std::endl;
-	system( "PAUSE" );
-	return 0;
-
 	if( argc >= 3 )
 	{
 		if( !_stricmp( argv[ 1 ], "show" ) )
@@ -196,7 +189,7 @@ int main( int argc, char **argv )
 			std::vector<CData> vecData;
 			for( unsigned u = 4; u < (unsigned) argc; u++ )
 			{
-				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ) );
+				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ), 4 );
 				std::wcout << "Loaded " << vecTemp.size( ) << " instances from \"" << argv[ u ] << "\"" << std::endl;
 				vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
 			}

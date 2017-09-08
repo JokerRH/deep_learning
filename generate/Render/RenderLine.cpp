@@ -19,16 +19,3 @@ CVector<3> CRenderLine::GetMax( void ) const
 		std::max( { m_avec3Points[ 0 ][ 2 ], m_avec3Points[ 1 ][ 2 ] } )
 	} );
 }
-
-void CRenderLine::Transform( const CMatrix<3, 3> &mat )
-{
-	m_avec3Points[ 0 ] = mat * m_avec3Points[ 0 ];
-	m_avec3Points[ 1 ] = mat * m_avec3Points[ 1 ];
-}
-
-CRenderLine &CRenderLine::Shift( const CVector<3> &vec3 )
-{
-	m_avec3Points[ 0 ] += vec3;
-	m_avec3Points[ 1 ] += vec3;
-	return *this;
-}

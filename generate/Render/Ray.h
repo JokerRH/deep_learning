@@ -2,6 +2,7 @@
 
 #include "Vector.h"
 #include "Matrix.h"
+#include "Transformation.h"
 #include <opencv2/core/types.hpp>
 
 class CRay
@@ -25,10 +26,8 @@ public:
 	 * @return Vector containing the multiplicator for the closest points. First value is index for \e this, second is for \e other
 	 */
 	CVector<2> PointOfShortestDistance( const CRay &other ) const;
-	CRay Transformed( const CMatrix<3, 3> &matTransform ) const;
-	CRay &Transform( const CMatrix<3, 3> &matTransform );
-	CRay Shifted( const CVector<3> &vec3 ) const;
-	CRay &Shift( const CVector<3> &vec3 );
+	friend CRay operator*( const CTransformation &matTransform, const CRay &ray );
+	CRay &operator*=( const CTransformation &matTransform );
 	CRay &operator*=( const double &other );
 	CRay &operator/=( const double &other );
 	CRay &operator+=( const CVector<3> &other );
@@ -42,11 +41,6 @@ public:
 	CVector<3> m_vec3Origin;
 	CVector<3> m_vec3Dir;
 };
-
-inline CRay operator*( const CMatrix<3, 3> &matTransform, const CRay &ray )
-{
-	return CRay( matTransform * ray.m_vec3Origin, matTransform * ray.m_vec3Dir );
-}
 
 inline CRay::CRay( const CVector<3> &vec3Origin, const CVector<3> &vec3Dir ) :
 	m_vec3Origin( vec3Origin ),
@@ -67,26 +61,18 @@ inline CVector<3> CRay::operator()( const double &other ) const
 	return m_vec3Origin + m_vec3Dir * other;
 }
 
-inline CRay CRay::Transformed( const CMatrix<3, 3> &matTransform ) const
+inline CRay operator*( const CTransformation &matTransform, const CRay &ray )
 {
-	return CRay( matTransform * m_vec3Origin, matTransform * m_vec3Dir );
+	CRay ret( ray );
+	ret.m_vec3Origin *= matTransform;
+	ret.m_vec3Dir *= matTransform.RSMatrix( );
+	return ret;
 }
 
-inline CRay &CRay::Transform( const CMatrix<3, 3> &matTransform )
+inline CRay &CRay::operator*=( const CTransformation &matTransform )
 {
-	m_vec3Origin = matTransform * m_vec3Origin;
-	m_vec3Dir = matTransform * m_vec3Dir;
-	return *this;
-}
-
-inline CRay CRay::Shifted( const CVector<3> &vec3 ) const
-{
-	return CRay( m_vec3Origin + vec3, m_vec3Dir );
-}
-
-inline CRay &CRay::Shift( const CVector<3> &vec3 )
-{
-	m_vec3Origin += vec3;
+	m_vec3Origin *= matTransform;
+	m_vec3Dir *= matTransform.RSMatrix( );
 	return *this;
 }
 

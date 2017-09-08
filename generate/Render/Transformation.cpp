@@ -11,9 +11,9 @@ CTransformation CTransformation::GetRotationMatrix( double dPitch, double dYaw, 
 
 CTransformation CTransformation::GetRotationMatrixRad( double dPitch, double dYaw, double dRoll )
 {
-	//Roll
-	double dCos = cos( dPitch );
-	double dSin = sin( dPitch );
+	//Pitch
+	double dCos = cos( -dPitch );
+	double dSin = sin( -dPitch );
 	CMatrix<3, 3> matX(
 	{
 		1, 0, 0,
@@ -21,7 +21,7 @@ CTransformation CTransformation::GetRotationMatrixRad( double dPitch, double dYa
 		0, dSin, dCos
 	} );
 
-	//Pitch
+	//Yaw
 	dCos = cos( dYaw );
 	dSin = sin( dYaw );
 	CMatrix<3, 3> matY(
@@ -31,7 +31,7 @@ CTransformation CTransformation::GetRotationMatrixRad( double dPitch, double dYa
 		-dSin, 0, dCos
 	} );
 
-	//Yaw
+	//Roll
 	dCos = cos( dRoll );
 	dSin = sin( dRoll );
 	CMatrix<3, 3> matZ(
@@ -42,10 +42,22 @@ CTransformation CTransformation::GetRotationMatrixRad( double dPitch, double dYa
 	} );
 
 	CMatrix<3, 3> mat( matX * matY * matZ );
-	CTransformation matRotate( { 0 } );
-	std::copy( mat.m_adValues.begin( ), mat.m_adValues.end( ), matRotate.m_adValues.begin( ) );
-	matRotate.m_adValues[ 15 ] = 1;
-	return matRotate;
+	return CTransformation( {
+		mat.m_adValues[ 0 ], mat.m_adValues[ 1 ], mat.m_adValues[ 2 ], 0,
+		mat.m_adValues[ 3 ], mat.m_adValues[ 4 ], mat.m_adValues[ 5 ], 0,
+		mat.m_adValues[ 6 ], mat.m_adValues[ 7 ], mat.m_adValues[ 8 ], 0,
+		0, 0, 0, 1
+	} );
+}
+
+CTransformation CTransformation::GetTRSMatrix( const CVector<3> &vec3Translation, const CMatrix<3, 3> matRS )
+{
+	return CTransformation( {
+		matRS.m_adValues[ 0 ], matRS.m_adValues[ 1 ], matRS.m_adValues[ 2 ], vec3Translation[ 0 ],
+		matRS.m_adValues[ 3 ], matRS.m_adValues[ 4 ], matRS.m_adValues[ 5 ], vec3Translation[ 1 ],
+		matRS.m_adValues[ 6 ], matRS.m_adValues[ 7 ], matRS.m_adValues[ 8 ], vec3Translation[ 2 ],
+		0, 0, 0, 1
+	} );
 }
 
 CVector<3> CTransformation::operator*( const CVector<3> &vec3 ) const
@@ -55,4 +67,16 @@ CVector<3> CTransformation::operator*( const CVector<3> &vec3 ) const
 		m_adValues[ 4 ] * vec3[ 0 ] + m_adValues[ 5 ] * vec3[ 1 ] + m_adValues[ 6 ] * vec3[ 2 ] + m_adValues[ 7 ],
 		m_adValues[ 8 ] * vec3[ 0 ] + m_adValues[ 9 ] * vec3[ 1 ] + m_adValues[ 10 ] * vec3[ 2 ] + m_adValues[ 11 ]
 	} );
+}
+
+CTransformation CTransformation::Inverse( void ) const
+{
+	CMatrix<3, 3> matRSInv( {
+		m_adValues[ 0 ], m_adValues[ 4 ] , m_adValues[ 8 ],
+		m_adValues[ 1 ], m_adValues[ 5 ] , m_adValues[ 9 ],
+		m_adValues[ 2 ], m_adValues[ 6 ] , m_adValues[ 10 ],
+	} );
+	CVector<3> vec3Translate( { m_adValues[ 3 ], m_adValues[ 7 ], m_adValues[ 11 ] } );
+
+	return CTransformation::GetTRSMatrix( -( matRSInv * vec3Translate ), matRSInv );
 }

@@ -1,6 +1,6 @@
 #include "Ray.h"
 #include "Matrix.h"
-#include "RenderHelper.h"
+#include "Transformation.h"
 #include <opencv2/imgproc.hpp>
 #ifndef _USE_MATH_DEFINES
 #	define _USE_MATH_DEFINES
@@ -12,7 +12,7 @@ CRay::CRay( const CVector<3> &vec3Origin, CVector<2> vec2Amp ) :
 	m_vec3Dir( { 0, 0, 1 } )
 {
 	vec2Amp *= M_PI / 2;
-	m_vec3Dir = CRenderHelper::GetRotationMatrixRad( vec2Amp[ 0 ], vec2Amp[ 1 ], 0 ) * m_vec3Dir;
+	m_vec3Dir = CTransformation::GetRotationMatrixRad( vec2Amp[ 0 ], vec2Amp[ 1 ], 0 ) * m_vec3Dir;
 }
 
 CVector<2> CRay::PointOfShortestDistance( const CRay &other ) const
@@ -27,8 +27,8 @@ CVector<2> CRay::PointOfShortestDistance( const CRay &other ) const
 CVector<2> CRay::AmplitudeRepresentation( void ) const
 {
 	CVector<2> vec2Angles( {
-		-atan( m_vec3Dir[ 1 ] / m_vec3Dir[ 2 ] ),															//Pitch
-		-atan( m_vec3Dir[ 0 ] / sqrt( m_vec3Dir[ 1 ] * m_vec3Dir[ 1 ] + m_vec3Dir[ 2 ] * m_vec3Dir[ 2 ] ) )	//Yaw
+		atan( m_vec3Dir[ 1 ] / m_vec3Dir[ 2 ] ),															//Pitch
+		atan( m_vec3Dir[ 0 ] / sqrt( m_vec3Dir[ 1 ] * m_vec3Dir[ 1 ] + m_vec3Dir[ 2 ] * m_vec3Dir[ 2 ] ) )	//Yaw
 	} );
 	
 	vec2Angles /= M_PI / 2;

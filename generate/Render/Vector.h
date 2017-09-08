@@ -6,6 +6,7 @@
 #include <string.h>
 #include <math.h>
 
+class CTransformation;
 template<unsigned int uRows>
 class CVector
 {
@@ -47,13 +48,14 @@ public:
 	double Angle( const CVector<3> &other ) const;
 
 private:
-	double m_adValues[ uRows ];
+	std::array<double, uRows> m_adValues;
 };
 
 template<unsigned int uRows>
-inline CVector<uRows>::CVector( const std::array<double, uRows> &adValues )
+inline CVector<uRows>::CVector( const std::array<double, uRows> &adValues ) :
+	m_adValues( adValues )
 {
-	memcpy( m_adValues, adValues.data( ), uRows * sizeof( double ) );
+
 }
 
 template<unsigned int uRows>
@@ -64,28 +66,30 @@ inline CVector<uRows>::CVector( void ) :
 }
 
 template<unsigned int uRows>
-inline CVector<uRows>::CVector( const CVector<uRows> &other )
+inline CVector<uRows>::CVector( const CVector<uRows> &other ) :
+	m_adValues( other.m_adValues )
 {
-	memcpy( m_adValues, other.m_adValues, uRows * sizeof( double ) );
+
 }
 
 template<unsigned int uRows>
 inline CVector<uRows> &CVector<uRows>::operator=( const CVector<uRows> &other )
 {
-	memcpy( m_adValues, other.m_adValues, uRows * sizeof( double ) );
+	m_adValues = other.m_adValues;
 	return *this;
 }
 
 template<unsigned int uRows>
-inline CVector<uRows>::CVector( CVector<uRows> &&other )
+inline CVector<uRows>::CVector( CVector<uRows> &&other ) :
+	m_adValues( std::move( other.m_adValues ) )
 {
-	memcpy( m_adValues, other.m_adValues, uRows * sizeof( double ) );
+
 }
 
 template<unsigned int uRows>
 inline CVector<uRows> & CVector<uRows>::operator=( CVector<uRows> &&other )
 {
-	memcpy( m_adValues, other.m_adValues, uRows * sizeof( double ) );
+	m_adValues = std::move( other.m_adValues );
 	return *this;
 }
 
@@ -152,8 +156,7 @@ inline CVector<uRows> &CVector<uRows>::operator/=( const double &other )
 template<unsigned int uRows>
 inline CVector<uRows> CVector<uRows>::operator+( const CVector<uRows> &other ) const
 {
-	std::array<double, uRows> adValues;
-	std::copy( m_adValues, m_adValues + uRows, adValues.begin( ) );
+	std::array<double, uRows> adValues = m_adValues;
 	for( unsigned int u = 0; u < uRows; u++ )
 		adValues[ u ] += other.m_adValues[ u ];
 
@@ -172,8 +175,7 @@ inline CVector<uRows> &CVector<uRows>::operator+=( const CVector<uRows> &other )
 template<unsigned int uRows>
 inline CVector<uRows> CVector<uRows>::operator-( const CVector<uRows> &other ) const
 {
-	std::array<double, uRows> adValues;
-	std::copy( m_adValues, m_adValues + uRows, adValues.begin( ) );
+	std::array<double, uRows> adValues = m_adValues;
 	for( unsigned int u = 0; u < uRows; u++ )
 		adValues[ u ] -= other.m_adValues[ u ];
 

@@ -2,6 +2,7 @@
 
 #include "RenderObject.h"
 #include "Matrix.h"
+#include "Transformation.h"
 #include <sstream>
 #include <opencv2\core.hpp>
 
@@ -23,9 +24,10 @@ public:
 	CVector<3> GetMax( void ) const override;
 	void RenderFrame( cv::Mat &matImage, const cv::Scalar &color, int iThickness = 2 ) const;
 	void RenderContent( cv::Mat &matImage, const cv::Scalar &color ) const;
-	void Transform( const CMatrix<3, 3> &mat );
-	CRenderPlane &Shift( const CVector<3> &vec3 );
-	CRenderPlane Shifted( const CVector<3> &vec3 ) const;
+	
+	friend CRenderPlane operator*( const CTransformation &matTransform, const CRenderPlane &plane );
+	CRenderPlane &operator*=( const CTransformation &matTransform );
+
 	CRenderLine GetLine( unsigned char fLine ) const;
 	CRenderLine GetLines( unsigned char &fLine ) const;
 	
@@ -63,9 +65,18 @@ inline void CRenderPlane::RenderFrame( cv::Mat &matImage, const cv::Scalar &colo
 		GetLines( fLine ).RenderFrame( matImage, color, iThickness );
 }
 
-inline CRenderPlane CRenderPlane::Shifted( const CVector<3> &vec3 ) const
+inline CRenderPlane operator*( const CTransformation &matTransform, const CRenderPlane &plane )
 {
-	return CRenderPlane( *this ).Shift( vec3 );
+	return CRenderPlane( { matTransform * plane.m_avec3Points[ 0 ], matTransform * plane.m_avec3Points[ 1 ], matTransform * plane.m_avec3Points[ 2 ], matTransform * plane.m_avec3Points[ 3 ] } );
+}
+
+inline CRenderPlane &CRenderPlane::operator*=( const CTransformation &matTransform )
+{
+	m_avec3Points[ 0 ] *= matTransform;
+	m_avec3Points[ 1 ] *= matTransform;
+	m_avec3Points[ 2 ] *= matTransform;
+	m_avec3Points[ 3 ] *= matTransform;
+	return *this;
 }
 
 inline CRenderLine CRenderPlane::GetLine( unsigned char fLine ) const

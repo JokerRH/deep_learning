@@ -5,7 +5,7 @@
 #include "Render\RenderPoint.h"
 #include "Render\RenderLine.h"
 #include "Render\Ray.h"
-#include "Render\RenderHelper.h"
+#include "Render\Transformation.h"
 #include <opencv2\core.hpp>
 
 class CScenery
@@ -13,12 +13,13 @@ class CScenery
 public:
 	CScenery( const CData &data );
 
-	CScenery &Transform( const CMatrix<3, 3> &matTransform );
-	CScenery Transformed( const CMatrix<3, 3> &matTransform ) const;
-	CScenery &Shift( const CVector<3> &vec3Shift );
-	CScenery Shifted( const CVector<3> &vec3Shift ) const;
 	CScenery &Fit( bool fShift = true );
 	void Draw( cv::Mat &matImage ) const;
+
+	friend CScenery operator*( const CTransformation &matTransform, const CScenery &scenery );
+	CScenery &operator*=( const CTransformation &matTransform );
+
+	CTransformation GetTransformation( void ) const;
 
 private:
 	CRenderPoint m_Camera;
@@ -29,14 +30,13 @@ private:
 	CRenderBox m_Face;
 	CRay m_GazeLeft;
 	CRay m_GazeRight;
+
+	CTransformation m_matTransform = CTransformation::Unit( );
 };
 
-inline CScenery CScenery::Transformed( const CMatrix<3, 3> &matTransform ) const
-{
-	return CScenery( *this ).Transform( matTransform );
-}
+CScenery operator*( const CTransformation &matTransform, const CScenery &scenery );
 
-inline CScenery CScenery::Shifted( const CVector<3> &vec3Shift ) const
+inline CTransformation CScenery::GetTransformation( void ) const
 {
-	return CScenery( *this ).Shift( vec3Shift );
+	return m_matTransform;
 }

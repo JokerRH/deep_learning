@@ -1,6 +1,6 @@
 #include "Data.h"
 #include "Scenery.h"
-#include "Render\RenderHelper.h"
+#include "Render\Transformation.h"
 #include "Render\Ray.h"
 #include <iostream>
 #include <wtypes.h>
@@ -316,43 +316,53 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 				switch( uKey )
 				{
 				case 71:	//Pos1
-					scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, M_PI * 0.125, 0 ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetRotationMatrixRad( 0, M_PI * 0.125, 0 );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				case 72:	//Arrow_Up
-					scenery.Shift( CVector<3>( { 0, 0.1, 0 } ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetTranslationMatrix( CVector<3>( { 0, 0.1, 0 } ) );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				case 73:	//Img_Up
-					scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, 0, M_PI * 0.125 ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetRotationMatrixRad( 0, 0, M_PI * 0.125 );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				case 75:	//Arrow_Left
-					scenery.Shift( CVector<3>( { -0.1, 0, 0 } ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetTranslationMatrix( CVector<3>( { -0.1, 0, 0 } ) );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				case 77:	//Arrow_Right
-					scenery.Shift( CVector<3>( { 0.1, 0, 0 } ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetTranslationMatrix( CVector<3>( { 0.1, 0, 0 } ) );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				case 79:	//Home
-					scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, -M_PI * 0.125, 0 ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetRotationMatrixRad( 0, -M_PI * 0.125, 0 );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				case 80:	//Arrow_Down
-					scenery.Shift( CVector<3>( { 0, -0.1, 0 } ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetTranslationMatrix( CVector<3>( { 0, -0.1, 0 } ) );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				case 81:	//Img_Down
-					scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, 0, -M_PI * 0.125 ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetRotationMatrixRad( 0, 0, -M_PI * 0.125 );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				case 82:	//Insert
-					scenery.Transform( CRenderHelper::GetRotationMatrixRad( M_PI * 0.125, 0, 0 ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetRotationMatrixRad( M_PI * 0.125, 0, 0 );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				case 83:	//Delete
-					scenery.Transform( CRenderHelper::GetRotationMatrixRad( -M_PI * 0.125, 0, 0 ) ).Draw( matScreen( rectScenery ) );
+					scenery *= CTransformation::GetRotationMatrixRad( -M_PI * 0.125, 0, 0 );
+					scenery.Draw( matScreen( rectScenery ) );
 					cv::imshow( sWindow, matScreen );
 					break;
 				default:
@@ -364,21 +374,25 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 			case 27:
 				throw 27;
 			case 43:	//Numpad+
-				scenery.Transform( CRenderHelper::GetTransformationMatrix( 1.1 ) ).Draw( matScreen( rectScenery ) );
+				scenery *= CTransformation::GetScaleMatrix( 1.1 );
+				scenery.Draw( matScreen( rectScenery ) );
 				cv::imshow( sWindow, matScreen );
 				break;
 			case 45:	//Numpad-
-				scenery.Transform( CRenderHelper::GetTransformationMatrix( 1 / 1.1 ) ).Draw( matScreen( rectScenery ) );
+				scenery *= CTransformation::GetScaleMatrix( 1 / 1.1 );
+				scenery.Draw( matScreen( rectScenery ) );
 				cv::imshow( sWindow, matScreen );
 				break;
 			case 50:	//Numpad_2
 				scenery = CScenery( *this );
-				scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, M_PI, M_PI ) ).Fit( false ).Draw( matScreen( rectScenery ) );
+				scenery *= CTransformation::GetRotationMatrixRad( 0, M_PI, M_PI );
+				scenery.Draw( matScreen( rectScenery ) );
 				cv::imshow( sWindow, matScreen );
 				break;
 			case 56:	//Numpad_8
 				scenery = CScenery( *this );
-				scenery.Transform( CRenderHelper::GetRotationMatrixRad( 0, M_PI, M_PI / 2 ) ).Fit( false ).Draw( matScreen( rectScenery ) );
+				scenery *= CTransformation::GetRotationMatrixRad( 0, M_PI, M_PI / 2 );
+				scenery.Draw( matScreen( rectScenery ) );
 				cv::imshow( sWindow, matScreen );
 				break;
 			case 70:	//'f'
@@ -409,7 +423,7 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 
 			cv::Point pt( GET_X_LPARAM( msg.lParam ), GET_Y_LPARAM( msg.lParam ) );
 			ptLastPos = pt - ptLastPos;
-			scenery.Transform( CRenderHelper::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 ) );
+			scenery *= CTransformation::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 );
 			scenery.Draw( matScreen( rectScenery ) );
 			cv::imshow( sWindow, matScreen );
 			fDrag = false;
@@ -422,7 +436,7 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 
 			cv::Point pt( GET_X_LPARAM( msg.lParam ), GET_Y_LPARAM( msg.lParam ) );
 			ptLastPos = pt - ptLastPos;
-			scenery.Transform( CRenderHelper::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 ) );
+			scenery *= CTransformation::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 );
 			scenery.Draw( matScreen( rectScenery ) );
 			cv::imshow( sWindow, matScreen );
 			ptLastPos = pt;
@@ -453,21 +467,16 @@ void CData::ScaleFace( const CVector<2> &vec2Scale, const CVector<2> &vec2Shift 
 	ptEyeRight -= rectFace.tl( );
 }
 
-CVector<3> CData::GetFacePosition( void ) const
-{
-	return ( vec3EyeLeft + vec3EyeRight ) / 2.0;
-}
-
-CMatrix<3, 3> CData::GetFaceTransformation( void ) const
+CTransformation CData::GetFaceTransformation( void ) const
 {
 	CVector<3> vec3EyesX = vec3EyeLeft - vec3EyeRight;
 	double dScale = vec3EyesX.Abs( );
 	vec3EyesX /= dScale;
 	CVector<3> vec3EyesY = vec3EyesX.CrossProduct( CVector<3>( { 0, 0, -1 } ) ).Normalize( );
-	CVector<3> vec3EyesZ = vec3EyesX.CrossProduct( vec3EyesY ).Normalize( );
+	CVector<3> vec3EyesZ = vec3EyesY.CrossProduct( vec3EyesX ).Normalize( );
 
 	std::wcout << "X: " << vec3EyesX.ToString( ) << "; Y: " << "X: " << vec3EyesY.ToString( ) << "; Z: " << vec3EyesZ.ToString( ) << std::endl;
-	return CRenderHelper::GetTransformationMatrix( vec3EyesX, vec3EyesY, vec3EyesZ ) * CRenderHelper::GetTransformationMatrix( dScale );
+	return CTransformation::GetTRSMatrix( ( vec3EyeLeft + vec3EyeRight ) / 2.0, vec3EyesX, vec3EyesY, vec3EyesZ, dScale );
 }
 
 void *CData::WriteThread( void * )
