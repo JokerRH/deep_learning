@@ -181,29 +181,6 @@ int main( int argc, char **argv )
 			system( "PAUSE" );
 			return EXIT_SUCCESS;
 		}
-	}
-	if( argc >= 5 )
-	{
-		if( !_stricmp( argv[ 1 ], "exp" ) )
-		{
-			std::vector<CData> vecData;
-			for( unsigned u = 4; u < (unsigned) argc; u++ )
-			{
-				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ) );
-				std::wcout << "Loaded " << vecTemp.size( ) << " instances from \"" << argv[ u ] << "\"" << std::endl;
-				vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
-			}
-			std::wcout << "Loaded " << vecData.size( ) << " instances\n" << std::endl;
-			if( !CGazeData::Export( vecData, StrToWStr( argv[ 3 ] ), std::stoul( argv[ 2 ] ) ) )
-			{
-				system( "PAUSE" );
-				return EXIT_FAILURE;
-			}
-
-			std::wcout << "Done." << std::endl;
-			system( "PAUSE" );
-			return EXIT_SUCCESS;
-		}
 		else if( !_stricmp( argv[ 1 ], "imp" ) )
 		{
 			std::vector<CData> vecData;
@@ -248,6 +225,29 @@ int main( int argc, char **argv )
 			}
 
 			cv::destroyAllWindows( );
+			std::wcout << "Done." << std::endl;
+			system( "PAUSE" );
+			return EXIT_SUCCESS;
+		}
+	}
+	if( argc >= 5 )
+	{
+		if( !_stricmp( argv[ 1 ], "exp" ) )
+		{
+			std::vector<CData> vecData;
+			for( unsigned u = 4; u < (unsigned) argc; u++ )
+			{
+				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ) );
+				std::wcout << "Loaded " << vecTemp.size( ) << " instances from \"" << argv[ u ] << "\"" << std::endl;
+				vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
+			}
+			std::wcout << "Loaded " << vecData.size( ) << " instances\n" << std::endl;
+			if( !CGazeData::Export( vecData, StrToWStr( argv[ 3 ] ), std::stoul( argv[ 2 ] ) ) )
+			{
+				system( "PAUSE" );
+				return EXIT_FAILURE;
+			}
+
 			std::wcout << "Done." << std::endl;
 			system( "PAUSE" );
 			return EXIT_SUCCESS;

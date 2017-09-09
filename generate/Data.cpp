@@ -289,6 +289,7 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 	CScenery scenery( *this );
 	scenery.Fit( ).Draw( matScreen( rectScenery ) );
 	cv::imshow( sWindow, matScreen );
+	bool fReference = false;
 
 	bool fDrag = false;
 	cv::Point ptLastPos;
@@ -369,6 +370,19 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 					std::wcout << "VSC Key: " << uKey << std::endl;
 				}
 				break;
+			case 9:		//Tab
+				if( dataref.IsValid( ) )
+					break;
+
+				if( fReference )
+					scenery = scenery.GetTransformation( ) * CScenery( *this );
+				else
+					scenery = scenery.GetTransformation( ) * CScenery( dataref );
+
+				fReference = !fReference;
+				scenery.Draw( matScreen( rectScenery ) );
+				cv::imshow( sWindow, matScreen );
+				break;
 			case 13:	//Enter
 				return;
 			case 27:
@@ -423,7 +437,7 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 
 			cv::Point pt( GET_X_LPARAM( msg.lParam ), GET_Y_LPARAM( msg.lParam ) );
 			ptLastPos = pt - ptLastPos;
-			scenery *= CTransformation::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 );
+			scenery *= CTransformation::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, - (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 );
 			scenery.Draw( matScreen( rectScenery ) );
 			cv::imshow( sWindow, matScreen );
 			fDrag = false;
@@ -436,7 +450,7 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 
 			cv::Point pt( GET_X_LPARAM( msg.lParam ), GET_Y_LPARAM( msg.lParam ) );
 			ptLastPos = pt - ptLastPos;
-			scenery *= CTransformation::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 );
+			scenery *= CTransformation::GetRotationMatrixRad( (double) ptLastPos.y / rectScenery.height * M_PI * 0.5, - (double) ptLastPos.x / rectScenery.width * M_PI * 0.5, 0 );
 			scenery.Draw( matScreen( rectScenery ) );
 			cv::imshow( sWindow, matScreen );
 			ptLastPos = pt;
@@ -469,7 +483,7 @@ void CData::ScaleFace( const CVector<2> &vec2Scale, const CVector<2> &vec2Shift 
 
 CTransformation CData::GetFaceTransformation( void ) const
 {
-	CVector<3> vec3EyesX = vec3EyeLeft - vec3EyeRight;
+	CVector<3> vec3EyesX = vec3EyeRight - vec3EyeLeft;
 	double dScale = vec3EyesX.Abs( );
 	vec3EyesX /= dScale;
 	CVector<3> vec3EyesY = vec3EyesX.CrossProduct( CVector<3>( { 0, 0, -1 } ) ).Normalize( );

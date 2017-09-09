@@ -34,7 +34,7 @@ CRenderBox::CRenderBox( const CVector<3> &vec3Min, const CVector<3> &vec3Max ) :
 	m_avec3Points[ 4 ] = vec3Min + vec3DimY;
 	m_avec3Points[ 5 ] = vec3Min;
 	m_avec3Points[ 6 ] = vec3Min + vec3DimX;
-	m_avec3Points[ 6 ] = vec3Max - vec3DimZ;
+	m_avec3Points[ 7 ] = vec3Max - vec3DimZ;
 }
 
 #define BOX( plane, a, b, c, d )\

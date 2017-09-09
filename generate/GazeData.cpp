@@ -13,7 +13,7 @@
 const std::regex CGazeData::s_regData( R"a((?:"((?:[^"]|"")*)"\s+|(\S+)\s+)\d+.*)a" );
 const std::regex CGazeData::s_regLabel( R"a(([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+)))\s*,\s*([+-]?(?:(?:\d+(?:\.\d+)?)|(?:\.\d+))).*)a" );
 
-bool CGazeData::Export( std::vector<CData> &vecData, const std::wstring &sPath, unsigned uValBatchSize, double dTrainValRatio )
+bool CGazeData::Export( std::vector<CData> &vecData, std::wstring sPath, unsigned uValBatchSize, double dTrainValRatio )
 {
 	{
 		double dBatchCount = vecData.size( ) * ( 1 - dTrainValRatio ) / uValBatchSize;
@@ -27,10 +27,6 @@ bool CGazeData::Export( std::vector<CData> &vecData, const std::wstring &sPath, 
 	const std::vector<CData> vecTrain( vecData.begin( ), vecData.begin( ) + (int) ( vecData.size( ) * dTrainValRatio ) );
 	const std::vector<CData> vecVal( vecData.begin( ) + (int) ( vecData.size( ) * dTrainValRatio ), vecData.end( ) );
 
-	std::wcout << "Exporting to \"" << sPath << "\"" << std::endl;
-	std::wcout << "Training data  : " << vecTrain.size( ) << std::endl;
-	std::wcout << "Validation data: " << vecVal.size( ) << std::endl;
-
 	std::wstring sTrain;
 	std::wstring sTrainData;
 	std::wstring sTrainLabel;
@@ -38,13 +34,16 @@ bool CGazeData::Export( std::vector<CData> &vecData, const std::wstring &sPath, 
 	std::wstring sValData;
 	std::wstring sValLabel;
 	WCHAR szFullPattern[ MAX_PATH ];
+	GetFullPathName( sPath.c_str( ), MAX_PATH, szFullPattern, nullptr );
+	sPath = std::wstring( szFullPattern );
+
 	PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"train" );
 	sTrain = std::wstring( szFullPattern );
 	PathCchCombine( szFullPattern, MAX_PATH, sTrain.c_str( ), L"data.txt" );
 	sTrainData = std::wstring( szFullPattern );
 	PathCchCombine( szFullPattern, MAX_PATH, sTrain.c_str( ), L"label.csv" );
 	sTrainLabel = std::wstring( szFullPattern );
-	
+
 	PathCchCombine( szFullPattern, MAX_PATH, sPath.c_str( ), L"val" );
 	sVal = std::wstring( szFullPattern );
 	PathCchCombine( szFullPattern, MAX_PATH, sVal.c_str( ), L"data.txt" );
@@ -52,16 +51,20 @@ bool CGazeData::Export( std::vector<CData> &vecData, const std::wstring &sPath, 
 	PathCchCombine( szFullPattern, MAX_PATH, sVal.c_str( ), L"label.csv" );
 	sValLabel = std::wstring( szFullPattern );
 
+	std::wcout << "Exporting to \"" << sPath << "\"" << std::endl;
+	std::wcout << "Training data  : " << vecTrain.size( ) << std::endl;
+	std::wcout << "Validation data: " << vecVal.size( ) << std::endl;
+
 	//Create export directory
 	if( !CreateDirectory( sPath.c_str( ), nullptr ) && GetLastError( ) != ERROR_ALREADY_EXISTS )
 	{
 		std::wcerr << "Unable to create directory \"" << sPath << "\"" << std::endl;
 		return false;
 	}
-	
 
-	//Create train directory
-	while( true )
+	{
+		std::wstring sPathClear;
+		//Create train directory
 		if( !CreateDirectory( sTrain.c_str( ), nullptr ) )
 		{
 			if( GetLastError( ) != ERROR_ALREADY_EXISTS )
@@ -69,21 +72,15 @@ bool CGazeData::Export( std::vector<CData> &vecData, const std::wstring &sPath, 
 				std::wcerr << "Unable to create directory \"" << sTrain << "\"" << std::endl;
 				return false;
 			}
-			
-			//Directory exists, try to remove it
-			if( !RemoveDirectory( sTrain.c_str( ) ) )
-			{
-				std::wcerr << "Unable to clear directory \"" << sTrain << "\"" << std::endl;
-				break;	//Unable to remove directory, continue with full one
-			}
-			
+
+			//Directory exists, save path to delete
+			PathCchCombine( szFullPattern, MAX_PATH, sTrain.c_str( ), L"*.*" );
+			sPathClear.append( szFullPattern );
+			sPathClear.append( 1, '\0' );
 			//Directory removed, next iteration will create an empty one
 		}
-		else
-			break;	//Empty directory created
 
-	//Create val directory
-	while( true )
+		//Create val directory
 		if( !CreateDirectory( sVal.c_str( ), nullptr ) )
 		{
 			if( GetLastError( ) != ERROR_ALREADY_EXISTS )
@@ -91,18 +88,40 @@ bool CGazeData::Export( std::vector<CData> &vecData, const std::wstring &sPath, 
 				std::wcerr << "Unable to create directory \"" << sVal << "\"" << std::endl;
 				return false;
 			}
-			
-			//Directory exists, try to remove it
-			if( !RemoveDirectory( sVal.c_str( ) ) )
-			{
-				std::wcerr << "Unable to clear directory \"" << sVal << "\"" << std::endl;
-				break;	//Unable to remove directory, continue with full one
-			}
-			
+
+			//Directory exists, delete content
+			PathCchCombine( szFullPattern, MAX_PATH, sVal.c_str( ), L"*.*" );
+			sPathClear.append( szFullPattern );
+			sPathClear.append( 1, '\0' );
 			//Directory removed, next iteration will create an empty one
 		}
-		else
-			break;	//Empty directory created
+
+		if( !sPathClear.empty( ) )
+		{
+			std::wcout << "Clearing export directory" << std::endl;
+			sPathClear.append( 1, '\0' );	//Double null-terminated
+			SHFILEOPSTRUCT file_op =
+			{
+				GetConsoleWindow( ),
+				FO_DELETE,
+				sPathClear.c_str( ),
+				L"",
+				FOF_SILENT,
+				false,
+				nullptr,
+				L""
+			};
+			if( SHFileOperation( &file_op ) )
+			{
+				if( file_op.fAnyOperationsAborted )
+				{
+					std::wcout << "Cancelled by user" << std::endl;
+					return false;
+				}
+				std::wcerr << "Unable to clear directory \"" << sPath << "\"" << std::endl;
+			}
+		}
+	}
 
 	//Export train data
 	std::fstream smData( sTrainData, std::fstream::out );
@@ -288,8 +307,8 @@ CGazeData::CGazeData( const std::string &sData, const std::string &sLabel, const
 	if( !match.size( ) )
 		throw 1;
 
-	rayEyeLeft = CRay( CVector<3>( { 0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) );
-	rayEyeRight = CRay( CVector<3>( { -0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) );
+	rayEyeLeft = CRay( CVector<3>( { -0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 1 ].str( ) ), std::stod( match[ 2 ].str( ) ) } ) );
+	rayEyeRight = CRay( CVector<3>( { 0.5, 0, 0 } ), CVector<2>( { std::stod( match[ 3 ].str( ) ), std::stod( match[ 4 ].str( ) ) } ) );
 	vec3EyeLeft = CVector<3>( { std::stod( match[ 5 ].str( ) ), std::stod( match[ 6 ].str( ) ) } );
 	vec3EyeRight = CVector<3>( { std::stod( match[ 7 ].str( ) ), std::stod( match[ 8 ].str( ) ) } );
 }
@@ -325,15 +344,12 @@ CData CGazeData::MergeReference( const std::vector<CData> &vecData )
 	CTransformation matTransform( GetFaceTransformation( ) );
 	rayEyeLeft = matTransform * rayEyeLeft;
 	rayEyeRight = matTransform * rayEyeRight;
-	
-	//Move rays in position
-	CVector<3> vec3FacePos = ( vec3EyeLeft + vec3EyeRight ) / 2.0;
-	rayEyeLeft += vec3FacePos;
-	rayEyeRight += vec3FacePos;
 
 	//Calculate gaze point as the point of shortest distance between the eye rays
 	CVector<2> vec2Gaze = rayEyeLeft.PointOfShortestDistance( rayEyeRight );
 	vec3GazePoint = ( rayEyeLeft( vec2Gaze[ 0 ] ) + rayEyeRight( vec2Gaze[ 1 ] ) ) / 2.0;
+	rayEyeLeft *= vec2Gaze[ 0 ];
+	rayEyeRight *= vec2Gaze[ 1 ];
 	return data;
 }
 	

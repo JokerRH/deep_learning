@@ -5,7 +5,7 @@
 class CGazeData : public CData
 {
 public:
-	static bool CGazeData::Export( std::vector<CData> &vecData, const std::wstring &sPath, unsigned uValBatchSize, double dTrainValRatio = 2.0 / 3.0 );
+	static bool CGazeData::Export( std::vector<CData> &vecData, std::wstring sPath, unsigned uValBatchSize, double dTrainValRatio = 2.0 / 3.0 );
 	static std::vector<CGazeData> LoadData( const std::wstring &sPath );
 	static cv::Rect FindTemplate( const cv::Mat &matImage, const cv::Mat &matTemplate );
 

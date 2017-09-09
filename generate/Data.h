@@ -36,7 +36,7 @@ public:
 	void WriteAsync( void );
 	void Show( const std::string &sWindow, const CData &dataref = CData( ) );
 	void ScaleFace( const CVector<2> &vec2Scale, const CVector<2> &vec2Shift );
-	bool IsValid( void );
+	bool IsValid( void ) const;
 
 	CTransformation GetFaceTransformation( void ) const;
 
@@ -68,7 +68,7 @@ private:
 	static std::vector<pthread_t> s_vecThreadWrite;
 };
 
-inline bool CData::IsValid( void )
+inline bool CData::IsValid( void ) const
 {
 	return !matImage.empty( );
 }

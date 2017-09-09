@@ -30,13 +30,6 @@ private:
 	CRenderBox m_Face;
 	CRay m_GazeLeft;
 	CRay m_GazeRight;
-
-	CTransformation m_matTransform = CTransformation::Unit( );
 };
 
 CScenery operator*( const CTransformation &matTransform, const CScenery &scenery );
-
-inline CTransformation CScenery::GetTransformation( void ) const
-{
-	return m_matTransform;
-}
