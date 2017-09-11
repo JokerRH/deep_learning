@@ -156,7 +156,12 @@ void CData::FindFilesRecursively( const std::wstring &sDir, const std::wstring &
 
 std::wstring CData::GetPath( const std::wstring &sFile )
 {
-	WCHAR *szPath = (WCHAR*) _alloca( ( sFile.size( ) + 1 ) * sizeof( WCHAR ) );
+	WCHAR *szPath = (WCHAR*) _malloca( ( sFile.size( ) + 1 ) * sizeof( WCHAR ) );
+	if( !szPath )
+	{
+		std::wcerr << "Unable to allcate memory for path" << std::endl;
+		throw 0;
+	}
 	memcpy( (void *) szPath, sFile.c_str( ), ( sFile.size( ) + 1 ) * sizeof( WCHAR ) );
 	PathCchRemoveFileSpec( szPath, ( sFile.size( ) + 1 ) * sizeof( WCHAR ) );
 	return std::wstring( szPath );
@@ -258,6 +263,21 @@ void CData::WriteAsync( void )
 	s_QueueWrite.Push_Back( *this );
 }
 
+static void DrawFace( const CData &data, const cv::Rect &rectImage, cv::Mat &matScreen )
+{
+	cv::Mat matImage = data.matImage.clone( );
+	double dScaleX = (double) rectImage.width / data.matImage.cols;
+	double dScaleY = (double) rectImage.height / data.matImage.rows;
+	cv::resize( matImage, matImage, rectImage.size( ) );
+	cv::Rect rectFace( (int) ( data.rectFace.x * dScaleX ), (int) ( data.rectFace.y * dScaleY ), (int) ( data.rectFace.width * dScaleX ), (int) ( data.rectFace.height * dScaleY ) );
+	cv::Point ptEyeLeft( (int) ( data.ptEyeLeft.x * dScaleX ), (int) ( data.ptEyeLeft.y * dScaleY ) );
+	cv::Point ptEyeRight( (int) ( data.ptEyeRight.x * dScaleX ), (int) ( data.ptEyeRight.y * dScaleY ) );
+	cv::rectangle( matImage, rectFace, cv::Scalar( 0, 0, 255 ), 2 );
+	cv::circle( matImage, ptEyeLeft + rectFace.tl( ), 1, cv::Scalar( 0, 255, 0 ), -1 );
+	cv::circle( matImage, ptEyeRight + rectFace.tl( ), 1, cv::Scalar( 255, 0, 0 ), -1 );
+	matImage.copyTo( matScreen( rectImage ) );
+}
+
 void CData::Show( const std::string &sWindow, const CData &dataref )
 {
 	cv::Mat matScreen( GetScreenResolution( ), CV_8UC3, cv::Scalar::all( 255 ) );
@@ -272,19 +292,7 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 	cv::Rect rectImage( rectTotal.x + rectScenery.width, rectTotal.y, rectTotal.width - rectScenery.width, (int) ( (double) ( rectTotal.width - rectScenery.width ) / matImage.cols * matImage.rows ) );
 	
 	//Draw face
-	{
-		cv::Mat matImage = this->matImage.clone( );
-		double dScaleX = (double) rectImage.width / matImage.cols;
-		double dScaleY = (double) rectImage.height / matImage.rows;
-		cv::resize( matImage, matImage, rectImage.size( ) );
-		cv::Rect rectFace( (int) ( rectFace.x * dScaleX ), (int) ( rectFace.y * dScaleY ), (int) ( rectFace.width * dScaleX ), (int) ( rectFace.height * dScaleY ) );
-		cv::Point ptEyeLeft( (int) ( ptEyeLeft.x * dScaleX ), (int) ( ptEyeLeft.y * dScaleY ) );
-		cv::Point ptEyeRight( (int) ( ptEyeRight.x * dScaleX ), (int) ( ptEyeRight.y * dScaleY ) );
-		cv::rectangle( matImage, rectFace, cv::Scalar( 0, 0, 255 ), 2 );
-		cv::circle( matImage, ptEyeLeft + rectFace.tl( ), 1, cv::Scalar( 0, 255, 0 ), -1 );
-		cv::circle( matImage, ptEyeRight + rectFace.tl( ), 1, cv::Scalar( 255, 0, 0 ), -1 );
-		matImage.copyTo( matScreen( rectImage ) );
-	}
+	DrawFace( *this, rectImage, matScreen );
 
 	CScenery scenery( *this );
 	scenery.Fit( ).Draw( matScreen( rectScenery ) );
@@ -371,13 +379,19 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 				}
 				break;
 			case 9:		//Tab
-				if( dataref.IsValid( ) )
+				if( !dataref.IsValid( ) )
 					break;
 
 				if( fReference )
+				{
 					scenery = scenery.GetTransformation( ) * CScenery( *this );
+					DrawFace( *this, rectImage, matScreen );
+				}
 				else
+				{
 					scenery = scenery.GetTransformation( ) * CScenery( dataref );
+					DrawFace( dataref, rectImage, matScreen );
+				}
 
 				fReference = !fReference;
 				scenery.Draw( matScreen( rectScenery ) );
@@ -415,6 +429,7 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 				break;
 			case 90:	//'z'
 				scenery = CScenery( *this );
+				DrawFace( *this, rectImage, matScreen );
 				scenery.Fit( false ).Draw( matScreen( rectScenery ) );
 				cv::imshow( sWindow, matScreen );
 				break;
@@ -688,6 +703,13 @@ bool CData::GetFaceRect( const std::string &sWindow )
 			DispatchMessage( &msg );
 		}
 	}
+}
+
+CData::CData( const cv::Mat &matImage, const cv::Rect &rectFace ) :
+	matImage( matImage.clone( ) ),
+	rectFace( rectFace )
+{
+
 }
 
 bool CData::LoadImage( const std::wstring &sImage, const std::string &sWindow )

@@ -209,7 +209,7 @@ int main( int argc, char **argv )
 					if( !data.IsValid( ) )
 						continue;
 
-					import.Show( "Window" );
+					import.Show( "Window", data );
 				}
 			}
 			catch( int i )

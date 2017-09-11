@@ -12,13 +12,13 @@ CTransformation CTransformation::GetRotationMatrix( double dPitch, double dYaw, 
 CTransformation CTransformation::GetRotationMatrixRad( double dPitch, double dYaw, double dRoll )
 {
 	//Pitch
-	double dCos = cos( -dPitch );
-	double dSin = sin( -dPitch );
+	double dCos = cos( dPitch );
+	double dSin = sin( dPitch );
 	CMatrix<3, 3> matX(
 	{
 		1, 0, 0,
-		0, dCos, -dSin,
-		0, dSin, dCos
+		0, dCos, dSin,
+		0, -dSin, dCos
 	} );
 
 	//Yaw

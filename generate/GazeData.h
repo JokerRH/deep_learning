@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Data.h"
 #include "Render\Ray.h"
 #include <regex>

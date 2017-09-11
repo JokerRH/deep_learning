@@ -67,7 +67,7 @@ CRenderBox::CRenderBox( const CVector<3> &vec3Min, const CVector<3> &vec3Max ) :
 		else\
 		{\
 			fprintf( stderr, "Unknown line in CRenderBox::GetLineIndices\n" );\
-			assert( false );\
+			throw 0;\
 		}\
 		if( !fLine )\
 			fPlane &= ~plane;\
@@ -85,7 +85,7 @@ std::array<unsigned char, 2> CRenderBox::GetLineIndices( unsigned char &fPlane, 
 	else
 	{
 		fprintf( stderr, "Unknown plane in CRenderBox::GetLineIndices\n" );
-		assert( false );
+		throw 0;
 	}
 	
 	return abIndices;
@@ -146,7 +146,7 @@ std::array<unsigned char, 4> CRenderBox::GetPlaneIndices( unsigned char &fPlane 
 	else
 	{
 		fprintf( stderr, "Unknown plane in CRenderBox::GetPlaneIndices\n" );
-		assert( false );
+		throw 0;
 	}
 
 	return abIndices;

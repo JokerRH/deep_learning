@@ -52,7 +52,10 @@ public:
 	bool fWriteImage = true;
 
 protected:
+	CData( const cv::Mat &matImage, const cv::Rect &rectFace );
 	bool LoadImage( const std::wstring &sImage, const std::string &sWindow );
+
+	static cv::CascadeClassifier s_FaceCascade;
 
 private:
 	static void *WriteThread( void * );
@@ -60,7 +63,6 @@ private:
 	bool GetFaceRect( const std::string &sWindow );
 
 	static const std::wregex s_regLine;
-	static cv::CascadeClassifier s_FaceCascade;
 
 	static std::wstring s_sPathWrite;
 	static std::wfstream s_smFileWrite;

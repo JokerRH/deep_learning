@@ -69,6 +69,9 @@
     <ClInclude Include="Render\Transformation.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
+    <ClInclude Include="Detect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Render\RenderBox.cpp">
@@ -110,5 +113,8 @@
     <ClCompile Include="Render\Transformation.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

@@ -62,7 +62,7 @@ std::array<unsigned char, 2> CRenderPlane::GetLineIndices( unsigned char &fLine 
 	else
 	{
 		fprintf( stderr, "Unknown line in CRenderPlane::GetLineIndices\n" );
-		assert( false );
+		throw 0;
 	}
 
 	return abIndices;
