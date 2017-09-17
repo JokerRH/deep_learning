@@ -6,6 +6,9 @@
 #include <iostream>
 #include <PathCch.h>
 #include <regex>
+#ifndef _USE_MATH_DEFINES
+#	define _USE_MATH_DEFINES
+#endif
 #include <math.h>
 #include <fstream>
 
@@ -59,17 +62,9 @@ CColumbiaData::CColumbiaData( const std::wstring &sImage, const std::string &sWi
 	if( !match.size( ) )
 		throw 0;
 
-	/*
 	vec3GazePoint = CVector<3>( {
-		atan( std::stod( match[ 2 ].str( ) ) ) / 2.5,
-		atan( std::stod( match[ 1 ].str( ) ) ) / 2.5,
-		-0.5
-	} );
-	*/
-
-	vec3GazePoint = CVector<3>( {
-		tan( std::stod( match[ 2 ].str( ) ) ) * 2.5,
-		tan( std::stod( match[ 1 ].str( ) ) ) * 2.5,
+		tan( std::stod( match[ 2 ].str( ) ) * M_PI / 180 ) * 2.5,
+		tan( std::stod( match[ 1 ].str( ) ) * M_PI / 180 ) * 2.5,
 		-0.5
 	} );
 

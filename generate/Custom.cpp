@@ -83,15 +83,19 @@ CCustom::CCustom( const fileformat &data, const std::string & sWindow )
 
 	CVector<2> vec2EyeLeft( { (double) rectFace.x + ptEyeLeft.x, (double) rectFace.y + ptEyeLeft.y } );
 	CVector<2> vec2EyeRight( { (double) rectFace.x + ptEyeRight.x, (double) rectFace.y + ptEyeRight.y } );
-	const double dPixelIPD = ( vec2EyeLeft - vec2EyeRight ).Abs( );
-	const double dDistFact = 0.066 / dPixelIPD;
-	const double dDistance = ( CVector<2>( { (double) matImage.cols, (double) matImage.rows } ).Abs( ) / dPixelIPD ) * ( 0.033 / tan( data.dFOV * M_PI / ( 2 * 180 ) ) );
 
-	CVector<2> vec2Center( { matImage.cols / 2.0, matImage.rows / 2.0 } );
-	vec2EyeLeft = ( vec2EyeLeft - vec2Center ) * dDistFact;
-	vec2EyeRight = ( vec2EyeRight - vec2Center ) * dDistFact;
-	vec2EyeLeft[ 1 ] = -vec2EyeLeft[ 1 ];
-	vec2EyeRight[ 1 ] = -vec2EyeRight[ 1 ];
-	vec3EyeLeft = CVector<3>( { vec2EyeLeft[ 0 ], vec2EyeLeft[ 1 ], dDistance } );
-	vec3EyeRight = CVector<3>( { vec2EyeRight[ 0 ], vec2EyeRight[ 1 ], dDistance } );
+	const double dIPDFrac = 0.066 / ( vec2EyeLeft - vec2EyeRight ).Abs( );
+	const double dFocalLength = ( sqrt( matImage.cols * matImage.cols + matImage.rows * matImage.rows ) / 2 ) / tan( data.dFOV / ( 2 * 180 ) * M_PI );
+
+	vec3EyeLeft = CVector<3>( {
+		matImage.cols / 2.0 - vec2EyeLeft[ 0 ],
+		vec2EyeLeft[ 1 ] - matImage.rows / 2.0,
+		dIPDFrac
+	} ) * dFocalLength;
+
+	vec3EyeRight = CVector<3>( {
+		matImage.cols / 2.0 - vec2EyeRight[ 0 ],
+		vec2EyeRight[ 1 ] - matImage.rows / 2.0,
+		dIPDFrac
+	} ) * dFocalLength;
 }

@@ -340,10 +340,19 @@ CData CGazeData::MergeReference( const std::vector<CData> &vecData )
 	vec3EyeLeft = data.vec3EyeLeft;
 	vec3EyeRight = data.vec3EyeRight;
 
+#ifdef EXPORT_LOCAL
 	//Rays are in local space of the face, transform to global space
 	CTransformation matTransform( GetFaceTransformation( ) );
 	rayEyeLeft = matTransform * rayEyeLeft;
 	rayEyeRight = matTransform * rayEyeRight;
+#else
+	//Rays are in inverted global space
+	CTransformation matTransform = CTransformation::GetRotationMatrix( CVector<3>( { 1, 0, 0 } ), CVector<3>( { 0, 1, 0 } ), CVector<3>( { 0, 0, -1 } ) );
+	rayEyeLeft = matTransform * rayEyeLeft;
+	rayEyeRight = matTransform * rayEyeRight;
+	rayEyeLeft.m_vec3Origin = vec3EyeLeft;
+	rayEyeRight.m_vec3Origin = vec3EyeRight;
+#endif
 
 	//Calculate gaze point as the point of shortest distance between the eye rays
 	CVector<2> vec2Gaze = rayEyeLeft.PointOfShortestDistance( rayEyeRight );
@@ -362,7 +371,11 @@ std::string CGazeData::ToString( unsigned uPrecision ) const
 	std::wcout.setf( std::ios_base::fixed, std::ios_base::floatfield );
 	std::wcout.precision( 6 );
 
+#ifdef EXPORT_LOCAL
 	CTransformation matTransform( GetFaceTransformation( ).Invert( ) );
+#else
+	CTransformation matTransform = CTransformation::GetRotationMatrix( CVector<3>( { 1, 0, 0 } ), CVector<3>( { 0, 1, 0 } ), CVector<3>( { 0, 0, -1 } ) );
+#endif
 	CVector<2> vec2EyeLeft( ( matTransform * rayEyeLeft ).AmplitudeRepresentation( ) );
 	CVector<2> vec2EyeRight( ( matTransform * rayEyeRight ).AmplitudeRepresentation( ) );
 

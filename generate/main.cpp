@@ -1,12 +1,20 @@
+#ifndef _USE_MATH_DEFINES
+#	define _USE_MATH_DEFINES
+#endif
+#include <math.h>
+
 #include "Columbia.h"
 #include "Custom.h"
 #include "GazeData.h"
+#include "Detect.h"
 #include <stdlib.h>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <locale>
 #include <Windows.h>
+#include <Shlwapi.h>
+#include <Pathcch.h>
 #include <opencv2\highgui.hpp>
 
 #undef LoadImage
@@ -41,14 +49,98 @@ bool CreateCVWindow( const std::string &sWindow )
 	return true;
 }
 
-#include "Render\Matrix.h"
-int main( int argc, char **argv )
+int wmain( int argc, WCHAR **argv )
 {
+#if 0
+	auto vecData = CData::LoadData( LR"a(D:\Users\Rainer\Source\Repos\deep_learning\generate\x64\columbia\columbia_old.txt)a" );
+	std::wsmatch match;
+	const std::wregex regImage( LR"a(\d+_2m_0P_([+-]?\d+)V_([+-]?\d+)H\.jpg)a" );
+	CData::OpenWrite( LR"a(D:\Users\Rainer\Source\Repos\deep_learning\generate\x64\columbia\columbia.txt)a" );
+	for( auto &data : vecData )
+	{
+		std::regex_match( data.sImage, match, regImage );
+		data.vec3GazePoint = CVector<3>( {
+			tan( std::stod( match[ 2 ].str( ) ) * M_PI / 180 ) * 2.5,
+			tan( std::stod( match[ 1 ].str( ) ) * M_PI / 180 ) * 2.5,
+			-0.5
+		} );
+
+		data.fWriteImage = false;
+		data.matImage = cv::Mat( cv::Size( 1, 1 ), CV_8UC3, cv::Scalar::all( 255 ) );
+		data.WriteAsync( );
+	}
+	CData::CloseWrite( );
+	system( "PAUSE" );
+	return 0;
+#endif
+
+#if 0
+	auto vecRaw = CCustom::Load( LR"a(D:\Users\Rainer\Source\Repos\deep_learning\gaze_data\raw\rainer.txt)a" );
+	auto vecData = CData::LoadData( LR"a(D:\Users\Rainer\Source\Repos\deep_learning\generate\x64\rainer\rainer_old.txt)a" );
+
+	CData::OpenWrite( LR"a(D:\Users\Rainer\Source\Repos\deep_learning\generate\x64\rainer\rainer.txt)a" );
+	for( auto &filedata : vecRaw )
+	{
+		auto it = std::find_if( vecData.begin( ), vecData.end( ), [ filedata ]( const CData &data )
+		{
+			return PathFindFileName( filedata.sImage.c_str( ) ) == data.sImage;
+		} );
+
+		if( it == vecData.end( ) )
+			throw 0;
+
+		CData data( *it );
+		if( !data.LoadImage( ) )
+			throw 1;
+
+		CVector<3> vec3ScreenTL( { -0.25, -0.07, 0.57 } );
+		CVector<3> vec3ScreenDim( { 0.475, -0.268, -0.03 } );
+
+		CVector<2> vec2GazePoint( {
+			( -data.vec3GazePoint[ 0 ] - vec3ScreenTL[ 0 ] ) / vec3ScreenDim[ 0 ],
+			( data.vec3GazePoint[ 1 ] - vec3ScreenTL[ 1 ] ) / vec3ScreenDim[ 1 ]
+		} );
+
+		std::wcout << "Gaze point: " << vec2GazePoint << std::endl;
+
+		data.vec3GazePoint = CVector<3>( {
+			-vec3ScreenTL[ 0 ] - vec2GazePoint[ 0 ] * abs( vec3ScreenDim[ 0 ] ),
+			vec3ScreenTL[ 1 ] - vec2GazePoint[ 1 ] * abs( vec3ScreenDim[ 1 ] ),
+			vec3ScreenTL[ 2 ]
+		} );
+
+		CVector<2> vec2EyeLeft( { (double) data.rectFace.x + data.ptEyeLeft.x, (double) data.rectFace.y + data.ptEyeLeft.y } );
+		CVector<2> vec2EyeRight( { (double) data.rectFace.x + data.ptEyeRight.x, (double) data.rectFace.y + data.ptEyeRight.y } );
+
+		const double dIPDFrac = 0.066 / ( vec2EyeLeft - vec2EyeRight ).Abs( );
+		const double dFocalLength = ( sqrt( data.matImage.cols * data.matImage.cols + data.matImage.rows * data.matImage.rows ) / 2 ) / tan( filedata.dFOV / ( 2 * 180 ) * M_PI );
+
+		data.vec3EyeLeft = CVector<3>( {
+			vec2EyeLeft[ 0 ] - data.matImage.cols / 2.0,
+			-( vec2EyeLeft[ 1 ] - data.matImage.rows / 2.0 ),
+			dFocalLength
+		} ) * dIPDFrac;
+
+		data.vec3EyeRight = CVector<3>( {
+			vec2EyeRight[ 0 ] - data.matImage.cols / 2.0,
+			-( vec2EyeRight[ 1 ] - data.matImage.rows / 2.0 ),
+			dFocalLength
+		} ) * dIPDFrac;
+
+		data.fWriteImage = false;
+		data.WriteAsync( );
+	}
+	CData::CloseWrite( );
+
+	system( "PAUSE" );
+	return 0;
+#endif
+
 	if( argc >= 3 )
 	{
-		if( !_stricmp( argv[ 1 ], "show" ) )
+		if( !_wcsicmp( argv[ 1 ], L"show" ) )
 		{
-			std::vector<CData> vecData = CData::LoadData( StrToWStr( argv[ 2 ] ), 4 );
+			std::vector<CData> vecData = CData::LoadData( argv[ 2 ] );
 			std::wcout << "Loaded " << vecData.size( ) << " instances" << std::endl;
 
 			if( !CreateCVWindow( "Window" ) )
@@ -62,6 +154,7 @@ int main( int argc, char **argv )
 				for( CData data : vecData )
 				{
 					data.LoadImage( );
+					std::wcout << "Showing" << data.sImage << std::endl;
 					data.Show( "Window" );
 				}
 			}
@@ -85,14 +178,14 @@ int main( int argc, char **argv )
 	}
 	if( argc >= 4 )
 	{
-		if( !_stricmp( argv[ 1 ], "columbia" ) )
+		if( !_wcsicmp( argv[ 1 ], L"columbia" ) )
 		{
-			std::vector<std::wstring> vecsImages = CColumbiaData::Load( StrToWStr( argv[ 2 ] ), StrToWStr( argv[ 3 ] ) );
+			std::vector<std::wstring> vecsImages = CColumbiaData::Load( argv[ 2 ], argv[ 3 ] );
 
 			CData::Init( );
 			try
 			{
-				if( !CData::OpenWrite( StrToWStr( argv[ 3 ] ) ) )
+				if( !CData::OpenWrite( argv[ 3 ] ) )
 				{
 					system( "PAUSE" );
 					return EXIT_FAILURE;
@@ -133,14 +226,14 @@ int main( int argc, char **argv )
 			system( "PAUSE" );
 			return EXIT_SUCCESS;
 		}
-		else if( !_stricmp( argv[ 1 ], "custom" ) )
+		else if( !_wcsicmp( argv[ 1 ], L"custom" ) )
 		{
-			std::vector<CCustom::fileformat> vecImages = CCustom::Load( StrToWStr( argv[ 2 ] ), StrToWStr( argv[ 3 ] ) );
+			std::vector<CCustom::fileformat> vecImages = CCustom::Load( argv[ 2 ], argv[ 3 ] );
 
 			CData::Init( );
 			try
 			{
-				if( !CData::OpenWrite( StrToWStr( argv[ 3 ] ) ) )
+				if( !CData::OpenWrite( argv[ 3 ] ) )
 				{
 					system( "PAUSE" );
 					return EXIT_FAILURE;
@@ -181,18 +274,18 @@ int main( int argc, char **argv )
 			system( "PAUSE" );
 			return EXIT_SUCCESS;
 		}
-		else if( !_stricmp( argv[ 1 ], "imp" ) )
+		else if( !_wcsicmp( argv[ 1 ], L"imp" ) )
 		{
 			std::vector<CData> vecData;
 			for( unsigned u = 3; u < (unsigned) argc; u++ )
 			{
-				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ) );
+				std::vector<CData> vecTemp = CData::LoadData( argv[ u ] );
 				std::wcout << "Loaded " << vecTemp.size( ) << " instances from \"" << argv[ u ] << "\"" << std::endl;
 				vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
 			}
 			std::wcout << "Loaded " << vecData.size( ) << " instances\n" << std::endl;
 
-			std::vector<CGazeData> vecImport = CGazeData::LoadData( StrToWStr( argv[ 2 ] ) );
+			std::vector<CGazeData> vecImport = CGazeData::LoadData( argv[ 2 ] );
 			std::wcout << "Imported " << vecImport.size( ) << " instances" << std::endl;
 
 			if( !CreateCVWindow( "Window" ) )
@@ -229,20 +322,44 @@ int main( int argc, char **argv )
 			system( "PAUSE" );
 			return EXIT_SUCCESS;
 		}
+#ifdef WITH_CAFFE
+		else if( !_wcsicmp( argv[ 1 ], L"run" ) )
+		{
+			WCHAR szPath[ MAX_PATH ];
+			if( !GetFullPathName( argv[ 0 ], MAX_PATH, szPath, nullptr ) )
+			{
+				std::wcerr << "Unable to get full path for executable folder" << std::endl;
+				return EXIT_FAILURE;
+			}
+			PathCchRemoveFileSpec( szPath, MAX_PATH );
+			PathCchCombine( szPath, MAX_PATH, szPath, L"network" );
+			if( !CDetect::Init( szPath ) )
+			{
+				system( "PAUSE" );
+				return EXIT_FAILURE;
+			}
+
+			CDetect::Terminate( );
+
+			std::wcout << "Done." << std::endl;
+			system( "PAUSE" );
+			return EXIT_SUCCESS;
+		}
+#endif
 	}
 	if( argc >= 5 )
 	{
-		if( !_stricmp( argv[ 1 ], "exp" ) )
+		if( !_wcsicmp( argv[ 1 ], L"exp" ) )
 		{
 			std::vector<CData> vecData;
 			for( unsigned u = 4; u < (unsigned) argc; u++ )
 			{
-				std::vector<CData> vecTemp = CData::LoadData( StrToWStr( argv[ u ] ) );
+				std::vector<CData> vecTemp = CData::LoadData( argv[ u ] );
 				std::wcout << "Loaded " << vecTemp.size( ) << " instances from \"" << argv[ u ] << "\"" << std::endl;
 				vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
 			}
 			std::wcout << "Loaded " << vecData.size( ) << " instances\n" << std::endl;
-			if( !CGazeData::Export( vecData, StrToWStr( argv[ 3 ] ), std::stoul( argv[ 2 ] ) ) )
+			if( !CGazeData::Export( vecData, argv[ 3 ], std::stoul( argv[ 2 ] ) ) )
 			{
 				system( "PAUSE" );
 				return EXIT_FAILURE;
@@ -255,6 +372,8 @@ int main( int argc, char **argv )
 	}
 
 	std::wcout << "Invalid parameters" << std::endl;
+	for( unsigned u = 1; u < (unsigned) argc; u++ )
+		std::wcout << u << ": \"" << argv[ u ] << "\"" << std::endl;
 	system( "PAUSE" );
 	return EXIT_SUCCESS;
 }
