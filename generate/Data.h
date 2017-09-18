@@ -52,7 +52,7 @@ public:
 	bool fWriteImage = true;
 
 protected:
-	CData( const cv::Mat &matImage, const cv::Rect &rectFace );
+	CData( const cv::Mat &matImage, const cv::Rect &rectFace, const std::wstring &sPath );
 	bool LoadImage( const std::wstring &sImage, const std::string &sWindow );
 
 	static cv::CascadeClassifier s_FaceCascade;

@@ -2,7 +2,7 @@
 
 #ifdef WITH_CAFFE
 
-#include "Data.h"
+#include "GazeData.h"
 #include "Render\Ray.h"
 #include <memory>
 #include <string>
@@ -15,16 +15,15 @@
 #include <caffe\caffe.hpp>
 #pragma warning( pop )
 
-class CDetect : public CData
+class CDetect : public CGazeData
 {
 public:
 	static bool Init( const std::wstring &sNetwork );
 	static void Terminate( void );
-	CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV );
-	~CDetect( void ) override = default;
+	static std::vector<cv::Rect> GetFaces( const cv::Mat &matImage );
 
-	CRay rayEyeLeft;
-	CRay rayEyeRight;
+	CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV, const std::wstring &sPath = std::wstring( ) );
+	~CDetect( void ) override = default;
 
 private:
 	static bool SetMean( const std::string &sMeanFile );

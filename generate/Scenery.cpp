@@ -22,7 +22,7 @@ CScenery::CScenery( const CData &data ) :
 	}
 	catch( std::bad_cast )
 	{
-		
+
 	}
 	
 	CVector<3> vec3EyeLeft( { (double) ( data.rectFace.width - data.ptEyeLeft.x ), (double) ( data.ptEyeLeft.y ), 0 } );

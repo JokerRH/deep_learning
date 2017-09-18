@@ -280,16 +280,33 @@ static void DrawFace( const CData &data, const cv::Rect &rectImage, cv::Mat &mat
 
 void CData::Show( const std::string &sWindow, const CData &dataref )
 {
+	//Reference text
+	std::string sReference( "Reference" );
+	int iFontFace = cv::FONT_HERSHEY_SIMPLEX;
+	double dFontScale = 2;
+	int iFontThickness = 3;
+
+	//Calculate image size
 	cv::Mat matScreen( GetScreenResolution( ), CV_8UC3, cv::Scalar::all( 255 ) );
 	cv::Rect rectTotal;
+	cv::Rect rectScenery;
+	cv::Rect rectImage;
+	cv::Point ptText;
 	{
-		cv::Size size( matImage.cols * 3, std::max( matImage.cols * 2, matImage.rows ) );
+		int iBaseLine = 0;
+		cv::Size textSize( cv::getTextSize( sReference, iFontFace, dFontScale, iFontThickness, &iBaseLine ) );
+		int iSideWidth = std::max( matImage.cols, textSize.width );
+
+		cv::Size size( matImage.cols * 2 + iSideWidth, std::max( matImage.cols * 2, matImage.rows + textSize.height ) );
 		double dScale = std::min( (double) matScreen.cols / size.width, (double) matScreen.rows / size.height );
 		size = cv::Size( (int) ( size.width * dScale ), (int) ( size.height * dScale ) );
 		rectTotal = cv::Rect( (int) ( matScreen.cols / 2.0 - size.width / 2.0 ), (int) ( matScreen.rows / 2.0 - size.height / 2.0 ), size.width, size.height );
+
+		double dBaseDim = (double) matImage.cols / ( matImage.cols * 2 + iSideWidth );
+		rectScenery = cv::Rect( rectTotal.x, rectTotal.y, (int) ( rectTotal.width * dBaseDim * 2 ), (int) ( rectTotal.width * dBaseDim * 2 ) );
+		rectImage = cv::Rect( rectTotal.x + rectScenery.width, rectTotal.y, (int) ( rectTotal.width * dBaseDim ), (int) ( rectTotal.width * dBaseDim / matImage.cols * matImage.rows ) );
+		ptText = cv::Point( rectImage.x, rectImage.y + rectImage.height + textSize.height );
 	}
-	cv::Rect rectScenery( rectTotal.x, rectTotal.y, (int) ( rectTotal.width * 2 / 3.0 ), (int) ( rectTotal.width * 2 / 3.0 ) );
-	cv::Rect rectImage( rectTotal.x + rectScenery.width, rectTotal.y, rectTotal.width - rectScenery.width, (int) ( (double) ( rectTotal.width - rectScenery.width ) / matImage.cols * matImage.rows ) );
 	
 	//Draw face
 	DrawFace( *this, rectImage, matScreen );
@@ -384,6 +401,7 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 
 				if( fReference )
 				{
+					matScreen = cv::Scalar::all( 255 );
 					scenery = scenery.GetTransformation( ) * CScenery( *this );
 					DrawFace( *this, rectImage, matScreen );
 				}
@@ -391,6 +409,7 @@ void CData::Show( const std::string &sWindow, const CData &dataref )
 				{
 					scenery = scenery.GetTransformation( ) * CScenery( dataref );
 					DrawFace( dataref, rectImage, matScreen );
+					putText( matScreen, sReference, ptText, iFontFace, dFontScale, cv::Scalar( 51, 153, 255 ), iFontThickness, 8 );
 				}
 
 				fReference = !fReference;
@@ -705,11 +724,14 @@ bool CData::GetFaceRect( const std::string &sWindow )
 	}
 }
 
-CData::CData( const cv::Mat &matImage, const cv::Rect &rectFace ) :
+CData::CData( const cv::Mat &matImage, const cv::Rect &rectFace, const std::wstring &sPath ) :
 	matImage( matImage.clone( ) ),
 	rectFace( rectFace )
 {
+	if( sPath.empty( ) )
+		return;
 
+	sImage = std::wstring( PathFindFileName( sPath.c_str( ) ) );
 }
 
 bool CData::LoadImage( const std::wstring &sImage, const std::string &sWindow )

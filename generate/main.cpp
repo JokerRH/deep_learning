@@ -326,6 +326,21 @@ int wmain( int argc, WCHAR **argv )
 		else if( !_wcsicmp( argv[ 1 ], L"run" ) )
 		{
 			WCHAR szPath[ MAX_PATH ];
+			if( !GetFullPathName( argv[ 2 ], MAX_PATH, szPath, nullptr ) )
+			{
+				std::wcerr << "Unable to get full path for executable folder" << std::endl;
+				return EXIT_FAILURE;
+			}
+			double dFOV = std::wcstod( argv[ 3 ], nullptr );
+			std::wstring sImage( szPath );
+			cv::Mat matImage( cv::imread( std::string( sImage.begin( ), sImage.end( ) ) ) );
+			if( matImage.empty( ) )
+			{
+				std::wcerr << "Unable to read image \"" << sImage << "\"" << std::endl;
+				system( "PAUSE" );
+				return EXIT_FAILURE;
+			}
+
 			if( !GetFullPathName( argv[ 0 ], MAX_PATH, szPath, nullptr ) )
 			{
 				std::wcerr << "Unable to get full path for executable folder" << std::endl;
@@ -339,6 +354,70 @@ int wmain( int argc, WCHAR **argv )
 				return EXIT_FAILURE;
 			}
 
+			std::vector<cv::Rect> vecFaces = CDetect::GetFaces( matImage );
+			if( !CreateCVWindow( "Window" ) )
+			{
+				system( "PAUSE" );
+				CDetect::Terminate( );
+				return EXIT_FAILURE;
+			}
+
+			std::vector<CData> vecData;
+			if( argc >= 5 )
+			{
+				for( unsigned u = 4; u < (unsigned) argc; u++ )
+				{
+					if( !GetFullPathName( argv[ u ], MAX_PATH, szPath, nullptr ) )
+					{
+						std::wcerr << "Unable to get full path for executable folder" << std::endl;
+						return EXIT_FAILURE;
+					}
+
+					std::vector<CData> vecTemp = CData::LoadData( szPath );
+					std::wcout << "Loaded " << vecTemp.size( ) << " instances from \"" << szPath << "\"" << std::endl;
+					vecData.insert( vecData.end( ), vecTemp.begin( ), vecTemp.end( ) );
+				}
+				std::wcout << "Loaded " << vecData.size( ) << " instances\n" << std::endl;
+			}
+
+			try
+			{
+				for( const cv::Rect &rectFace : vecFaces )
+				{
+					CDetect detected( matImage, rectFace, dFOV, sImage );
+
+					std::vector<CData>::iterator it = std::find_if( vecData.begin( ), vecData.end( ), [ detected ]( const CData &data )
+					{
+						return detected.sImage == data.sImage;
+					} );
+
+					if( it != vecData.end( ) )
+					{
+						it->LoadImage( );
+						detected.Show( "Window", *it );
+					}
+					else
+					{
+						if( argc >= 5 )
+							std::wcout << "Reference for image \"" << detected.sImage << "\" not found" << std::endl;
+						detected.Show( "Window" );
+					}
+				}
+			}
+			catch( int i )
+			{
+				cv::destroyAllWindows( );
+				CDetect::Terminate( );
+
+				if( i != 27 )
+				{
+					system( "PAUSE" );
+					return EXIT_FAILURE;
+				}
+				return EXIT_SUCCESS;
+			}
+
+			cv::destroyAllWindows( );
 			CDetect::Terminate( );
 
 			std::wcout << "Done." << std::endl;

@@ -81,21 +81,21 @@ CCustom::CCustom( const fileformat &data, const std::string & sWindow )
 	if( !LoadImage( data.sImage, sWindow ) )
 		throw 0;
 
-	CVector<2> vec2EyeLeft( { (double) rectFace.x + ptEyeLeft.x, (double) rectFace.y + ptEyeLeft.y } );
-	CVector<2> vec2EyeRight( { (double) rectFace.x + ptEyeRight.x, (double) rectFace.y + ptEyeRight.y } );
+	CVector<2> vec2EyeLeft( { (double) ( rectFace.x + ptEyeLeft.x ), (double) ( rectFace.y + ptEyeLeft.y ) } );
+	CVector<2> vec2EyeRight( { (double) ( rectFace.x + ptEyeRight.x ), (double) ( rectFace.y + ptEyeRight.y ) } );
 
 	const double dIPDFrac = 0.066 / ( vec2EyeLeft - vec2EyeRight ).Abs( );
 	const double dFocalLength = ( sqrt( matImage.cols * matImage.cols + matImage.rows * matImage.rows ) / 2 ) / tan( data.dFOV / ( 2 * 180 ) * M_PI );
 
 	vec3EyeLeft = CVector<3>( {
-		matImage.cols / 2.0 - vec2EyeLeft[ 0 ],
-		vec2EyeLeft[ 1 ] - matImage.rows / 2.0,
-		dIPDFrac
-	} ) * dFocalLength;
+		vec2EyeLeft[ 0 ] - matImage.cols / 2.0,
+		-( vec2EyeLeft[ 1 ] - matImage.rows / 2.0 ),
+		dFocalLength
+	} ) * dIPDFrac;
 
 	vec3EyeRight = CVector<3>( {
-		matImage.cols / 2.0 - vec2EyeRight[ 0 ],
-		vec2EyeRight[ 1 ] - matImage.rows / 2.0,
-		dIPDFrac
-	} ) * dFocalLength;
+		vec2EyeRight[ 0 ] - matImage.cols / 2.0,
+		-( vec2EyeRight[ 1 ] - matImage.rows / 2.0 ),
+		dFocalLength
+	} ) * dIPDFrac;
 }

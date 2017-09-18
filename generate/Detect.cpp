@@ -6,6 +6,10 @@
 #include <Pathcch.h>
 #include <opencv2\imgproc.hpp>
 #include <opencv2\objdetect.hpp>
+#ifndef _USE_MATH_DEFINES
+#	define _USE_MATH_DEFINES
+#endif
+#include <math.h>
 
 #pragma warning( push )
 #pragma warning( disable: 4244 )
@@ -38,6 +42,7 @@ namespace caffe
 
 bool CDetect::Init( const std::wstring &sNetwork )
 {
+	CData::Init( );
 	if( !PathFileExists( sNetwork.c_str( ) ) )
 	{
 		std::wcerr << "Network folder \"" << sNetwork << "\" does not exist" << std::endl;
@@ -109,7 +114,6 @@ FOUND:
 	//Load network
 	s_pNetwork = new caffe::Net<float>( sProtoFile, caffe::TEST );
 	s_pNetwork->CopyTrainedLayersFrom( sModelFile );
-	std::wcout << "Done loading" << std::endl;
 
 	CHECK_EQ( s_pNetwork->num_inputs( ), 1 ) << "Network should have exactly one input.";
 	CHECK_EQ( s_pNetwork->num_outputs( ), 1 ) << "Network should have exactly one output.";
@@ -135,10 +139,84 @@ void CDetect::Terminate( void )
 	delete s_pNetwork;
 }
 
-CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV ) :
-	CData( matImage, rectFace )
+std::vector<cv::Rect> CDetect::GetFaces( const cv::Mat & matImage )
 {
+	cv::Mat matComp;
+	cv::resize( matImage, matComp, cv::Size( 500, (int) ( 500.0 / matImage.cols * matImage.rows ) ) );
+	std::vector<cv::Rect> vecFaces;
+	s_FaceCascade.detectMultiScale( matComp, vecFaces, 1.1, 5, CV_HAAR_SCALE_IMAGE, cv::Size( 30, 30 ) );
+	for( cv::Rect &rectFace : vecFaces )
+	{
+		rectFace = cv::Rect(
+			(int) ( (double) rectFace.x / matComp.cols * matImage.cols ),
+			(int) ( (double) rectFace.y / matComp.rows * matImage.rows ),
+			(int) ( (double) rectFace.width / matComp.cols * matImage.cols ),
+			(int) ( (double) rectFace.height / matComp.rows * matImage.rows ) );
+	}
 
+	return vecFaces;
+}
+
+CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV, const std::wstring &sPath ) :
+	CGazeData( matImage, rectFace, sPath )
+{
+	std::array<float, 8> arOutput = Forward( matImage( rectFace ) );
+	std::wcout << "Output:" << std::endl;
+	std::wcout << "\t" << arOutput[ 0 ] << std::endl;
+	std::wcout << "\t" << arOutput[ 1 ] << std::endl;
+	std::wcout << "\t" << arOutput[ 2 ] << std::endl;
+	std::wcout << "\t" << arOutput[ 3 ] << std::endl;
+	std::wcout << "\t" << arOutput[ 4 ] << std::endl;
+	std::wcout << "\t" << arOutput[ 5 ] << std::endl;
+	std::wcout << "\t" << arOutput[ 6 ] << std::endl;
+	std::wcout << "\t" << arOutput[ 7 ] << std::endl;
+
+	ptEyeLeft = cv::Point( (int) ( arOutput[ 4 ] * rectFace.width ), (int) ( arOutput[ 5 ] * rectFace.height ) );
+	ptEyeRight = cv::Point( (int) ( arOutput[ 6 ] * rectFace.width ), (int) ( arOutput[ 7 ] * rectFace.height ) );
+
+	CVector<2> vec2EyeLeft( { (double) ( rectFace.x + ptEyeLeft.x ), (double) ( rectFace.y + ptEyeLeft.y ) } );
+	CVector<2> vec2EyeRight( { (double) ( rectFace.x + ptEyeRight.x ), (double) ( rectFace.y + ptEyeRight.y ) } );
+
+	const double dIPDFrac = 0.066 / ( vec2EyeLeft - vec2EyeRight ).Abs( );
+	const double dFocalLength = ( sqrt( matImage.cols * matImage.cols + matImage.rows * matImage.rows ) / 2 ) / tan( dFOV / ( 2 * 180 ) * M_PI );
+
+	vec3EyeLeft = CVector<3>( {
+		vec2EyeLeft[ 0 ] - matImage.cols / 2.0,
+		-( vec2EyeLeft[ 1 ] - matImage.rows / 2.0 ),
+		dFocalLength
+	} ) * dIPDFrac;
+
+	vec3EyeRight = CVector<3>( {
+		vec2EyeRight[ 0 ] - matImage.cols / 2.0,
+		-( vec2EyeRight[ 1 ] - matImage.rows / 2.0 ),
+		dFocalLength
+	} ) * dIPDFrac;
+
+	std::wcout << "Left: " << vec3EyeLeft << std::endl;
+	std::wcout << "Right: " << vec3EyeRight << std::endl;
+
+	rayEyeLeft = CRay( CVector<3>( { -0.5, 0, 0 } ), CVector<2>( { arOutput[ 0 ], arOutput[ 1 ] } ) );
+	rayEyeRight = CRay( CVector<3>( { 0.5, 0, 0 } ), CVector<2>( { arOutput[ 2 ], arOutput[ 3 ] } ) );
+
+#ifdef EXPORT_LOCAL
+	//Rays are in local space of the face, transform to global space
+	CTransformation matTransform( GetFaceTransformation( ) );
+	rayEyeLeft = matTransform * rayEyeLeft;
+	rayEyeRight = matTransform * rayEyeRight;
+#else
+	//Rays are in inverted global space
+	CTransformation matTransform = CTransformation::GetRotationMatrix( CVector<3>( { 1, 0, 0 } ), CVector<3>( { 0, 1, 0 } ), CVector<3>( { 0, 0, -1 } ) );
+	rayEyeLeft = matTransform * rayEyeLeft;
+	rayEyeRight = matTransform * rayEyeRight;
+	rayEyeLeft.m_vec3Origin = vec3EyeLeft;
+	rayEyeRight.m_vec3Origin = vec3EyeRight;
+#endif
+
+	//Calculate gaze point as the point of shortest distance between the eye rays
+	CVector<2> vec2Gaze = rayEyeLeft.PointOfShortestDistance( rayEyeRight );
+	vec3GazePoint = ( rayEyeLeft( vec2Gaze[ 0 ] ) + rayEyeRight( vec2Gaze[ 1 ] ) ) / 2.0;
+	rayEyeLeft *= vec2Gaze[ 0 ];
+	rayEyeRight *= vec2Gaze[ 1 ];
 }
 
 bool CDetect::SetMean( const std::string &sMeanFile )

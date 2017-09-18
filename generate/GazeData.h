@@ -22,7 +22,16 @@ public:
 	CRay rayEyeLeft;
 	CRay rayEyeRight;
 
+protected:
+	CGazeData( const cv::Mat &matImage, const cv::Rect &rectFace, const std::wstring &sPath );
+
 private:
 	static const std::regex s_regData;
 	static const std::regex s_regLabel;
 };
+
+inline CGazeData::CGazeData( const cv::Mat &matImage, const cv::Rect &rectFace, const std::wstring &sPath ) :
+	CData( matImage, rectFace, sPath )
+{
+
+}
