@@ -14,7 +14,7 @@
 class CData
 {
 public:
-	static bool Init( void );
+	static bool Init( const std::wstring &sPath );
 	static bool OpenWrite( const std::wstring &sFile, unsigned uNumThreads = 1 );
 	static void CloseWrite( void );
 	static std::vector<CData> LoadData( const std::wstring &sFile, unsigned uCount = (unsigned) -1 );

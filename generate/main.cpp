@@ -136,6 +136,19 @@ int wmain( int argc, WCHAR **argv )
 	return 0;
 #endif
 
+	std::wstring sExecPath;
+	{
+		WCHAR szPath[ MAX_PATH ];
+		if( !GetFullPathName( argv[ 0 ], MAX_PATH, szPath, nullptr ) )
+		{
+			std::wcerr << "Unable to get full path for executable folder" << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		PathRemoveFileSpec( szPath );
+		sExecPath = std::wstring( szPath );
+	}
+
 	if( argc >= 3 )
 	{
 		if( !_wcsicmp( argv[ 1 ], L"show" ) )
@@ -182,7 +195,7 @@ int wmain( int argc, WCHAR **argv )
 		{
 			std::vector<std::wstring> vecsImages = CColumbiaData::Load( argv[ 2 ], argv[ 3 ] );
 
-			CData::Init( );
+			CData::Init( sExecPath );
 			try
 			{
 				if( !CData::OpenWrite( argv[ 3 ] ) )
@@ -230,7 +243,7 @@ int wmain( int argc, WCHAR **argv )
 		{
 			std::vector<CCustom::fileformat> vecImages = CCustom::Load( argv[ 2 ], argv[ 3 ] );
 
-			CData::Init( );
+			CData::Init( sExecPath  );
 			try
 			{
 				if( !CData::OpenWrite( argv[ 3 ] ) )
@@ -325,14 +338,18 @@ int wmain( int argc, WCHAR **argv )
 #ifdef WITH_CAFFE
 		else if( !_wcsicmp( argv[ 1 ], L"run" ) )
 		{
-			WCHAR szPath[ MAX_PATH ];
-			if( !GetFullPathName( argv[ 2 ], MAX_PATH, szPath, nullptr ) )
-			{
-				std::wcerr << "Unable to get full path for executable folder" << std::endl;
-				return EXIT_FAILURE;
-			}
 			double dFOV = std::wcstod( argv[ 3 ], nullptr );
-			std::wstring sImage( szPath );
+			std::wstring sImage;
+			{
+				WCHAR szPath[ MAX_PATH ];
+				if( !GetFullPathName( argv[ 2 ], MAX_PATH, szPath, nullptr ) )
+				{
+					std::wcerr << "Unable to get full path for image" << std::endl;
+					return EXIT_FAILURE;
+				}
+
+				sImage = std::wstring( szPath );
+			}
 			cv::Mat matImage( cv::imread( std::string( sImage.begin( ), sImage.end( ) ) ) );
 			if( matImage.empty( ) )
 			{
@@ -341,14 +358,7 @@ int wmain( int argc, WCHAR **argv )
 				return EXIT_FAILURE;
 			}
 
-			if( !GetFullPathName( argv[ 0 ], MAX_PATH, szPath, nullptr ) )
-			{
-				std::wcerr << "Unable to get full path for executable folder" << std::endl;
-				return EXIT_FAILURE;
-			}
-			PathCchRemoveFileSpec( szPath, MAX_PATH );
-			PathCchCombine( szPath, MAX_PATH, szPath, L"network" );
-			if( !CDetect::Init( szPath ) )
+			if( !CDetect::Init( sExecPath ) )
 			{
 				system( "PAUSE" );
 				return EXIT_FAILURE;
@@ -365,11 +375,12 @@ int wmain( int argc, WCHAR **argv )
 			std::vector<CData> vecData;
 			if( argc >= 5 )
 			{
+				WCHAR szPath[ MAX_PATH ];
 				for( unsigned u = 4; u < (unsigned) argc; u++ )
 				{
 					if( !GetFullPathName( argv[ u ], MAX_PATH, szPath, nullptr ) )
 					{
-						std::wcerr << "Unable to get full path for executable folder" << std::endl;
+						std::wcerr << "Unable to get full path for data" << std::endl;
 						return EXIT_FAILURE;
 					}
 

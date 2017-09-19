@@ -18,7 +18,11 @@
 #include <caffe\layer_factory.hpp>
 #pragma warning( pop )
 
-#pragma comment( lib, "libcaffe.lib" )
+#ifdef _DEBUG
+#	pragma comment( lib, "libcaffe_D.lib" )
+#else
+#	pragma comment( lib, "libcaffe.lib" )
+#endif
 
 caffe::Net<float> *CDetect::s_pNetwork;
 cv::Size CDetect::s_InputShape;
@@ -40,13 +44,22 @@ namespace caffe
 	extern void Register_MemoryDataLayer( void );
 }
 
-bool CDetect::Init( const std::wstring &sNetwork )
+bool CDetect::Init( const std::wstring &sPath )
 {
-	CData::Init( );
-	if( !PathFileExists( sNetwork.c_str( ) ) )
-	{
-		std::wcerr << "Network folder \"" << sNetwork << "\" does not exist" << std::endl;
+	if( !CData::Init( sPath ) )
 		return false;
+
+	std::wstring sNetwork;
+	{
+		WCHAR szPath[ MAX_PATH ];
+		PathCchCombine( szPath, MAX_PATH, sPath.c_str( ), L"network" );
+		if( !PathFileExists( szPath ) )
+		{
+			std::wcerr << "Network folder \"" << szPath << "\" does not exist" << std::endl;
+			return false;
+		}
+
+		sNetwork = std::wstring( szPath );
 	}
 
 	Register_InputLayer( );

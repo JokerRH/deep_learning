@@ -33,10 +33,11 @@ std::wfstream CData::s_smFileWrite;
 CQueue<CData> CData::s_QueueWrite( 10 );
 std::vector<pthread_t> CData::s_vecThreadWrite;
 
-#define HAARCASCADES_PATH R"(D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\etc\haarcascades\)"
-bool CData::Init( void )
+bool CData::Init( const std::wstring &sPath )
 {
-	if( !s_FaceCascade.load( HAARCASCADES_PATH "haarcascade_frontalface_default.xml" ) )
+	WCHAR szPath[ MAX_PATH ];
+	PathCchCombine( szPath, MAX_PATH, sPath.c_str( ), L"haarcascade_frontalface_default.xml" );
+	if( !s_FaceCascade.load( std::string( szPath, szPath + wcslen( szPath ) ) ) )
 	{
 		std::wcerr << "Unable to load face cascade" << std::endl;
 		return false;
