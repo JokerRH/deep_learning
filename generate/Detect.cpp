@@ -174,6 +174,7 @@ CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV
 	CGazeData( matImage, rectFace, sPath )
 {
 	std::array<float, 8> arOutput = Forward( matImage( rectFace ) );
+	/*
 	std::wcout << "Output:" << std::endl;
 	std::wcout << "\t" << arOutput[ 0 ] << std::endl;
 	std::wcout << "\t" << arOutput[ 1 ] << std::endl;
@@ -183,6 +184,7 @@ CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV
 	std::wcout << "\t" << arOutput[ 5 ] << std::endl;
 	std::wcout << "\t" << arOutput[ 6 ] << std::endl;
 	std::wcout << "\t" << arOutput[ 7 ] << std::endl;
+	*/
 
 	ptEyeLeft = cv::Point( (int) ( arOutput[ 4 ] * rectFace.width ), (int) ( arOutput[ 5 ] * rectFace.height ) );
 	ptEyeRight = cv::Point( (int) ( arOutput[ 6 ] * rectFace.width ), (int) ( arOutput[ 7 ] * rectFace.height ) );
@@ -204,9 +206,6 @@ CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV
 		-( vec2EyeRight[ 1 ] - matImage.rows / 2.0 ),
 		dFocalLength
 	} ) * dIPDFrac;
-
-	std::wcout << "Left: " << vec3EyeLeft << std::endl;
-	std::wcout << "Right: " << vec3EyeRight << std::endl;
 
 	rayEyeLeft = CRay( CVector<3>( { -0.5, 0, 0 } ), CVector<2>( { arOutput[ 0 ], arOutput[ 1 ] } ) );
 	rayEyeRight = CRay( CVector<3>( { 0.5, 0, 0 } ), CVector<2>( { arOutput[ 2 ], arOutput[ 3 ] } ) );

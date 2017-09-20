@@ -16,6 +16,7 @@ public:
 	~CGazeData( void ) override = default;
 
 	CData MergeReference( const std::vector<CData> &vecData );
+	void PrintDiff( const CData &dataref ) const;
 	
 	std::string ToString( unsigned uPrecision = std::numeric_limits<double>::max_digits10 ) const;
 	

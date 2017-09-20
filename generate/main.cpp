@@ -405,6 +405,7 @@ int wmain( int argc, WCHAR **argv )
 					if( it != vecData.end( ) )
 					{
 						it->LoadImage( );
+						detected.PrintDiff( *it );
 						detected.Show( "Window", *it );
 					}
 					else

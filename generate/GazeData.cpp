@@ -361,7 +361,19 @@ CData CGazeData::MergeReference( const std::vector<CData> &vecData )
 	rayEyeRight *= vec2Gaze[ 1 ];
 	return data;
 }
-	
+
+void CGazeData::PrintDiff( const CData &dataref ) const
+{
+	std::wcout << "Eye left:" << std::endl;
+	std::wcout << "  Angle: " << CRay( dataref.vec3EyeLeft, dataref.vec3GazePoint - dataref.vec3EyeLeft ).AmplitudeRepresentation( ) - rayEyeLeft.AmplitudeRepresentation( ) << std::endl;
+
+	std::wcout << "Eye right:" << std::endl;
+	std::wcout << "  Angle: " << CRay( dataref.vec3EyeRight, dataref.vec3GazePoint - dataref.vec3EyeRight ).AmplitudeRepresentation( ) - rayEyeRight.AmplitudeRepresentation( ) << std::endl;
+
+	std::wcout << "GazePoint: " << dataref.vec3GazePoint - vec3GazePoint << " (" << ( dataref.vec3GazePoint - vec3GazePoint ).Abs( ) << "m)" << std::endl;
+	std::wcout << "Ref. Distance: " << dataref.vec3EyeLeft[ 2 ] << "m" << std::endl;
+}
+
 std::string CGazeData::ToString( unsigned uPrecision ) const
 {
 	std::ostringstream out;
