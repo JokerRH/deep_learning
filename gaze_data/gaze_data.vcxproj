@@ -76,16 +76,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Users\Rainer\Documents\Visual Studio 2015\pthread\include;D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\include;D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK\Header;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Users\Rainer\Documents\Visual Studio 2015\pthread\lib\x64;D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK_64\Library;D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\x64\vc14\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>Path\pthread\include;Path\Opencv-3.2.0\build\include;Path\EDSDKv0306W\Windows\EDSDK\Header;$(IncludePath)</IncludePath>
+    <LibraryPath>Path\pthread\lib\x64;Path\EDSDKv0306W\Windows\EDSDK_64\Library;Path\Opencv-3.2.0\build\x64\vc14\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\Users\Rainer\Documents\Visual Studio 2015\pthread\include;D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK\Header;D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Users\Rainer\Documents\Visual Studio 2015\pthread\lib\x64;D:\Users\Rainer\Documents\Visual Studio 2015\Opencv-3.2.0\build\x64\vc14\lib;D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK_64\Library;$(LibraryPath)</LibraryPath>
+    <IncludePath>Path\pthread\include;Path\EDSDKv0306W\Windows\EDSDK\Header;Path\Opencv-3.2.0\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>Path\pthread\lib\x64;Path\Opencv-3.2.0\build\x64\vc14\lib;Path\EDSDKv0306W\Windows\EDSDK_64\Library;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
