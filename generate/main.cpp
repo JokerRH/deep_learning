@@ -2,22 +2,27 @@
 #	define _USE_MATH_DEFINES
 #endif
 #include <math.h>
+#include <Windows.h>
+#undef LoadImage
+#undef ERROR
+#undef STRICT
 
 #include "Columbia.h"
 #include "Custom.h"
 #include "GazeData.h"
 #include "Detect.h"
+#include "Canon.h"
+#include "Display.h"
 #include <stdlib.h>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <locale>
-#include <Windows.h>
 #include <Shlwapi.h>
 #include <Pathcch.h>
 #include <opencv2\highgui.hpp>
 
-#undef LoadImage
+DWORD g_dwMainThreadID;
 
 std::wstring StrToWStr( const std::string &str )
 {
@@ -51,6 +56,7 @@ bool CreateCVWindow( const std::string &sWindow )
 
 int wmain( int argc, WCHAR **argv )
 {
+	g_dwMainThreadID = GetCurrentThreadId( );
 	std::wstring sExecPath;
 	{
 		WCHAR szPath[ MAX_PATH ];
@@ -64,6 +70,76 @@ int wmain( int argc, WCHAR **argv )
 		sExecPath = std::wstring( szPath );
 	}
 
+	if( argc >= 2 )
+	{
+#ifdef WITH_CAFFE
+		if( !_wcsicmp( argv[ 1 ], L"live" ) )
+		{
+			int iReturn = EXIT_FAILURE;
+			if( !CDetect::Init( sExecPath ) )
+				goto LIVE_EXIT;
+
+			if( !CCanon::Init( ) )
+				goto LIVE_DETECT;
+
+			CCanon *pCamera;
+			try
+			{
+				pCamera = CCanon::SelectCamera( );
+			}
+			catch( int i )
+			{
+				if( i == 27 )
+					iReturn = EXIT_SUCCESS;
+
+				goto LIVE_CANON;
+			}
+
+			if( !pCamera )
+			{
+				system( "PAUSE" );
+				iReturn = EXIT_SUCCESS;
+				goto LIVE_CANON;
+			}
+
+			if( !pCamera->StartLiveView( ) )
+				goto LIVE_CAMERA;
+
+			if( !CreateCVWindow( "Window" ) )
+				goto LIVE_LIVEVIEW;
+
+			try
+			{
+				CDisplay::ShowLive( "Window", *pCamera );
+			}
+			catch( int i )
+			{
+				if( i == 27 )
+					iReturn = EXIT_SUCCESS;
+
+				goto LIVE_WINDOW;
+			}
+
+			iReturn = EXIT_SUCCESS;
+
+LIVE_WINDOW:
+			cv::destroyAllWindows( );
+LIVE_LIVEVIEW:
+			pCamera->StopLiveView( );
+LIVE_CAMERA:
+			delete pCamera;
+LIVE_CANON:
+			CCanon::Terminate( );
+LIVE_DETECT:
+			CDetect::Terminate( );
+LIVE_EXIT:
+			if( iReturn != EXIT_SUCCESS )
+				system( "PAUSE" );
+
+			return iReturn;
+		}
+#endif
+	}
 	if( argc >= 3 )
 	{
 		if( !_wcsicmp( argv[ 1 ], L"show" ) )
@@ -83,7 +159,7 @@ int wmain( int argc, WCHAR **argv )
 				{
 					data.LoadImage( );
 					std::wcout << "Showing" << data.sImage << std::endl;
-					data.Show( "Window" );
+					CDisplay::ShowImage( "Window", data );
 				}
 			}
 			catch( int i )
@@ -230,7 +306,7 @@ int wmain( int argc, WCHAR **argv )
 					if( !data.IsValid( ) )
 						continue;
 
-					import.Show( "Window", data );
+					CDisplay::ShowImage( "Window", import, data );
 				}
 			}
 			catch( int i )
@@ -251,7 +327,7 @@ int wmain( int argc, WCHAR **argv )
 			return EXIT_SUCCESS;
 		}
 #ifdef WITH_CAFFE
-		else if( !_wcsicmp( argv[ 1 ], L"run" ) )
+		else if( !_wcsicmp( argv[ 1 ], L"run" ) )	//run szPath dFOV [szRefPath]*
 		{
 			double dFOV = std::wcstod( argv[ 3 ], nullptr );
 			std::wstring sImage;
@@ -321,13 +397,14 @@ int wmain( int argc, WCHAR **argv )
 					{
 						it->LoadImage( );
 						detected.PrintDiff( *it );
-						detected.Show( "Window", *it );
+						CDisplay::ShowImage( "Window", detected, *it );
 					}
 					else
 					{
 						if( argc >= 5 )
 							std::wcout << "Reference for image \"" << detected.sImage << "\" not found" << std::endl;
-						detected.Show( "Window" );
+
+						CDisplay::ShowImage( "Window", detected );
 					}
 				}
 			}

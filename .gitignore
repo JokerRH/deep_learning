@@ -249,3 +249,4 @@ ModelManifest.xml
 /generate/Models
 /generate/include
 /generate/lib
+/generate/doxygen/html

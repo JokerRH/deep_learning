@@ -35,6 +35,16 @@ CVector<2> CRay::AmplitudeRepresentation( void ) const
 	return vec2Angles;
 }
 
+CVector<3> CRay::GetMin( void ) const
+{
+	return CVector<3>::GetMin( { m_vec3Origin, m_vec3Origin + m_vec3Dir } );
+}
+
+CVector<3> CRay::GetMax( void ) const
+{
+	return CVector<3>::GetMax( { m_vec3Origin, m_vec3Origin + m_vec3Dir } );
+}
+
 void CRay::Render( cv::Mat &matImage, const cv::Scalar &colorPoint, const cv::Scalar &colorLine, double dLength, int iRadius, int iPointThickness, int iLineThickness ) const
 {
 	CVector<3> vec3Endp = ( *this )( dLength );

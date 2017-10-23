@@ -3,14 +3,16 @@
 #include "Vector.h"
 #include "Matrix.h"
 #include "Transformation.h"
+#include "RenderObject.h"
 #include <opencv2/core/types.hpp>
 
-class CRay
+class CRay : public CRenderObject
 {
 public:
 	CRay( const CVector<3> &vec3Origin, const CVector<3> &vec3Dir );
 	CRay( const CVector<3> &vec3Origin, CVector<2> vec2Amp );
 	CRay( void );
+	~CRay( void ) override = default;
 
 	CRay( const CRay &other ) = default;
 	CRay &operator=( const CRay &other ) = default;
@@ -32,11 +34,14 @@ public:
 	CRay &operator/=( const double &other );
 	CRay &operator+=( const CVector<3> &other );
 	CVector<2> AmplitudeRepresentation( void ) const;
+
+	CVector<3> GetMin( void ) const override;
+	CVector<3> GetMax( void ) const override;
 	
 	void Render( cv::Mat &matImage, const cv::Scalar &colorPoint, const cv::Scalar &colorLine, double dLength = 1, int iRadius = 3, int iPointThickness = -1, int iLineThickness = 1 ) const;
 
 	friend std::wostream &operator<<( std::wostream &smOut, const CRay &ray );
-	std::wstring ToString( unsigned int uPrecision = 2 ) const;
+	std::wstring ToString( unsigned int uPrecision = 2 ) const override;
 
 	CVector<3> m_vec3Origin;
 	CVector<3> m_vec3Dir;

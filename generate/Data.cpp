@@ -1,3 +1,9 @@
+/**
+	\file
+	\author Rainer Heinelt
+	\brief CData implementation
+*/
+
 #include "Data.h"
 #include "Scenery.h"
 #include "Render\Transformation.h"
@@ -33,6 +39,16 @@ std::wfstream CData::s_smFileWrite;
 CQueue<CData> CData::s_QueueWrite( 10 );
 std::vector<pthread_t> CData::s_vecThreadWrite;
 
+/**
+	\fn static bool CData::Init( const std::wstring &sPath )
+	\brief Initializes this class
+	\param[in]	sPath	Path to the OpenCV Haarcascade folder
+	\retval		true	Class sucessfully initialized
+	\retval		false	Error initializing (failed to load Haarcascade)
+	\asdf
+
+	Loads the OpenCV Haarcascade for face detection (\see CData::s_FaceCascade)
+*/
 bool CData::Init( const std::wstring &sPath )
 {
 	WCHAR szPath[ MAX_PATH ];
@@ -46,6 +62,17 @@ bool CData::Init( const std::wstring &sPath )
 	return true;
 }
 
+/**
+	\fn
+	\brief Opens the file for writing
+	\param[in]	sFile		File to be written to
+	\param[in]	uNumThreads	Number of write threads (\see CData::s_vecThreadWrite)
+	\retval		true		Sucessfully initialized writer
+	\retval		false		Failed to initialized writer
+
+	If it doesn't exist, creates the directory the file should be stored in, then opens the file for writing.
+	Write threads (\see CData::s_vecThreadWrite) are created.
+*/
 bool CData::OpenWrite( const std::wstring &sFile, unsigned uNumThreads )
 {
 	s_sPathWrite = GetPath( sFile );
@@ -229,6 +256,13 @@ CData::CData( const std::wstring &sLine, const std::wstring &sPath, bool fLoadIm
 	LoadImage( );
 }
 
+/**
+	\brief Loads the image from disk
+	\retval	true	Sucessfully loaded the image
+	\retval	false	Failed to load the image
+
+	Loads the image by combining CData::sRootPath and CData::sImage.
+*/
 bool CData::LoadImage( void )
 {
 	WCHAR szFullPattern[ MAX_PATH ];

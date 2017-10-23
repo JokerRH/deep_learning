@@ -9,6 +9,7 @@ class CRenderObject
 public:
 	static CVector<3> GetMin( const std::initializer_list<const CRenderObject *> &list );
 	static CVector<3> GetMax( const std::initializer_list<const CRenderObject *> &list );
+	static CVector<3> GetDim( const CVector<3> &vec3Min, const CVector<3> &vec3Max );
 	static CVector<3> GetDim( const std::initializer_list<const CRenderObject *> &list );
 	static CRenderBox GetBox( const std::initializer_list<const CRenderObject *> &list );
 

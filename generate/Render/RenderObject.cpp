@@ -7,12 +7,10 @@ CVector<3> CRenderObject::GetMin( const std::initializer_list<const CRenderObjec
 {
 	CVector<3> vec3Min( { 0 } );
 	CVector<3> vec3ObjectMin( { 0 } );
-	for( std::initializer_list<const CRenderObject *>::const_iterator it = list.begin( ); it < list.end( ); it++ )
+	for( const CRenderObject *pObject : list )
 	{
-		vec3ObjectMin = ( *it )->GetMin( );
-		vec3Min[ 0 ] = std::min( vec3Min[ 0 ], vec3ObjectMin[ 0 ] );
-		vec3Min[ 1 ] = std::min( vec3Min[ 1 ], vec3ObjectMin[ 1 ] );
-		vec3Min[ 2 ] = std::min( vec3Min[ 2 ], vec3ObjectMin[ 2 ] );
+		vec3ObjectMin = pObject->GetMin( );
+		vec3Min = CVector<3>::GetMin( { vec3Min, vec3ObjectMin } );
 	}
 
 	return vec3Min;
@@ -22,15 +20,22 @@ CVector<3> CRenderObject::GetMax( const std::initializer_list<const CRenderObjec
 {
 	CVector<3> vec3Max( { 0 } );
 	CVector<3> vec3ObjectMax( { 0 } );
-	for( std::initializer_list<const CRenderObject *>::const_iterator it = list.begin( ); it < list.end( ); it++ )
+	for( const CRenderObject *pObject : list )
 	{
-		vec3ObjectMax = ( *it )->GetMax( );
-		vec3Max[ 0 ] = std::max( vec3Max[ 0 ], vec3ObjectMax[ 0 ] );
-		vec3Max[ 1 ] = std::max( vec3Max[ 1 ], vec3ObjectMax[ 1 ] );
-		vec3Max[ 2 ] = std::max( vec3Max[ 2 ], vec3ObjectMax[ 2 ] );
+		vec3ObjectMax = pObject->GetMax( );
+		vec3Max = CVector<3>::GetMin( { vec3Max, vec3ObjectMax } );
 	}
 
 	return vec3Max;
+}
+
+CVector<3> CRenderObject::GetDim( const CVector<3> &vec3Min, const CVector<3> &vec3Max )
+{
+	CVector<3> vec3Dim = vec3Min - vec3Max;
+	vec3Dim[ 0 ] = std::abs( vec3Dim[ 0 ] );
+	vec3Dim[ 1 ] = std::abs( vec3Dim[ 1 ] );
+	vec3Dim[ 2 ] = std::abs( vec3Dim[ 2 ] );
+	return vec3Dim;
 }
 
 CVector<3> CRenderObject::GetDim( const std::initializer_list<const CRenderObject *> &list )

@@ -42,6 +42,9 @@ public:
 	CVector<3> CrossProduct( const CVector<3> &other );
 	CVector<3> &MakeCrossProduct( const CVector<3> &other );
 
+	static CVector<uRows> GetMin( const std::initializer_list<const CVector<uRows>> &list );
+	static CVector<uRows> GetMax( const std::initializer_list<const CVector<uRows>> &list );
+
 	template<unsigned int uRows>
 	friend std::wostream &operator<<( std::wostream& smOut, const CVector<uRows> &dt );
 	std::wstring ToString( unsigned int uPrecision = 2 ) const;
@@ -257,6 +260,34 @@ inline CVector<3> &CVector<3>::MakeCrossProduct( const CVector<3> &other )
 	m_adValues[ 1 ] = dY;
 	m_adValues[ 2 ] = dZ;
 	return *this;
+}
+
+template<unsigned int uRows>
+inline CVector<uRows> CVector<uRows>::GetMin( const std::initializer_list<const CVector<uRows>> &list )
+{
+	if( !list.size( ) )
+		return CVector<3>( { 0 } );
+
+	CVector<uRows> vecReturn( *list.begin( ) );
+	for( const CVector<uRows> *pvec = list.begin( ) + 1; pvec < list.end( ); pvec++ )
+		for( unsigned u = 0; u < uRows; u++ )
+			vecReturn.m_adValues[ u ] = std::min( vecReturn.m_adValues[ u ], pvec->m_adValues[ u ] );
+
+	return vecReturn;
+}
+
+template<unsigned int uRows>
+inline CVector<uRows> CVector<uRows>::GetMax( const std::initializer_list<const CVector<uRows>>& list )
+{
+	if( !list.size( ) )
+		return CVector<3>( { 0 } );
+
+	CVector<uRows> vecReturn( *list.begin( ) );
+	for( const CVector<uRows> *pvec = list.begin( ) + 1; pvec < list.end( ); pvec++ )
+		for( unsigned u = 0; u < uRows; u++ )
+			vecReturn.m_adValues[ u ] = std::max( vecReturn.m_adValues[ u ], pvec->m_adValues[ u ] );
+
+	return vecReturn;
 }
 
 template<unsigned int uRows>

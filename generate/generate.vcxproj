@@ -74,8 +74,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>include;$(IncludePath)</IncludePath>
-    <LibraryPath>lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK\Header;include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK_64\Library;lib;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -83,8 +83,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>include;$(IncludePath)</IncludePath>
-    <LibraryPath>lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK\Header;include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Users\Rainer\Documents\Visual Studio 2015\EDSDKv0306W\Windows\EDSDK_64\Library;lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -116,7 +116,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Shlwapi.lib;;Pathcch.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Shlwapi.lib;Pathcch.lib;pthreadVC2.lib;EDSDK.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>false</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
@@ -154,7 +154,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>Shlwapi.lib;Pathcch.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Shlwapi.lib;Pathcch.lib;pthreadVC2.lib;EDSDK.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -162,7 +162,9 @@
     <ClInclude Include="Columbia.h" />
     <ClInclude Include="Custom.h" />
     <ClInclude Include="Data.h" />
+    <ClInclude Include="Display.h" />
     <ClInclude Include="GazeData.h" />
+    <ClInclude Include="Canon.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="Render\Matrix.h" />
     <ClInclude Include="Render\Ray.h" />
@@ -179,10 +181,12 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Canon.cpp" />
     <ClCompile Include="Columbia.cpp" />
     <ClCompile Include="Custom.cpp" />
     <ClCompile Include="Data.cpp" />
     <ClCompile Include="Detect.cpp" />
+    <ClCompile Include="Display.cpp" />
     <ClCompile Include="GazeData.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Queue.cpp" />
@@ -216,6 +220,7 @@
     <Import Project="..\packages\protobuf-vc140.2.6.1.1\build\native\protobuf-vc140.targets" Condition="Exists('..\packages\protobuf-vc140.2.6.1.1\build\native\protobuf-vc140.targets')" />
     <Import Project="..\packages\opencvdefault.redist.3.1.0\build\native\opencvdefault.redist.targets" Condition="Exists('..\packages\opencvdefault.redist.3.1.0\build\native\opencvdefault.redist.targets')" />
     <Import Project="..\packages\opencvdefault.3.1.0\build\native\opencvdefault.targets" Condition="Exists('..\packages\opencvdefault.3.1.0\build\native\opencvdefault.targets')" />
+    <Import Project="..\packages\Libjpeg-Turbo.1.5.15\build\native\Libjpeg-Turbo.targets" Condition="Exists('..\packages\Libjpeg-Turbo.1.5.15\build\native\Libjpeg-Turbo.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -232,5 +237,6 @@
     <Error Condition="!Exists('..\packages\protobuf-vc140.2.6.1.1\build\native\protobuf-vc140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\protobuf-vc140.2.6.1.1\build\native\protobuf-vc140.targets'))" />
     <Error Condition="!Exists('..\packages\opencvdefault.redist.3.1.0\build\native\opencvdefault.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\opencvdefault.redist.3.1.0\build\native\opencvdefault.redist.targets'))" />
     <Error Condition="!Exists('..\packages\opencvdefault.3.1.0\build\native\opencvdefault.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\opencvdefault.3.1.0\build\native\opencvdefault.targets'))" />
+    <Error Condition="!Exists('..\packages\Libjpeg-Turbo.1.5.15\build\native\Libjpeg-Turbo.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Libjpeg-Turbo.1.5.15\build\native\Libjpeg-Turbo.targets'))" />
   </Target>
 </Project>
