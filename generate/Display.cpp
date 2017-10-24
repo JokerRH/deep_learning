@@ -114,16 +114,18 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 
 void CDisplay::ShowLive( const std::string & sWindow, CCanon &camera )
 {
-	CDisplay display( 16.0 / 9.0 );
-
 	camera.WaitForLiveView( );
 	cv::Mat matImage;
-	double dFOV = 27;
+	double dFOV;
+	camera.TakePicture( matImage, dFOV );	//Get FOV value
+
+	CDisplay display( (double) matImage.cols / matImage.rows );
 
 	MSG msg;
+	bool fUpdate = true;
 	while( true )
 	{
-		if( !PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) )
+		if( !PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) && fUpdate )
 		{
 			//No message available, update image
 			if( !camera.DownloadLiveView( matImage ) )
@@ -163,9 +165,18 @@ void CDisplay::ShowLive( const std::string & sWindow, CCanon &camera )
 				switch( uKey )
 				{
 				case 13:	//Enter
-					return;
+					if( fUpdate )
+						return;
+
+					fUpdate = true;
+					break;
 				case 27:	//Escape
 					throw 27;
+				case 80:	//'p'
+					camera.TakePicture( );
+					break;
+				//default:
+					//std::wcout << "Key: " << uKey << std::endl;
 				}
 				break;
 			}
@@ -177,6 +188,14 @@ void CDisplay::ShowLive( const std::string & sWindow, CCanon &camera )
 				display.m_Scenery.Draw( display.GetSceneryROI( ) );
 				display.Show( sWindow );
 			}
+			break;
+		case CANON_IMAGE_READY:
+			if( !( (CCanon *) msg.wParam )->DownloadImage( matImage, dFOV, (EdsDirectoryItemRef) msg.lParam ) )
+				break;
+
+			display.SetData( matImage, dFOV );
+			display.Show( sWindow );
+			fUpdate = false;
 			break;
 		}
 

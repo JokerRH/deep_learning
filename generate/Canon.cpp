@@ -199,8 +199,6 @@ CCanon::~CCanon( void )
 
 bool CCanon::TakePicture( void )
 {
-	return false;
-#if 0
 	EdsError err = EdsSendCommand( m_Camera, kEdsCameraCommand_PressShutterButton, kEdsCameraCommand_ShutterButton_Completely );
 	if( err != EDS_ERR_OK )
 	{
@@ -215,22 +213,39 @@ bool CCanon::TakePicture( void )
 		return false;
 	}
 
-	BOOL fReturn;
+	return true;
+}
+
+bool CCanon::TakePicture( cv::Mat &matImage, double &dFOV )
+{
+	if( !TakePicture( ) )
+		return false;
+
 	MSG msg;
-	while( !m_fHasImage )
+	BOOL fReturn;
+	while( true )
 	{
 		if( ( fReturn = GetMessage( &msg, NULL, 0, 0 ) ) == -1 )
-			return EXIT_FAILURE;	//Error
+			throw 27;	//Error
 
 		switch( msg.message )
 		{
 		case WM_QUIT:
+			std::wcout << "Quit message" << std::endl;
 			PostQuitMessage( 0 );
-			break;
+			throw 27;
 		case WM_KEYDOWN:
+			{
+				unsigned uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_CHAR );
+				switch( uKey )
+				{
+				case 27:
+					throw 27;
+				}
+			}
 			break;
-		case WM_KEYUP:
-			break;
+		case CANON_IMAGE_READY:
+			return ( (CCanon *) msg.wParam )->DownloadImage( matImage, dFOV, (EdsDirectoryItemRef) msg.lParam );
 		}
 
 		if( fReturn > 0 )
@@ -239,23 +254,6 @@ bool CCanon::TakePicture( void )
 			DispatchMessage( &msg );
 		}
 	}
-
-	img = m_img;
-
-	while( fReturn )
-		while( ( fReturn = PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) > 0 )
-		{
-			TranslateMessage( &msg );
-			DispatchMessage( &msg );
-		}
-
-	return true;
-#endif
-}
-
-bool CCanon::TakePicture( cv::Mat &matImage )
-{
-	return false;
 }
 
 bool CCanon::StartLiveView( void )
@@ -332,6 +330,114 @@ void CCanon::WaitForLiveView( void )
 	}
 }
 
+bool CCanon::DownloadImage( cv::Mat & matImage, double & dFOV, EdsDirectoryItemRef directoryItem )
+{
+	bool fReturn = false;
+	EdsStreamRef stream;
+	EdsDirectoryItemInfo dirItemInfo;
+	EdsError err = EdsGetDirectoryItemInfo( directoryItem, &dirItemInfo );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to get information about directory item: %s\n", GetErrorMacro( err ) );
+		goto RETURN;
+	}
+
+	if( ( dirItemInfo.format & 0xFF ) != kEdsTargetImageType_Jpeg )
+	{
+		EdsDownloadCancel( directoryItem );
+		goto RETURN;
+	}
+
+	//Create memory stream
+	err = EdsCreateMemoryStream( dirItemInfo.size, &stream );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to create memory stream: %s\n", GetErrorMacro( err ) );
+		goto RETURN;
+	}
+
+	//Download
+	err = EdsDownload( directoryItem, dirItemInfo.size, stream );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to download item: %s\n", GetErrorMacro( err ) );
+		goto STREAM;
+	}
+
+	err = EdsDownloadComplete( directoryItem );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to complete download: %s\n", GetErrorMacro( err ) );
+		goto STREAM;
+	}
+
+	EdsImageRef image;
+	err = EdsCreateImageRef( stream, &image );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to get image from stream: %s\n", GetErrorMacro( err ) );
+		goto STREAM;
+	}
+
+	EdsRational ratVal;
+	err = EdsGetPropertyData( image, kEdsPropID_FocalLength, 0, sizeof( EdsRational ), &ratVal );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to get focal length: %s\n", GetErrorMacro( err ) );
+		goto IMAGE;
+	}
+	//printf( "Focal length: %f\n", ratVal.numerator / (double) ratVal.denominator );
+
+	EdsRelease( stream );
+	EdsImageInfo imageInfo;
+	err = EdsGetImageInfo( image, kEdsImageSrc_FullView, &imageInfo );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to get image info: %s\n", GetErrorMacro( err ) );
+		EdsRelease( image );
+		goto RETURN;
+	}
+
+	err = EdsCreateMemoryStream( 0, &stream );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to create memory stream: %s\n", GetErrorMacro( err ) );
+		EdsRelease( image );
+		goto RETURN;
+	}
+
+	err = EdsGetImage( image, kEdsImageSrc_FullView, kEdsTargetImageType_RGB, imageInfo.effectiveRect, imageInfo.effectiveRect.size, stream );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to get image: %s\n", GetErrorMacro( err ) );
+		goto IMAGE;
+	}
+
+	EdsRelease( image );
+
+	unsigned char *pbData;
+	err = EdsGetPointer( stream, (EdsVoid**) &pbData );
+	if( err != EDS_ERR_OK )
+	{
+		fprintf( stderr, "Failed to get image data: %s\n", GetErrorMacro( err ) );
+		goto STREAM;
+	}
+
+	cv::cvtColor( cv::Mat( imageInfo.height, imageInfo.width, CV_8UC3, pbData ), matImage, CV_BGR2RGB );
+	dFOV = 2 * 180 / M_PI * atan( CANON_SENSOR_DIAG / ( 2 * ratVal.numerator / (double) ratVal.denominator ) );
+	PostThreadMessage( g_dwMainThreadID, CANON_IMAGE_READY, 0, 0 );
+
+	fReturn = true;
+	goto STREAM;
+
+IMAGE:
+	EdsRelease( image );
+STREAM:
+	EdsRelease( stream );
+RETURN:
+	return fReturn;
+}
+
 bool CCanon::DownloadLiveView( cv::Mat & matImage )
 {
 	EdsError err = EDS_ERR_OK;
@@ -339,22 +445,20 @@ bool CCanon::DownloadLiveView( cv::Mat & matImage )
 	EdsStreamRef stream = NULL;
 	unsigned char* data = NULL;
 	EdsUInt64 qwSize = 0;
+	bool fReturn = false;
 
 	err = EdsCreateMemoryStream( 0, &stream );
-
 	if( err != EDS_ERR_OK )
 	{
 		std::cout << "Download Live View Image Error in Function EdsCreateMemoryStream: " << err << "\n";
-		return false;
+		goto RETURN;
 	}
 
 	err = EdsCreateEvfImageRef( stream, &image );
-
 	if( err != EDS_ERR_OK )
 	{
 		std::cout << "Download Live View Image Error in Function EdsCreateEvfImageRef: " << err << "\n";
-		return false;
-
+		goto STREAM;
 	}
 
 	err = EdsDownloadEvfImage( m_Camera, image );
@@ -363,41 +467,35 @@ bool CCanon::DownloadLiveView( cv::Mat & matImage )
 	case EDS_ERR_OK:
 		break;
 	case EDS_ERR_OBJECT_NOTREADY:
-		return false;
+		goto IMAGE;
 	default:
 		std::cout << "Download Live View Image Error in Function EdsDownloadEvfImage: " << err << "\n";
-		return false;
+		goto IMAGE;
 	}
 
-	err = EdsGetPointer( stream, (EdsVoid**) & data );
+	err = EdsGetPointer( stream, (EdsVoid **) &data );
 	if( err != EDS_ERR_OK )
 	{
 		std::cout << "Download Live View Image Error in Function EdsGetPointer: " << err << "\n";
-		return false;
+		goto IMAGE;
 	}
 
 	err = EdsGetLength( stream, &qwSize );
 	if( err != EDS_ERR_OK )
 	{
 		std::cout << "Download Live View Image Error in Function EdsGetLength: " << err << "\n";
-		return false;
+		goto IMAGE;
 	}
 
 	matImage = cv::imdecode( std::vector<char>( data, data + qwSize ), 1 );
 
-	if( stream )
-	{
-		EdsRelease( stream );
-		stream = NULL;
-	}
-
-	if( image )
-	{
-		EdsRelease( image );
-		image = NULL;
-	}
-
-	return true;
+	fReturn = true;
+IMAGE:
+	EdsRelease( image );
+STREAM:
+	EdsRelease( stream );
+RETURN:
+	return fReturn;
 }
 
 const char *CCanon::GetErrorMacro( EdsError err )
@@ -720,16 +818,15 @@ const char *CCanon::GetErrorMacro( EdsError err )
 	return nullptr;
 }
 
-EdsError EDSCALLBACK CCanon::HandleObjectEvent( EdsObjectEvent event, EdsBaseRef object, EdsVoid *context )
+EdsError EDSCALLBACK CCanon::HandleObjectEvent( EdsObjectEvent event, EdsBaseRef object, EdsVoid *pContext )
 {
 	switch( event )
 	{
 	case kEdsObjectEvent_DirItemRequestTransfer:
-		( (CCanon *) context )->DownloadImage( object );
+		PostThreadMessage( g_dwMainThreadID, CANON_IMAGE_READY, (WPARAM) pContext, (LPARAM) object );
 		break;
 	//default:
 		//printf( "Received object event\n" );
-		//break;
 	}
 	return EDS_ERR_OK;
 }
@@ -742,125 +839,15 @@ EdsError EDSCALLBACK CCanon::HandlePropertyEvent( EdsPropertyEvent event, EdsPro
 		switch( propertyID )
 		{
 		case kEdsPropID_Evf_OutputDevice:
-			PostThreadMessage( g_dwMainThreadID, CANON_LIVEVIEW_READY, 0, 0 );
+			PostThreadMessage( g_dwMainThreadID, CANON_LIVEVIEW_READY, (WPARAM) pContext, 0 );
 			break;
+		//default:
+			//printf( "Property %d changed\n", propertyID );
 		}
 		break;
 	//default:
-		//printf( "Received property event\n" );
-		//break;
+		//printf( "Received property event %d\n", event );
 	}
-	return EDS_ERR_OK;
-}
-
-EdsError CCanon::DownloadImage( EdsDirectoryItemRef directoryItem )
-{
-	EdsStreamRef stream;
-	EdsDirectoryItemInfo dirItemInfo;
-	EdsError err = EdsGetDirectoryItemInfo( directoryItem, &dirItemInfo );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to get information about directory item: %s\n", GetErrorMacro( err ) );
-		return err;
-	}
-
-	if( ( dirItemInfo.format & 0xFF ) != kEdsTargetImageType_Jpeg )
-	{
-		EdsDownloadCancel( directoryItem );
-		return EDS_ERR_OK;
-	}
-
-	//Create memory stream
-	err = EdsCreateMemoryStream( dirItemInfo.size, &stream );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to create memory stream: %s\n", GetErrorMacro( err ) );
-		return err;
-	}
-
-	//Download
-	err = EdsDownload( directoryItem, dirItemInfo.size, stream );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to download item: %s\n", GetErrorMacro( err ) );
-		EdsRelease( stream );
-		return err;
-	}
-
-	err = EdsDownloadComplete( directoryItem );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to complete download: %s\n", GetErrorMacro( err ) );
-		EdsRelease( stream );
-		return err;
-	}
-
-	EdsImageRef image;
-	err = EdsCreateImageRef( stream, &image );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to get image from stream: %s\n", GetErrorMacro( err ) );
-		EdsRelease( stream );
-		return err;
-	}
-
-	EdsRational ratVal;
-	err = EdsGetPropertyData( image, kEdsPropID_FocalLength, 0, sizeof( EdsRational ), &ratVal );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to get focal length: %s\n", GetErrorMacro( err ) );
-		EdsRelease( stream );
-		EdsRelease( image );
-		return err;
-	}
-	printf( "Focal length: %f\n", ratVal.numerator / (double) ratVal.denominator );
-
-	EdsRelease( stream );
-	EdsImageInfo imageInfo;
-	err = EdsGetImageInfo( image, kEdsImageSrc_FullView, &imageInfo );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to get image info: %s\n", GetErrorMacro( err ) );
-		EdsRelease( image );
-		EdsRelease( stream );
-		return err;
-	}
-
-	err = EdsCreateMemoryStream( 0, &stream );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to create memory stream: %s\n", GetErrorMacro( err ) );
-		return err;
-	}
-
-	err = EdsGetImage( image, kEdsImageSrc_FullView, kEdsTargetImageType_RGB, imageInfo.effectiveRect, imageInfo.effectiveRect.size, stream );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to get image: %s\n", GetErrorMacro( err ) );
-		EdsRelease( image );
-		return err;
-	}
-
-	EdsRelease( image );
-
-	unsigned char *pbData;
-	err = EdsGetPointer( stream, (EdsVoid**) &pbData );
-	if( err != EDS_ERR_OK )
-	{
-		fprintf( stderr, "Failed to get image data: %s\n", GetErrorMacro( err ) );
-		EdsRelease( stream );
-		return err;
-	}
-
-	/*
-	double d = 43.3 / ( 2 * ratVal.numerator / (double) ratVal.denominator );
-	m_img = CImage( cv::Mat( imageInfo.height, imageInfo.width, CV_8UC3, pbData ), 2 * 180 / M_PI * atan( CANON_SENSOR_DIAG / ( 2 * ratVal.numerator / (double) ratVal.denominator ) ), time( nullptr ), "Image_Canon" );
-	printf( "FoV: %f\n", m_img.dFOV );
-	cv::cvtColor( m_img.matImage, m_img.matImage, CV_BGR2RGB );
-	m_fHasImage = true;
-	*/
-
-	EdsRelease( stream );
 	return EDS_ERR_OK;
 }
 

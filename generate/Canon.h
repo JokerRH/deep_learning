@@ -9,6 +9,7 @@
 #define CANON_SENSOR_DIAG 26.81976883
 
 #define CANON_LIVEVIEW_READY	WM_USER
+#define CANON_IMAGE_READY		WM_USER + 1
 
 class CCanon
 {
@@ -22,19 +23,19 @@ public:
 
 	~CCanon( void );
 	bool TakePicture( void );
-	bool TakePicture( cv::Mat &matImage );
+	bool TakePicture( cv::Mat &matImage, double &dFOV );
 	bool StartLiveView( void );
 	void StopLiveView( void );
 	void WaitForLiveView( void );
 
+	bool DownloadImage( cv::Mat &matImage, double &dFOV, EdsDirectoryItemRef directoryItem );
 	bool DownloadLiveView( cv::Mat &matImage );
 
 	static const char *GetErrorMacro( EdsError err );
 
 private:
-	static EdsError EDSCALLBACK HandleObjectEvent( EdsObjectEvent event, EdsBaseRef object, EdsVoid *context );
+	static EdsError EDSCALLBACK HandleObjectEvent( EdsObjectEvent event, EdsBaseRef object, EdsVoid *pContext );
 	static EdsError EDSCALLBACK HandlePropertyEvent( EdsPropertyEvent event, EdsPropertyID propertyID, EdsUInt32 dwParam, EdsVoid *pContext );
-	EdsError DownloadImage( EdsDirectoryItemRef directoryItem );
 
 	CCanon( EdsCameraRef &camera );
 	static bool s_fInitialized;
