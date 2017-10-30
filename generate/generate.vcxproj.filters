@@ -19,6 +19,12 @@
     <Filter Include="Source Files\Render">
       <UniqueIdentifier>{4b1bbcdb-b754-4fda-b5f7-15cad48d59e5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Camera">
+      <UniqueIdentifier>{26e5638c-3cf4-49f7-ac56-1cedcc286f20}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Camera">
+      <UniqueIdentifier>{4a559459-7787-4efc-8af6-00a1c1aac67e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Data.h">
@@ -78,11 +84,17 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Canon.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Display.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera\Camera.h">
+      <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera\Canon.h">
+      <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera\Webcam.h">
+      <Filter>Header Files\Camera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -128,11 +140,17 @@
     <ClCompile Include="Detect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Canon.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Display.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera\Camera.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera\Canon.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera\Webcam.cpp">
+      <Filter>Source Files\Camera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

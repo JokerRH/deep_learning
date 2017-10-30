@@ -112,7 +112,7 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 	}
 }
 
-void CDisplay::ShowLive( const std::string & sWindow, CCanon &camera )
+void CDisplay::ShowLive( const std::string & sWindow, CCamera &camera )
 {
 	camera.WaitForLiveView( );
 	cv::Mat matImage;
@@ -189,8 +189,8 @@ void CDisplay::ShowLive( const std::string & sWindow, CCanon &camera )
 				display.Show( sWindow );
 			}
 			break;
-		case CANON_IMAGE_READY:
-			if( !( (CCanon *) msg.wParam )->DownloadImage( matImage, dFOV, (EdsDirectoryItemRef) msg.lParam ) )
+		case CAMERA_IMAGE_READY:
+			if( !( (CCamera *) msg.wParam )->DownloadImage( matImage, dFOV, (void *) msg.lParam ) )
 				break;
 
 			display.SetData( matImage, dFOV );

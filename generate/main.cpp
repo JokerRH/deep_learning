@@ -11,7 +11,7 @@
 #include "Custom.h"
 #include "GazeData.h"
 #include "Detect.h"
-#include "Canon.h"
+#include "Camera/Camera.h"
 #include "Display.h"
 #include <stdlib.h>
 #include <iostream>
@@ -79,13 +79,13 @@ int wmain( int argc, WCHAR **argv )
 			if( !CDetect::Init( sExecPath ) )
 				goto LIVE_EXIT;
 
-			if( !CCanon::Init( ) )
+			if( !CCamera::Init( ) )
 				goto LIVE_DETECT;
 
-			CCanon *pCamera;
+			CCamera *pCamera;
 			try
 			{
-				pCamera = CCanon::SelectCamera( );
+				pCamera = CCamera::SelectCamera( );
 			}
 			catch( int i )
 			{
@@ -129,7 +129,7 @@ LIVE_LIVEVIEW:
 LIVE_CAMERA:
 			delete pCamera;
 LIVE_CANON:
-			CCanon::Terminate( );
+			CCamera::Terminate( );
 LIVE_DETECT:
 			CDetect::Terminate( );
 LIVE_EXIT:

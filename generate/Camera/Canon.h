@@ -1,6 +1,7 @@
 #pragma once
-#ifdef _MSC_VER
+#ifdef WITH_EDSDK
 
+#include "Camera.h"
 #include <vector>
 #include <EDSDK.h>
 #include <Windows.h>
@@ -8,28 +9,27 @@
 
 #define CANON_SENSOR_DIAG 26.81976883
 
-#define CANON_LIVEVIEW_READY	WM_USER
-#define CANON_IMAGE_READY		WM_USER + 1
-
-class CCanon
+class CCanon : public CCamera
 {
 public:
 	static bool Init( void );
 	static bool ThreadInit( void );
 	static void Terminate( void );
 	static void ThreadTerminate( void );
-	static bool IsInitialized( void );
-	static CCanon *SelectCamera( void );
 
-	~CCanon( void );
-	bool TakePicture( void );
-	bool TakePicture( cv::Mat &matImage, double &dFOV );
-	bool StartLiveView( void );
-	void StopLiveView( void );
-	void WaitForLiveView( void );
+	static std::vector<std::string> GetCameraList( void );
 
-	bool DownloadImage( cv::Mat &matImage, double &dFOV, EdsDirectoryItemRef directoryItem );
-	bool DownloadLiveView( cv::Mat &matImage );
+	CCanon( unsigned uIndex );
+
+	~CCanon( void ) override;
+	bool TakePicture( void ) override;
+	bool TakePicture( cv::Mat &matImage, double &dFOV ) override;
+	bool StartLiveView( void ) override;
+	void StopLiveView( void ) override;
+	void WaitForLiveView( void ) override;
+
+	bool DownloadImage( cv::Mat &matImage, double &dFOV, void *pImageRef ) override;
+	bool DownloadLiveView( cv::Mat &matImage ) override;
 
 	static const char *GetErrorMacro( EdsError err );
 
@@ -38,13 +38,7 @@ private:
 	static EdsError EDSCALLBACK HandlePropertyEvent( EdsPropertyEvent event, EdsPropertyID propertyID, EdsUInt32 dwParam, EdsVoid *pContext );
 
 	CCanon( EdsCameraRef &camera );
-	static bool s_fInitialized;
 
 	EdsCameraRef m_Camera;
 };
-
-inline bool CCanon::IsInitialized( void )
-{
-	return s_fInitialized;
-}
 #endif

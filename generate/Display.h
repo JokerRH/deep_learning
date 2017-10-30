@@ -8,7 +8,7 @@
 #undef STRICT
 
 #include "Data.h"
-#include "Canon.h"
+#include "Camera\Camera.h"
 #include "Scenery.h"
 #include <string>
 #include <opencv2\core.hpp>
@@ -23,7 +23,7 @@ class CDisplay
 public:
 	static cv::Rect Show( const std::string &sWindow, const cv::Mat &matImage );
 	static void ShowImage( const std::string &sWindow, const CData &data, const CData &dataref = CData( ) );
-	static void ShowLive( const std::string &sWindow, CCanon &camera );
+	static void ShowLive( const std::string &sWindow, CCamera &camera );
 
 private:
 	CDisplay( double dRatio );

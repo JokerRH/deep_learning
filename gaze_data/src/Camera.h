@@ -1,3 +1,4 @@
+#include "..\..\generate\Camera.h"
 #pragma once
 
 #include "Image.h"
@@ -33,4 +34,8 @@ inline CBaseCamera::~CBaseCamera( void )
 inline CCamera::~CCamera( void )
 {
 	
+}
+
+inline void CCamera::StopLiveView( void )
+{
 }
