@@ -42,6 +42,8 @@ namespace caffe
 	extern void Register_InnerProductLayer( void );
 	extern void Register_DropoutLayer( void );
 	extern void Register_MemoryDataLayer( void );
+	extern void Register_MVNLayer( void );
+	extern void Register_BatchNormLayer( void );
 }
 
 bool CDetect::Init( const std::wstring &sPath )
@@ -72,6 +74,8 @@ bool CDetect::Init( const std::wstring &sPath )
 	Register_InnerProductLayer( );
 	Register_DropoutLayer( );
 	Register_MemoryDataLayer( );
+	Register_MVNLayer( );
+	Register_BatchNormLayer( );
 
 	caffe::Caffe::set_mode( caffe::Caffe::CPU );
 
