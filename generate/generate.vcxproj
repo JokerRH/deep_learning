@@ -180,7 +180,6 @@
     <ClInclude Include="Render\Vector.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Scenery.h" />
-    <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera\Camera.cpp" />
