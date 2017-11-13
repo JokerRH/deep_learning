@@ -251,3 +251,5 @@ ModelManifest.xml
 /generate/lib
 /generate/doxygen/html
 /generate/EDSDKv0306W
+/demo_linux/Include
+/demo_linux/readme
