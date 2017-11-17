@@ -32,7 +32,7 @@ Loads the OpenCV Haarcascade for face detection (\see CData::s_FaceCascade)
 */
 bool CData::Init( const filestring_t &sPath )
 {
-	if( !s_FaceCascade.load( compat::ToString( compat::PathCombine_d( sPath, "haarcascade_frontalface_default.xml" ) ) ) )
+	if( !s_FaceCascade.load( compat::ToString( compat::PathCombine_d( sPath, CFSTR( "haarcascade_frontalface_default.xml" ) ) ) ) )
 	{
 		std::wcerr << "Unable to load face cascade" << std::endl;
 		return false;

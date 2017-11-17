@@ -8,7 +8,6 @@
 #include "Render/Vector.h"
 #include "Render/Matrix.h"
 #include "Render/Transformation.h"
-#include "Queue.h"
 #include <limits>
 #include <fstream>
 #include <regex>

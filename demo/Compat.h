@@ -15,9 +15,13 @@
 #ifdef _MSC_VER
 typedef wchar_t filechar_t;
 typedef std::wstring filestring_t;
+
+#define CFSTR( str )	L#str
 #else
 typedef char filechar_t;
 typedef std::string filestring_t;
+
+#define CFSTR( str )	#str
 #endif
 
 namespace compat
