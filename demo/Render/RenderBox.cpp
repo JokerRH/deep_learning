@@ -40,29 +40,29 @@ CRenderBox::CRenderBox( const CVector<3> &vec3Min, const CVector<3> &vec3Max ) :
 #define BOX( plane, a, b, c, d )\
 	if( fPlane & plane )\
 	{\
-		if( fLine & CRenderPlane::PLANE_LEFT )\
+		if( fLine & (unsigned char) CRenderPlane::PLANE_LEFT )\
 		{\
 			abIndices[ 0 ] = a;\
 			abIndices[ 1 ] = b;\
-			fLine &= ~CRenderPlane::PLANE_LEFT;\
+			fLine &= (unsigned char) ~CRenderPlane::PLANE_LEFT;\
 		}\
-		else if( fLine & CRenderPlane::PLANE_BOTTOM )\
+		else if( fLine & (unsigned char) CRenderPlane::PLANE_BOTTOM )\
 		{\
 			abIndices[ 0 ] = b;\
 			abIndices[ 1 ] = c;\
-			fLine &= ~CRenderPlane::PLANE_BOTTOM;\
+			fLine &= (unsigned char) ~CRenderPlane::PLANE_BOTTOM;\
 		}\
-		else if( fLine & CRenderPlane::PLANE_RIGHT )\
+		else if( fLine & (unsigned char) CRenderPlane::PLANE_RIGHT )\
 		{\
 			abIndices[ 0 ] = c;\
 			abIndices[ 1 ] = d;\
-			fLine &= ~CRenderPlane::PLANE_RIGHT;\
+			fLine &= (unsigned char) ~CRenderPlane::PLANE_RIGHT;\
 		}\
-		else if( fLine & CRenderPlane::PLANE_TOP )\
+		else if( fLine & (unsigned char) CRenderPlane::PLANE_TOP )\
 		{\
 			abIndices[ 0 ] = d;\
 			abIndices[ 1 ] = a;\
-			fLine &= ~CRenderPlane::PLANE_TOP;\
+			fLine &= (unsigned char) ~CRenderPlane::PLANE_TOP;\
 		}\
 		else\
 		{\
@@ -70,7 +70,7 @@ CRenderBox::CRenderBox( const CVector<3> &vec3Min, const CVector<3> &vec3Max ) :
 			throw 0;\
 		}\
 		if( !fLine )\
-			fPlane &= ~plane;\
+			fPlane &= (unsigned char) ~plane;\
 	}
 
 std::array<unsigned char, 2> CRenderBox::GetLineIndices( unsigned char &fPlane, unsigned char &fLine ) const
@@ -95,53 +95,53 @@ std::array<unsigned char, 2> CRenderBox::GetLineIndices( unsigned char &fPlane, 
 std::array<unsigned char, 4> CRenderBox::GetPlaneIndices( unsigned char &fPlane ) const
 {
 	std::array<unsigned char, 4> abIndices;
-	if( fPlane & BOX_FRONT )
+	if( fPlane & (unsigned char) BOX_FRONT )
 	{
 		abIndices[ 0 ] = 0;
 		abIndices[ 1 ] = 1;
 		abIndices[ 2 ] = 2;
 		abIndices[ 3 ] = 3;
-		fPlane &= ~BOX_FRONT;
+		fPlane &= (unsigned char) ~BOX_FRONT;
 	}
-	else if( fPlane & BOX_BACK )
+	else if( fPlane & (unsigned char) BOX_BACK )
 	{
 		abIndices[ 0 ] = 4;
 		abIndices[ 1 ] = 5;
 		abIndices[ 2 ] = 6;
 		abIndices[ 3 ] = 7;
-		fPlane &= ~BOX_BACK;
+		fPlane &= (unsigned char) ~BOX_BACK;
 	}
-	else if( fPlane & BOX_LEFT )
+	else if( fPlane & (unsigned char) BOX_LEFT )
 	{
 		abIndices[ 0 ] = 0;
 		abIndices[ 1 ] = 4;
 		abIndices[ 2 ] = 5;
 		abIndices[ 3 ] = 1;
-		fPlane &= ~BOX_LEFT;
+		fPlane &= (unsigned char) ~BOX_LEFT;
 	}
-	else if( fPlane & BOX_RIGHT )
+	else if( fPlane & (unsigned char) BOX_RIGHT )
 	{
 		abIndices[ 0 ] = 3;
 		abIndices[ 1 ] = 2;
 		abIndices[ 2 ] = 6;
 		abIndices[ 3 ] = 7;
-		fPlane &= ~BOX_RIGHT;
+		fPlane &= (unsigned char) ~BOX_RIGHT;
 	}
-	else if( fPlane & BOX_TOP )
+	else if( fPlane & (unsigned char) BOX_TOP )
 	{
 		abIndices[ 0 ] = 0;
 		abIndices[ 1 ] = 3;
 		abIndices[ 2 ] = 7;
 		abIndices[ 3 ] = 4;
-		fPlane &= ~BOX_TOP;
+		fPlane &= (unsigned char) ~BOX_TOP;
 	}
-	else if( fPlane & BOX_BOTTOM )
+	else if( fPlane & (unsigned char) BOX_BOTTOM )
 	{
 		abIndices[ 0 ] = 1;
 		abIndices[ 1 ] = 2;
 		abIndices[ 2 ] = 6;
 		abIndices[ 3 ] = 5;
-		fPlane &= ~BOX_BOTTOM;
+		fPlane &= (unsigned char) ~BOX_BOTTOM;
 	}
 	else
 	{

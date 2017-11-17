@@ -5,9 +5,9 @@
 #pragma once
 
 #include "Compat.h"
-#include "Render\Vector.h"
-#include "Render\Matrix.h"
-#include "Render\Transformation.h"
+#include "Render/Vector.h"
+#include "Render/Matrix.h"
+#include "Render/Transformation.h"
 #include "Queue.h"
 #include <limits>
 #include <fstream>

@@ -35,29 +35,29 @@ void CRenderPlane::RenderContent( cv::Mat &matImage, const cv::Scalar &color ) c
 std::array<unsigned char, 2> CRenderPlane::GetLineIndices( unsigned char &fLine ) const
 {
 	std::array<unsigned char, 2> abIndices;
-	if( fLine & PLANE_LEFT )
+	if( fLine & (unsigned char) PLANE_LEFT )
 	{
 		abIndices[ 0 ] = 0;
 		abIndices[ 1 ] = 1;
-		fLine &= ~PLANE_LEFT;
+		fLine &= (unsigned char) ~PLANE_LEFT;
 	}
-	else if( fLine & PLANE_BOTTOM )
+	else if( fLine & (unsigned char) PLANE_BOTTOM )
 	{
 		abIndices[ 0 ] = 1;
 		abIndices[ 1 ] = 2;
-		fLine &= ~PLANE_BOTTOM;
+		fLine &= (unsigned char) ~PLANE_BOTTOM;
 	}
-	else if( fLine & PLANE_RIGHT )
+	else if( fLine & (unsigned char) PLANE_RIGHT )
 	{
 		abIndices[ 0 ] = 2;
 		abIndices[ 1 ] = 3;
-		fLine &= ~PLANE_RIGHT;
+		fLine &= (unsigned char) ~PLANE_RIGHT;
 	}
-	else if( fLine & PLANE_TOP )
+	else if( fLine & (unsigned char) PLANE_TOP )
 	{
 		abIndices[ 0 ] = 3;
 		abIndices[ 1 ] = 0;
-		fLine &= ~PLANE_TOP;
+		fLine &= (unsigned char) ~PLANE_TOP;
 	}
 	else
 	{

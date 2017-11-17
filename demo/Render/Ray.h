@@ -4,7 +4,7 @@
 #include "Matrix.h"
 #include "Transformation.h"
 #include "RenderObject.h"
-#include <opencv2/core/types_c.h>
+#include <opencv2/core/core.hpp>
 
 class CRay : public CRenderObject
 {

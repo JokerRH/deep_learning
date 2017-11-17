@@ -6,8 +6,8 @@
 
 #include "Data.h"
 #include "Compat.h"
-#include "Render\Transformation.h"
-#include "Render\Ray.h"
+#include "Render/Transformation.h"
+#include "Render/Ray.h"
 #include <iostream>
 #ifndef _USE_MATH_DEFINES
 #	define _USE_MATH_DEFINES
@@ -32,7 +32,7 @@ Loads the OpenCV Haarcascade for face detection (\see CData::s_FaceCascade)
 */
 bool CData::Init( const filestring_t &sPath )
 {
-	if( !s_FaceCascade.load( compat::ToString( compat::PathCombine( sPath, "haarcascade_frontalface_default.xml" ) ) ) )
+	if( !s_FaceCascade.load( compat::ToString( compat::PathCombine_d( sPath, "haarcascade_frontalface_default.xml" ) ) ) )
 	{
 		std::wcerr << "Unable to load face cascade" << std::endl;
 		return false;
@@ -59,5 +59,5 @@ CData::CData( const cv::Mat &matImage, const cv::Rect &rectFace, const filestrin
 	if( sPath.empty( ) )
 		return;
 
-	sImage = compat::PathFindFileName( sPath );
+	sImage = compat::PathFindFileName_d( sPath );
 }

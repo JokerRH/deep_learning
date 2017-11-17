@@ -35,8 +35,8 @@ public:
 	CMatrix<uRows, uCols> &Invert( void );
 	CMatrix<uCols, uRows> Transposed( void ) const;
 
-	template<unsigned int uRows, unsigned int uCols>
-	friend std::wostream &operator<<( std::wostream &smOut, const CMatrix<uRows, uCols> &mat );
+	template<unsigned int uRowsE, unsigned int uColsE>
+	friend std::wostream &operator<<( std::wostream &smOut, const CMatrix<uRowsE, uColsE> &mat );
 	std::wstring ToString( unsigned int uPrecision = 2 ) const;
 
 protected:
@@ -121,7 +121,8 @@ inline double CMatrix<4, 4>::Determinant( void ) const
 template<unsigned int uRows, unsigned int uCols>
 inline double CMatrix<uRows, uCols>::Determinant( void ) const
 {
-	static_assert( false, "Not yet implemented" );
+	//static_assert( false, "Not yet implemented" );
+	throw 0;
 	return 0.0;
 }
 
@@ -273,7 +274,8 @@ inline CMatrix<4, 4> CMatrix<4, 4>::Inverse( void ) const
 template<unsigned int uRows, unsigned int uCols>
 inline CMatrix<uRows, uCols> CMatrix<uRows, uCols>::Inverse( void ) const
 {
-	static_assert( false, "Not yet implemented" );
+	//static_assert( false, "Not yet implemented" );
+	throw 0;
 	return CMatrix<uRows, uCols>( );
 }
 
@@ -341,7 +343,8 @@ inline CMatrix<4, 4> &CMatrix<4, 4>::Invert( void )
 template<unsigned int uRows, unsigned int uCols>
 inline CMatrix<uRows, uCols> &CMatrix<uRows, uCols>::Invert( void )
 {
-	static_assert( false, "Not yet implemented" );
+	//static_assert( false, "Not yet implemented" );
+	throw 0;
 	return *this;
 }
 

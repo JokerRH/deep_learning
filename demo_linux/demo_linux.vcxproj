@@ -61,35 +61,42 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>Include;../shared;$(IncludePath)</IncludePath>
-    <SourcePath>../shared;$(SourcePath)</SourcePath>
+    <IncludePath>Include;$(IncludePath)</IncludePath>
+    <SourcePath>$(SourcePath)</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="..\shared\Render\Ray.cpp" />
-    <ClCompile Include="..\shared\Render\RenderBox.cpp" />
-    <ClCompile Include="..\shared\Render\RenderLine.cpp" />
-    <ClCompile Include="..\shared\Render\RenderObject.cpp" />
-    <ClCompile Include="..\shared\Render\RenderPlane.cpp" />
-    <ClCompile Include="..\shared\Render\Transformation.cpp" />
-    <ClCompile Include="Compat.cpp" />
-    <ClCompile Include="Data.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClInclude Include="..\demo\Compat.h" />
+    <ClInclude Include="..\demo\Data.h" />
+    <ClInclude Include="..\demo\Render\Matrix.h" />
+    <ClInclude Include="..\demo\Render\Ray.h" />
+    <ClInclude Include="..\demo\Render\Render.h" />
+    <ClInclude Include="..\demo\Render\RenderBox.h" />
+    <ClInclude Include="..\demo\Render\RenderLine.h" />
+    <ClInclude Include="..\demo\Render\RenderObject.h" />
+    <ClInclude Include="..\demo\Render\RenderPlane.h" />
+    <ClInclude Include="..\demo\Render\RenderPoint.h" />
+    <ClInclude Include="..\demo\Render\Transformation.h" />
+    <ClInclude Include="..\demo\Render\Vector.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\shared\Render\Matrix.h" />
-    <ClInclude Include="..\shared\Render\Ray.h" />
-    <ClInclude Include="..\shared\Render\Render.h" />
-    <ClInclude Include="..\shared\Render\RenderBox.h" />
-    <ClInclude Include="..\shared\Render\RenderLine.h" />
-    <ClInclude Include="..\shared\Render\RenderObject.h" />
-    <ClInclude Include="..\shared\Render\RenderPlane.h" />
-    <ClInclude Include="..\shared\Render\RenderPoint.h" />
-    <ClInclude Include="..\shared\Render\Transformation.h" />
-    <ClInclude Include="..\shared\Render\Vector.h" />
-    <ClInclude Include="Compat.h" />
-    <ClInclude Include="Data.h" />
+    <ClCompile Include="..\demo\Compat.cpp" />
+    <ClCompile Include="..\demo\Data.cpp" />
+    <ClCompile Include="..\demo\main.cpp" />
+    <ClCompile Include="..\demo\Render\Ray.cpp" />
+    <ClCompile Include="..\demo\Render\RenderBox.cpp" />
+    <ClCompile Include="..\demo\Render\RenderLine.cpp" />
+    <ClCompile Include="..\demo\Render\RenderObject.cpp" />
+    <ClCompile Include="..\demo\Render\RenderPlane.cpp" />
+    <ClCompile Include="..\demo\Render\Transformation.cpp" />
   </ItemGroup>
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalOptions>-I"../shared" %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

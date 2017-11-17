@@ -4,7 +4,7 @@
 #include "Matrix.h"
 #include "Transformation.h"
 #include <sstream>
-#include <opencv2\core.hpp>
+#include <opencv2/core/core.hpp>
 
 class CRenderLine;
 class CRenderPlane : public CRenderObject

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string.h>
 
-#ifdef __MSC_VER
+#ifdef _MSC_VER
 #	include <malloc.h>
 #else
 #	include <alloca.h>
@@ -11,10 +11,10 @@
 #	include <fnmatch.h>
 #endif
 
-#ifdef __MSC_VER
-int compat::CreateDirectory( const filestring_t &sPath )
+#ifdef _MSC_VER
+int compat::CreateDirectory_d( const filestring_t &sPath )
 {
-	if( !CreateDirectory( s_sPathWrite.c_str( ), nullptr ) )
+	if( !CreateDirectory( sPath.c_str( ), nullptr ) )
 		return 0;
 
 	if( GetLastError( ) == ERROR_ALREADY_EXISTS )
@@ -23,7 +23,7 @@ int compat::CreateDirectory( const filestring_t &sPath )
 	return 2;
 }
 
-filestring_t compat::PathRemoveFileSpec( const filestring_t &sPath )
+filestring_t compat::PathRemoveFileSpec_d( const filestring_t &sPath )
 {
 	filechar_t *szPath = (filechar_t *) _alloca( ( sPath.size( ) + 1 ) * sizeof( filechar_t ) );
 	if( !szPath )
@@ -79,7 +79,7 @@ void compat::FindFilesRecursively( const filestring_t &sDir, const filestring_t 
 	}
 }
 #else
-int compat::CreateDirectory( const filestring_t &sPath )
+int compat::CreateDirectory_d( const filestring_t &sPath )
 {
 	if( !mkdir( sPath.c_str( ), 0700 ) )
 		return 0;
@@ -91,7 +91,7 @@ int compat::CreateDirectory( const filestring_t &sPath )
 		if( stat( sPath.c_str( ), &sb ) )
 			return 1;
 
-		if( sb.st_mode & S_IFMT == S_IFDIR )
+		if( ( sb.st_mode & S_IFMT ) == S_IFDIR )
 			return 0;
 
 		return 1;
@@ -100,7 +100,7 @@ int compat::CreateDirectory( const filestring_t &sPath )
 	return 2;
 }
 
-filestring_t compat::PathRemoveFileSpec( const filestring_t &sPath )
+filestring_t compat::PathRemoveFileSpec_d( const filestring_t &sPath )
 {
 	filechar_t *szPath = (filechar_t *) alloca( ( sPath.size( ) + 1 ) * sizeof( filechar_t ) );
 	if( !szPath )
@@ -113,7 +113,7 @@ filestring_t compat::PathRemoveFileSpec( const filestring_t &sPath )
 	return filestring_t( szPath );
 }
 
-filestring_t compat::PathFindFileName( const filestring_t &sPath )
+filestring_t compat::PathFindFileName_d( const filestring_t &sPath )
 {
 	filechar_t *szPath = (filechar_t *) alloca( ( sPath.size( ) + 1 ) * sizeof( filechar_t ) );
 	if( !szPath )
@@ -136,10 +136,10 @@ void compat::FindFilesRecursively( const filestring_t &sDir, const filestring_t 
 	}
 
 	FTSENT *pNode;
-	while( pNode = fts_read( pFileSystem ) )
+	while( ( pNode = fts_read( pFileSystem ) ) )
 	{
 		if( !fnmatch( sPattern.c_str( ), pNode->fts_name, 0 ) )
-			vecsFiles.push_back( compat::PathCombine( pNode->fts_path, pNode->fts_name ) );
+			vecsFiles.push_back( compat::PathCombine_d( pNode->fts_path, pNode->fts_name ) );
 	}
 
 	fts_close( pFileSystem );

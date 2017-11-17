@@ -45,8 +45,8 @@ public:
 	static CVector<uRows> GetMin( const std::initializer_list<const CVector<uRows>> &list );
 	static CVector<uRows> GetMax( const std::initializer_list<const CVector<uRows>> &list );
 
-	template<unsigned int uRows>
-	friend std::wostream &operator<<( std::wostream& smOut, const CVector<uRows> &dt );
+	template<unsigned int uRowsE>
+	friend std::wostream &operator<<( std::wostream& smOut, const CVector<uRowsE> &dt );
 	std::wstring ToString( unsigned int uPrecision = 2 ) const;
 	double Angle( const CVector<3> &other ) const;
 
