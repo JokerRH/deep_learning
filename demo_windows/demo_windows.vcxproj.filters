@@ -19,6 +19,12 @@
     <Filter Include="Source Files\Render">
       <UniqueIdentifier>{235363e2-832a-4576-9760-3acb3b305685}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Camera">
+      <UniqueIdentifier>{f81523b6-cabe-4910-abd3-b00aa4d34b7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Camera">
+      <UniqueIdentifier>{6b37a36e-2061-4760-aa11-ba014fd87258}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\demo\Render\Matrix.h">
@@ -57,6 +63,27 @@
     <ClInclude Include="..\demo\Data.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\demo\GazeData.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Detect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Scenery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Camera\Camera.h">
+      <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Camera\Canon.h">
+      <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Camera\Webcam.h">
+      <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Display.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\demo\Render\Ray.cpp">
@@ -84,6 +111,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\demo\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\GazeData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Detect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Scenery.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Camera\Camera.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Camera\Canon.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Camera\Webcam.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Display.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

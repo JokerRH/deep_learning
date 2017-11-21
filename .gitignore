@@ -253,3 +253,5 @@ ModelManifest.xml
 /generate/EDSDKv0306W
 /demo_linux/Include
 /demo_linux/readme
+/demo_windows/include
+/demo_windows/lib

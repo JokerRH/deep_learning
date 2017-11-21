@@ -72,6 +72,7 @@
   <ItemGroup>
     <ClInclude Include="..\demo\Compat.h" />
     <ClInclude Include="..\demo\Data.h" />
+    <ClInclude Include="..\demo\GazeData.h" />
     <ClInclude Include="..\demo\Render\Matrix.h" />
     <ClInclude Include="..\demo\Render\Ray.h" />
     <ClInclude Include="..\demo\Render\Render.h" />
@@ -86,6 +87,7 @@
   <ItemGroup>
     <ClCompile Include="..\demo\Compat.cpp" />
     <ClCompile Include="..\demo\Data.cpp" />
+    <ClCompile Include="..\demo\GazeData.cpp" />
     <ClCompile Include="..\demo\main.cpp" />
     <ClCompile Include="..\demo\Render\Ray.cpp" />
     <ClCompile Include="..\demo\Render\RenderBox.cpp" />

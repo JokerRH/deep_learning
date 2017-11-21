@@ -1,27 +1,22 @@
 #ifdef WITH_CAFFE
 
 #include "Detect.h"
-#include <Windows.h>
-#include <Shlwapi.h>
-#include <Pathcch.h>
-#include <opencv2\imgproc.hpp>
-#include <opencv2\objdetect.hpp>
+#include "compat.h"
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/objdetect/objdetect.hpp>
 #ifndef _USE_MATH_DEFINES
 #	define _USE_MATH_DEFINES
 #endif
 #include <math.h>
 
-#pragma warning( push )
-#pragma warning( disable: 4244 )
-#pragma warning( disable: 4996 )
-#define _SCL_SECURE_NO_WARNINGS
-#include <caffe\layer_factory.hpp>
-#pragma warning( pop )
+#include <caffe/layer_factory.hpp>
 
-#ifdef _DEBUG
-#	pragma comment( lib, "libcaffe_D.lib" )
-#else
-#	pragma comment( lib, "libcaffe.lib" )
+#ifdef _MSC_VER
+#	ifdef _DEBUG
+#		pragma comment( lib, "libcaffe_D.lib" )
+#	else
+#		pragma comment( lib, "libcaffe.lib" )
+#	endif
 #endif
 
 caffe::Net<float> *CDetect::s_pNetwork;
@@ -52,17 +47,11 @@ bool CDetect::Init( const std::wstring &sPath )
 	if( !CData::Init( sPath ) )
 		return false;
 
-	std::wstring sNetwork;
+	filestring_t sNetwork = compat::PathCombine_d( sPath, CFSTR( "network" ) );
+	if( !compat::PathFolderExists_d( sNetwork ) )
 	{
-		WCHAR szPath[ MAX_PATH ];
-		PathCchCombine( szPath, MAX_PATH, sPath.c_str( ), L"network" );
-		if( !PathFileExists( szPath ) )
-		{
-			std::wcerr << "Network folder \"" << szPath << "\" does not exist" << std::endl;
-			return false;
-		}
-
-		sNetwork = std::wstring( szPath );
+		std::wcerr << "Network folder \"" << sNetwork << "\" does not exist" << std::endl;
+		return false;
 	}
 
 	Register_InputLayer( );
@@ -82,57 +71,36 @@ bool CDetect::Init( const std::wstring &sPath )
 	caffe::Caffe::set_mode( caffe::Caffe::CPU );
 
 	//Get proto and model file path
-	std::string sProtoFile;
-	std::string sMeanFile;
-	std::string sModelFile;
+	filestring_t sProtoFile = compat::PathCombine_d( sNetwork, CFSTR( "deploy.prototxt" ) );
+	if( !compat::PathFileExists_d( sProtoFile ) )
 	{
-		WCHAR szFullPattern[ MAX_PATH ];
-		PathCchCombine( szFullPattern, MAX_PATH, sNetwork.c_str( ), L"deploy.prototxt" );
-		sProtoFile = std::string( szFullPattern, szFullPattern + wcslen( szFullPattern ) );
-		if( !PathFileExists( szFullPattern ) || GetFileAttributes( szFullPattern ) & FILE_ATTRIBUTE_DIRECTORY )
-		{
-			std::wcerr << "Protofile \"" << szFullPattern << "\" not found" << std::endl;
-			return false;
-		}
+		std::wcerr << "Protofile \"" << sProtoFile << "\" not found" << std::endl;
+		return false;
+	}
 
-		PathCchCombine( szFullPattern, MAX_PATH, sNetwork.c_str( ), L"data.binaryproto" );
-		sMeanFile = std::string( szFullPattern, szFullPattern + wcslen( szFullPattern ) );
-		if( !PathFileExists( szFullPattern ) || GetFileAttributes( szFullPattern ) & FILE_ATTRIBUTE_DIRECTORY )
-		{
-			std::wcerr << "Mean file \"" << szFullPattern << "\" not found" << std::endl;
-			return false;
-		}
+	filestring_t sMeanFile = compat::PathCombine_d( sNetwork, CFSTR( "data.binaryproto" ) );
+	if( !compat::PathFileExists_d( sMeanFile ) )
+	{
+		std::wcerr << "Mean file \"" << sMeanFile << "\" not found" << std::endl;
+		return false;
+	}
 
-		PathCchCombine( szFullPattern, MAX_PATH, sNetwork.c_str( ), L"*.caffemodel" );
-		WIN32_FIND_DATA modelFileData;
-		HANDLE hModelFile = FindFirstFile( szFullPattern, &modelFileData );
-		if( hModelFile == INVALID_HANDLE_VALUE )
+	filestring_t sModelFile;
+	{
+		std::vector<filestring_t> vecFiles;
+		compat::FindFilesRecursively( sNetwork, CFSTR( "*.caffemodel" ), vecFiles );
+		if( !vecFiles.size( ) )
 		{
-			FindClose( hModelFile );
 			std::wcout << "No caffemodel found in folder \"" << sNetwork << "\"" << std::endl;
 			return false;
 		}
 
-		do
-		{
-			if( modelFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
-				continue;
-
-			goto FOUND;
-		} while( FindNextFile( hModelFile, &modelFileData ) );
-
-		FindClose( hModelFile );
-		std::wcout << "No caffemodel file found in folder \"" << sNetwork << "\"" << std::endl;
-		return false;
-
-FOUND:
-		PathCchCombine( szFullPattern, MAX_PATH, sNetwork.c_str( ), modelFileData.cFileName );
-		sModelFile = std::string( szFullPattern, szFullPattern + wcslen( szFullPattern ) );
+		sModelFile = vecFiles.front( );
 	}
 
 	//Load network
-	s_pNetwork = new caffe::Net<float>( sProtoFile, caffe::TEST );
-	s_pNetwork->CopyTrainedLayersFrom( sModelFile );
+	s_pNetwork = new caffe::Net<float>( compat::ToString( sProtoFile ), caffe::TEST );
+	s_pNetwork->CopyTrainedLayersFrom( compat::ToString( sModelFile ) );
 
 	CHECK_EQ( s_pNetwork->num_inputs( ), 1 ) << "Network should have exactly one input.";
 	CHECK_EQ( s_pNetwork->num_outputs( ), 1 ) << "Network should have exactly one output.";
@@ -143,9 +111,9 @@ FOUND:
 	CHECK_EQ( pOutputLayer->channels( ), 8 ) << "Output layer should have 3 channels";
 
 	s_InputShape = cv::Size( pInputLayer->width( ), pInputLayer->height( ) );
-	if( !SetMean( sMeanFile ) )
+	if( !SetMean( compat::ToString( sMeanFile ) ) )
 	{
-		std::wcerr << "Failed to set mean file \"" << StrToWStr( sMeanFile ) << "\"" << std::endl;
+		std::wcerr << "Failed to set mean file \"" << sMeanFile << "\"" << std::endl;
 		delete s_pNetwork;
 		return false;
 	}
@@ -278,7 +246,7 @@ std::array<float, 8> CDetect::Forward( cv::Mat matImage )
 	pInputLayer->Reshape( 1, 3, s_InputShape.height, s_InputShape.width );
 	s_pNetwork->Reshape( );	//Forward dimension change to all layers
 
-	//Separate channels
+							//Separate channels
 	std::vector<cv::Mat> vecInputChannels;
 	{
 		float* prInputData = pInputLayer->mutable_cpu_data( );
@@ -297,7 +265,7 @@ std::array<float, 8> CDetect::Forward( cv::Mat matImage )
 
 	if( matImage.size( ) != s_InputShape )
 		cv::resize( matImage, matImage, s_InputShape );
-	
+
 	matImage.convertTo( matImage, CV_32FC3 );
 	cv::subtract( matImage, s_matMean, matImage );
 

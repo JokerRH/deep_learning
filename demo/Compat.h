@@ -6,6 +6,11 @@
 #	include <Windows.h>
 #	include <Pathcch.h>
 #	include <Shlwapi.h>
+
+#	undef ERROR
+#	undef STRICT
+#	undef min
+#	undef max
 #else
 #	include <sys/stat.h>
 #	include <sys/types.h>
@@ -16,7 +21,7 @@
 typedef wchar_t filechar_t;
 typedef std::wstring filestring_t;
 
-#define CFSTR( str )	L#str
+#define CFSTR( str )	L##str
 #else
 typedef char filechar_t;
 typedef std::string filestring_t;
@@ -32,6 +37,9 @@ namespace compat
 	filestring_t PathRemoveFileSpec_d( const filestring_t &sPath );
 	filestring_t PathFindFileName_d( const filestring_t &sPath );
 	void FindFilesRecursively( const filestring_t &sDir, const filestring_t &sPattern, std::vector<filestring_t> &vecsFiles );
+	bool PathFileExists_d( const filestring_t &sPath );
+	bool PathFolderExists_d( const filestring_t &sPath );
+	filestring_t GetFullPathName_d( const filestring_t &sPath );
 }
 
 #ifdef _MSC_VER
@@ -50,6 +58,25 @@ inline filestring_t compat::PathCombine_d( const filestring_t &sPath, const file
 inline filestring_t compat::PathFindFileName_d( const filestring_t &sPath )
 {
 	return filestring_t( PathFindFileName( sPath.c_str( ) ) );
+}
+
+inline bool compat::PathFileExists_d( const filestring_t &sPath )
+{
+	return PathFileExists( sPath.c_str( ) ) && !( GetFileAttributes( sPath.c_str( ) ) & FILE_ATTRIBUTE_DIRECTORY );
+}
+
+inline bool compat::PathFolderExists_d( const filestring_t & sPath )
+{
+	return PathFileExists( sPath.c_str( ) ) && ( GetFileAttributes( sPath.c_str( ) ) & FILE_ATTRIBUTE_DIRECTORY );
+}
+
+inline filestring_t compat::GetFullPathName_d( const filestring_t & sPath )
+{
+	WCHAR szPath[ MAX_PATH ];
+	if( !GetFullPathName( sPath.c_str( ), MAX_PATH, szPath, nullptr ) )
+		return filestring_t( );
+
+	return filestring_t( szPath );
 }
 #else
 inline std::string compat::ToString( const filestring_t &sString )

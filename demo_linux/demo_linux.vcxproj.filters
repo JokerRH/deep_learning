@@ -51,6 +51,9 @@
     <ClInclude Include="..\demo\Data.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\demo\GazeData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\demo\Render\Ray.cpp">
@@ -78,6 +81,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\demo\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\GazeData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
