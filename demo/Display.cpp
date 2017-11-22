@@ -1,8 +1,12 @@
 #include "Display.h"
 #include "Detect.h"
 #include <iostream>
-#include <opencv2\imgproc.hpp>
-#include <opencv2\highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+#ifndef _MSC_VER
+#	include <X11/Xlib.h>
+#endif
 
 cv::Rect CDisplay::Show( const std::string & sWindow, const cv::Mat & matImage )
 {
@@ -22,6 +26,7 @@ cv::Rect CDisplay::Show( const std::string & sWindow, const cv::Mat & matImage )
 
 void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const CData &dataref )
 {
+#ifdef _MSC_VER
 	CDisplay display( data );
 	display.DrawFace( data );
 
@@ -110,6 +115,54 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 			DispatchMessage( &msg );
 		}
 	}
+#else
+	CDisplay display( data );
+	display.DrawFace( data );
+
+	display.m_Scenery.Fit( ).Draw( display.GetSceneryROI( ) );
+	display.Show( sWindow );
+
+	bool fReference = false;
+	int iKey;
+	while( true )
+	{
+		iKey = cv::waitKey( 0 );
+		if( ProcessKey( display.m_Scenery, { fReference ? &dataref : &data }, iKey, false ) )
+		{
+			display.m_Scenery.Draw( display.GetSceneryROI( ) );
+			display.Show( sWindow );
+		}
+		switch( iKey )
+		{
+		case 9:		//Tab
+			if( !dataref.IsValid( ) )
+				break;
+
+			if( fReference )
+			{
+				display.m_matScreen = cv::Scalar::all( 255 );
+				display.m_Scenery = display.m_Scenery.GetTransformation( ) * CScenery( data );
+				display.DrawFace( data );
+			}
+			else
+			{
+				display.m_Scenery = display.m_Scenery.GetTransformation( ) * CScenery( dataref );
+				display.DrawFace( dataref );
+				putText( display.m_matScreen, display.m_sReference, display.m_ptText, display.m_iFontFace, display.m_dFontScale, cv::Scalar( 51, 153, 255 ), display.m_iFontThickness, 8 );
+			}
+
+			fReference = !fReference;
+			display.m_Scenery.Draw( display.GetSceneryROI( ) );
+			display.Show( sWindow );
+			break;
+		case 13:	//Enter
+			return;
+		case 27:	//Escape
+			throw 27;
+		}
+		break;
+	}
+#endif
 }
 
 #ifdef WITH_CAFFE
@@ -271,9 +324,17 @@ void CDisplay::SetData( const cv::Mat &matImage, double dFOV )
 
 cv::Size CDisplay::GetScreenResolution( void )
 {
+#ifdef _MSC_VER
 	RECT desktop;
 	GetWindowRect( GetDesktopWindow( ), &desktop );
 	return cv::Size( desktop.right, desktop.bottom );
+#else
+	Display *d = XOpenDisplay( nullptr );
+	Screen *s = DefaultScreenOfDisplay( d );
+	cv::Size size( s->width, s->height );
+	XCloseDisplay( d );
+	return size;
+#endif
 }
 
 void CDisplay::DrawFace( const CData &data )

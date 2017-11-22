@@ -15,6 +15,7 @@
 #	include <sys/stat.h>
 #	include <sys/types.h>
 #	include <unistd.h>
+#	include <stdlib.h>
 #endif
 
 #ifdef _MSC_VER
@@ -32,6 +33,7 @@ typedef std::string filestring_t;
 namespace compat
 {
 	std::string ToString( const filestring_t &sString );
+	std::wstring ToWString( const filestring_t &sString );
 	filestring_t PathCombine_d( const filestring_t &sPath, const filestring_t &sAppend );
 	int CreateDirectory_d( const filestring_t &sPath );
 	filestring_t PathRemoveFileSpec_d( const filestring_t &sPath );
@@ -46,6 +48,11 @@ namespace compat
 inline std::string compat::ToString( const filestring_t &sString )
 {
 	return std::string( sString.c_str( ), sString.c_str( ) + sString.length( ) );
+}
+
+inline std::wstring compat::ToWString( const filestring_t &sString )
+{
+	return sString;
 }
 
 inline filestring_t compat::PathCombine_d( const filestring_t &sPath, const filestring_t &sAppend )
@@ -84,8 +91,33 @@ inline std::string compat::ToString( const filestring_t &sString )
 	return sString;
 }
 
+inline std::wstring compat::ToWString( const filestring_t &sString )
+{
+	return std::wstring( sString.begin( ), sString.end( ) );
+}
+
 inline filestring_t compat::PathCombine_d( const filestring_t &sPath, const filestring_t &sAppend )
 {
 	return sPath + "/" + sAppend;
+}
+
+inline bool compat::PathFileExists_d( const filestring_t &sPath )
+{
+	struct stat sb;
+	return !stat( sPath.c_str( ), &sb ) && S_ISREG( sb.st_mode );
+}
+
+inline bool compat::PathFolderExists_d( const filestring_t & sPath )
+{
+	struct stat sb;
+	return !stat( sPath.c_str( ), &sb ) && S_ISDIR( sb.st_mode );
+}
+
+inline filestring_t compat::GetFullPathName_d( const filestring_t & sPath )
+{
+	char *szPath = realpath( sPath.c_str( ), nullptr );
+	filestring_t sFull( szPath );
+	free( szPath );
+	return sFull;
 }
 #endif

@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <Windows.h>
-#include <opencv2\core.hpp>
+#include <opencv2/core/core.hpp>
 
 #define CAMERA_LIVEVIEW_READY	WM_USER
 #define CAMERA_IMAGE_READY		WM_USER + 1

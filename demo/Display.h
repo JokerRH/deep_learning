@@ -1,18 +1,20 @@
 #pragma once
 
-#include <Windows.h>
-#include <Windowsx.h>
-#undef max
-#undef min
-#undef ERROR
-#undef STRICT
+#ifdef _MSC_VER
+#	include <Windows.h>
+#	include <Windowsx.h>
+#	undef max
+#	undef min
+#	undef ERROR
+#	undef STRICT
+#endif
 
 #include "Data.h"
-#include "Camera\Camera.h"
+#include "Camera/Camera.h"
 #include "Scenery.h"
 #include <string>
-#include <opencv2\core.hpp>
-#include <opencv2\highgui.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #ifndef _USE_MATH_DEFINES
 #	define _USE_MATH_DEFINES
 #endif
@@ -42,7 +44,10 @@ private:
 
 	static bool ProcessKey( CScenery &scenery, const CData *pBegin, const CData *pEnd, unsigned uKey, bool fVSC );
 	static bool ProcessKey( CScenery &scenery, std::initializer_list<const CData *> listData, unsigned uKey, bool fVSC );
+
+#ifdef _MSC_VER
 	bool ProcessMouse( CScenery &scenery, MSG &msg );
+#endif
 
 	std::string m_sReference = "Reference";
 	int m_iFontFace = cv::FONT_HERSHEY_SIMPLEX;
@@ -145,6 +150,7 @@ inline bool CDisplay::ProcessKey( CScenery &scenery, std::initializer_list<const
 	return ProcessKey( scenery, (const CData *) listData.begin( ), (const CData *) listData.end( ), uKey, fVSC );
 }
 
+#ifdef _MSC_VER
 inline bool CDisplay::ProcessMouse( CScenery &scenery, MSG &msg )
 {
 	switch( msg.message )
@@ -182,3 +188,4 @@ inline bool CDisplay::ProcessMouse( CScenery &scenery, MSG &msg )
 		return false;
 	}
 }
+#endif

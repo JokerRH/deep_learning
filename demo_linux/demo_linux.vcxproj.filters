@@ -13,6 +13,12 @@
     <Filter Include="Source Files\Render">
       <UniqueIdentifier>{786c1525-e805-4713-acaa-5db0abda2d19}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Camera">
+      <UniqueIdentifier>{f536252c-890e-4ad1-aea4-49154ecb4000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Camera">
+      <UniqueIdentifier>{252f1eeb-0e47-4717-8e89-9d82b7263b37}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\demo\Render\Matrix.h">
@@ -54,6 +60,21 @@
     <ClInclude Include="..\demo\GazeData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\demo\Camera\Camera.h">
+      <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Camera\Webcam.h">
+      <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Detect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Display.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Scenery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\demo\Render\Ray.cpp">
@@ -84,6 +105,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\demo\GazeData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Camera\Camera.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Camera\Webcam.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Detect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Display.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Scenery.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

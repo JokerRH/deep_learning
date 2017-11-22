@@ -16,242 +16,242 @@
 
 #pragma comment( lib, "EDSDK.lib" )
 
-bool CCanon::Init(void)
+bool CCanon::Init( void )
 {
-	EdsError err = EdsInitializeSDK();
-	if (err != EDS_ERR_OK)
+	EdsError err = EdsInitializeSDK( );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to initialize EDSDK\n");
+		fprintf( stderr, "Failed to initialize EDSDK\n" );
 		return false;
 	}
 
 	return true;
 }
 
-bool CCanon::ThreadInit(void)
+bool CCanon::ThreadInit( void )
 {
-	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	CoInitializeEx( NULL, COINIT_APARTMENTTHREADED );
 	return true;
 }
 
-void CCanon::Terminate(void)
+void CCanon::Terminate( void )
 {
-	EdsTerminateSDK();
+	EdsTerminateSDK( );
 }
 
-void CCanon::ThreadTerminate(void)
+void CCanon::ThreadTerminate( void )
 {
-	CoUninitialize();
+	CoUninitialize( );
 }
 
-std::vector<std::string> CCanon::GetCameraList(void)
+std::vector<std::string> CCanon::GetCameraList( void )
 {
 	std::vector<std::string> vecCameras;
 	EdsUInt32 uCount = 0;
 	EdsCameraListRef cameraList;
-	EdsError err = EdsGetCameraList(&cameraList);
-	if (err != EDS_ERR_OK)
+	EdsError err = EdsGetCameraList( &cameraList );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to retrieve camera list\n");
+		fprintf( stderr, "Failed to retrieve camera list\n" );
 		return vecCameras;
 	}
 
-	err = EdsGetChildCount(cameraList, &uCount);
-	if (err != EDS_ERR_OK)
+	err = EdsGetChildCount( cameraList, &uCount );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to get camera count\n");
+		fprintf( stderr, "Failed to get camera count\n" );
 		return vecCameras;
 	}
 
 	EdsCameraRef camera;
 	EdsDeviceInfo deviceInfo;
-	for (unsigned int u = 0; u < uCount; u++)
+	for( unsigned int u = 0; u < uCount; u++ )
 	{
-		err = EdsGetChildAtIndex(cameraList, u, &camera);
-		if (err != EDS_ERR_OK)
+		err = EdsGetChildAtIndex( cameraList, u, &camera );
+		if( err != EDS_ERR_OK )
 		{
-			fprintf(stderr, "Warning: Failed to get camera %u\n", u);
+			fprintf( stderr, "Warning: Failed to get camera %u\n", u );
 			continue;
 		}
 
-		err = EdsGetDeviceInfo(camera, &deviceInfo);
-		if (err != EDS_ERR_OK)
+		err = EdsGetDeviceInfo( camera, &deviceInfo );
+		if( err != EDS_ERR_OK )
 		{
-			fprintf(stderr, "Warning: Failed to get information about camera %u\n", u);
-			EdsRelease(camera);
+			fprintf( stderr, "Warning: Failed to get information about camera %u\n", u );
+			EdsRelease( camera );
 			continue;
 		}
 
-		vecCameras.emplace_back(deviceInfo.szDeviceDescription);
-		EdsRelease(camera);
+		vecCameras.emplace_back( deviceInfo.szDeviceDescription );
+		EdsRelease( camera );
 	}
 
 	return vecCameras;
 }
 
-CCanon::CCanon(unsigned uIndex)
+CCanon::CCanon( unsigned uIndex )
 {
 	EdsUInt32 uCount = 0;
 	EdsCameraListRef cameraList;
-	EdsError err = EdsGetCameraList(&cameraList);
-	if (err != EDS_ERR_OK)
+	EdsError err = EdsGetCameraList( &cameraList );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to retrieve camera list\n");
+		fprintf( stderr, "Failed to retrieve camera list\n" );
 		throw 0;
 	}
 
-	err = EdsGetChildCount(cameraList, &uCount);
-	if (err != EDS_ERR_OK)
+	err = EdsGetChildCount( cameraList, &uCount );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to get camera count\n");
+		fprintf( stderr, "Failed to get camera count\n" );
 		throw 0;
 	}
 
-	if (uIndex >= uCount)
+	if( uIndex >= uCount )
 	{
 		std::wcerr << "No canon camera with index " << uIndex << std::endl;
 		throw 0;
 	}
 
-	err = EdsGetChildAtIndex(cameraList, uIndex, &m_Camera);
-	if (err != EDS_ERR_OK)
+	err = EdsGetChildAtIndex( cameraList, uIndex, &m_Camera );
+	if( err != EDS_ERR_OK )
 	{
 		std::wcerr << "Failed to get camera at index " << uIndex << std::endl;
-		EdsRelease(cameraList);
+		EdsRelease( cameraList );
 		throw 0;
 	}
 
-	EdsRelease(cameraList);
+	EdsRelease( cameraList );
 
-	err = EdsOpenSession(m_Camera);
-	if (err != EDS_ERR_OK)
+	err = EdsOpenSession( m_Camera );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to set open session with camera\n");
-		EdsRelease(m_Camera);
-		throw(0);
+		fprintf( stderr, "Failed to set open session with camera\n" );
+		EdsRelease( m_Camera );
+		throw( 0 );
 	}
 
-	err = EdsSetObjectEventHandler(m_Camera, kEdsObjectEvent_All, HandleObjectEvent, this);
-	if (err != EDS_ERR_OK)
+	err = EdsSetObjectEventHandler( m_Camera, kEdsObjectEvent_All, HandleObjectEvent, this );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to set object handler for camera\n");
-		EdsRelease(m_Camera);
-		throw(0);
+		fprintf( stderr, "Failed to set object handler for camera\n" );
+		EdsRelease( m_Camera );
+		throw( 0 );
 	}
 
-	err = EdsSetPropertyEventHandler(m_Camera, kEdsPropertyEvent_All, HandlePropertyEvent, this);
-	if (err != EDS_ERR_OK)
+	err = EdsSetPropertyEventHandler( m_Camera, kEdsPropertyEvent_All, HandlePropertyEvent, this );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to set property handler for camera\n");
-		EdsRelease(m_Camera);
-		throw(0);
+		fprintf( stderr, "Failed to set property handler for camera\n" );
+		EdsRelease( m_Camera );
+		throw( 0 );
 	}
 
 	EdsUInt32 dwSaveTo = kEdsSaveTo_Host;
 	EdsCapacity newCapacity = { 0x7FFFFFFF, 0x1000, 1 };
-	err = EdsSetPropertyData(m_Camera, kEdsPropID_SaveTo, 0, sizeof(EdsUInt32), &dwSaveTo);
-	if (err != EDS_ERR_OK)
+	err = EdsSetPropertyData( m_Camera, kEdsPropID_SaveTo, 0, sizeof( EdsUInt32 ), &dwSaveTo );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to set save target\n");
+		fprintf( stderr, "Failed to set save target\n" );
 		goto EXCEPTION;
 	}
 
-	err = EdsSetCapacity(m_Camera, newCapacity);
-	if (err != EDS_ERR_OK)
+	err = EdsSetCapacity( m_Camera, newCapacity );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to set capacity\n");
+		fprintf( stderr, "Failed to set capacity\n" );
 		goto EXCEPTION;
 	}
 	return;
 
 EXCEPTION:
-	err = EdsCloseSession(m_Camera);
-	if (err != EDS_ERR_OK)
-		fprintf(stderr, "Warning: Failed to close session with camera\n");
+	err = EdsCloseSession( m_Camera );
+	if( err != EDS_ERR_OK )
+		fprintf( stderr, "Warning: Failed to close session with camera\n" );
 
-	EdsRelease(m_Camera);
+	EdsRelease( m_Camera );
 	throw 0;
 }
 
-CCanon::~CCanon(void)
+CCanon::~CCanon( void )
 {
-	EdsError err = EdsCloseSession(m_Camera);
-	if (err != EDS_ERR_OK)
-		fprintf(stderr, "Warning: Failed to close session with camera\n");
+	EdsError err = EdsCloseSession( m_Camera );
+	if( err != EDS_ERR_OK )
+		fprintf( stderr, "Warning: Failed to close session with camera\n" );
 
-	EdsRelease(m_Camera);
+	EdsRelease( m_Camera );
 }
 
-bool CCanon::TakePicture(void)
+bool CCanon::TakePicture( void )
 {
-	EdsError err = EdsSendCommand(m_Camera, kEdsCameraCommand_PressShutterButton, kEdsCameraCommand_ShutterButton_Completely);
-	if (err != EDS_ERR_OK)
+	EdsError err = EdsSendCommand( m_Camera, kEdsCameraCommand_PressShutterButton, kEdsCameraCommand_ShutterButton_Completely );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to take picture: %s\n", GetErrorMacro(err));
+		fprintf( stderr, "Failed to take picture: %s\n", GetErrorMacro( err ) );
 		return false;
 	}
 
-	err = EdsSendCommand(m_Camera, kEdsCameraCommand_PressShutterButton, kEdsCameraCommand_ShutterButton_OFF);
-	if (err != EDS_ERR_OK)
+	err = EdsSendCommand( m_Camera, kEdsCameraCommand_PressShutterButton, kEdsCameraCommand_ShutterButton_OFF );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to take picture\n");
+		fprintf( stderr, "Failed to take picture\n" );
 		return false;
 	}
 
 	return true;
 }
 
-bool CCanon::TakePicture(cv::Mat &matImage, double &dFOV)
+bool CCanon::TakePicture( cv::Mat &matImage, double &dFOV )
 {
-	if (!TakePicture())
+	if( !TakePicture( ) )
 		return false;
 
 	MSG msg;
 	BOOL fReturn;
-	while (true)
+	while( true )
 	{
-		if ((fReturn = GetMessage(&msg, NULL, 0, 0)) == -1)
+		if( ( fReturn = GetMessage( &msg, NULL, 0, 0 ) ) == -1 )
 			throw 27;	//Error
 
-		switch (msg.message)
+		switch( msg.message )
 		{
 		case WM_QUIT:
 			std::wcout << "Quit message" << std::endl;
-			PostQuitMessage(0);
+			PostQuitMessage( 0 );
 			throw 27;
 		case WM_KEYDOWN:
-		{
-			unsigned uKey = MapVirtualKey((UINT)msg.wParam, MAPVK_VK_TO_CHAR);
-			switch (uKey)
 			{
-			case 27:
-				throw 27;
+				unsigned uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_CHAR );
+				switch( uKey )
+				{
+				case 27:
+					throw 27;
+				}
 			}
-		}
-		break;
+			break;
 		case CAMERA_IMAGE_READY:
-			return ((CCanon *)msg.wParam)->DownloadImage(matImage, dFOV, (void *)msg.lParam);
+			return ( (CCanon *) msg.wParam )->DownloadImage( matImage, dFOV, (void *) msg.lParam );
 		}
 
-		if (fReturn > 0)
+		if( fReturn > 0 )
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
 		}
 	}
 }
 
-bool CCanon::StartLiveView(void)
+bool CCanon::StartLiveView( void )
 {
 	EdsError err = EDS_ERR_OK;
 	// Get the output device for the live view image
 	EdsUInt32 device;
-	err = EdsGetPropertyData(m_Camera, kEdsPropID_Evf_OutputDevice, 0, sizeof(device), &device);
+	err = EdsGetPropertyData( m_Camera, kEdsPropID_Evf_OutputDevice, 0, sizeof( device ), &device );
 	// PC live view starts by setting the PC as the output device for the live view image.
-	if (err == EDS_ERR_OK)
+	if( err == EDS_ERR_OK )
 	{
 		device |= kEdsEvfOutputDevice_PC;
-		err = EdsSetPropertyData(m_Camera, kEdsPropID_Evf_OutputDevice, 0, sizeof(device), &device);
+		err = EdsSetPropertyData( m_Camera, kEdsPropID_Evf_OutputDevice, 0, sizeof( device ), &device );
 		return true;
 	}
 	else
@@ -263,166 +263,166 @@ bool CCanon::StartLiveView(void)
 	// Start downloading of the live view image once the property change notification arrives.
 }
 
-void CCanon::StopLiveView(void)
+void CCanon::StopLiveView( void )
 {
 	EdsError err = EDS_ERR_OK;
 	// Get the output device for the live view image
 	EdsUInt32 device;
-	err = EdsGetPropertyData(m_Camera, kEdsPropID_Evf_OutputDevice, 0, sizeof(device), &device);
+	err = EdsGetPropertyData( m_Camera, kEdsPropID_Evf_OutputDevice, 0, sizeof( device ), &device );
 	// PC live view ends if the PC is disconnected from the live view image output device.
-	if (err == EDS_ERR_OK)
+	if( err == EDS_ERR_OK )
 	{
 		device &= ~kEdsEvfOutputDevice_PC;
-		err = EdsSetPropertyData(m_Camera, kEdsPropID_Evf_OutputDevice, 0, sizeof(device), &device);
+		err = EdsSetPropertyData( m_Camera, kEdsPropID_Evf_OutputDevice, 0, sizeof( device ), &device );
 	}
 }
 
-void CCanon::WaitForLiveView(void)
+void CCanon::WaitForLiveView( void )
 {
 	MSG msg;
 	BOOL fReturn;
 	cv::Mat matImage;
-	while (true)
+	while( true )
 	{
-		if ((fReturn = GetMessage(&msg, NULL, 0, 0)) == -1)
+		if( ( fReturn = GetMessage( &msg, NULL, 0, 0 ) ) == -1 )
 			throw 27;	//Error
 
-		switch (msg.message)
+		switch( msg.message )
 		{
 		case WM_QUIT:
 			std::wcout << "Quit message" << std::endl;
-			PostQuitMessage(0);
+			PostQuitMessage( 0 );
 			throw 27;
 		case WM_KEYDOWN:
-		{
-			unsigned uKey = MapVirtualKey((UINT)msg.wParam, MAPVK_VK_TO_CHAR);
-			switch (uKey)
 			{
-			case 27:
-				throw 27;
+				unsigned uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_CHAR );
+				switch( uKey )
+				{
+				case 27:
+					throw 27;
+				}
 			}
-		}
-		break;
+			break;
 		case CAMERA_LIVEVIEW_READY:
 			return;
 		}
 
-		if (fReturn > 0)
+		if( fReturn > 0 )
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
 		}
 	}
 }
 
-bool CCanon::DownloadImage(cv::Mat & matImage, double & dFOV, void *pImageRef)
+bool CCanon::DownloadImage( cv::Mat & matImage, double & dFOV, void *pImageRef )
 {
 	bool fReturn = false;
 	EdsStreamRef stream;
 	EdsDirectoryItemInfo dirItemInfo;
-	EdsError err = EdsGetDirectoryItemInfo((EdsDirectoryItemRef)pImageRef, &dirItemInfo);
-	if (err != EDS_ERR_OK)
+	EdsError err = EdsGetDirectoryItemInfo( (EdsDirectoryItemRef) pImageRef, &dirItemInfo );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to get information about directory item: %s\n", GetErrorMacro(err));
+		fprintf( stderr, "Failed to get information about directory item: %s\n", GetErrorMacro( err ) );
 		goto RETURN;
 	}
 
-	if ((dirItemInfo.format & 0xFF) != kEdsTargetImageType_Jpeg)
+	if( ( dirItemInfo.format & 0xFF ) != kEdsTargetImageType_Jpeg )
 	{
-		EdsDownloadCancel((EdsDirectoryItemRef)pImageRef);
+		EdsDownloadCancel( (EdsDirectoryItemRef) pImageRef );
 		goto RETURN;
 	}
 
 	//Create memory stream
-	err = EdsCreateMemoryStream(dirItemInfo.size, &stream);
-	if (err != EDS_ERR_OK)
+	err = EdsCreateMemoryStream( dirItemInfo.size, &stream );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to create memory stream: %s\n", GetErrorMacro(err));
+		fprintf( stderr, "Failed to create memory stream: %s\n", GetErrorMacro( err ) );
 		goto RETURN;
 	}
 
 	//Download
-	err = EdsDownload((EdsDirectoryItemRef)pImageRef, dirItemInfo.size, stream);
-	if (err != EDS_ERR_OK)
+	err = EdsDownload( (EdsDirectoryItemRef) pImageRef, dirItemInfo.size, stream );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to download item: %s\n", GetErrorMacro(err));
+		fprintf( stderr, "Failed to download item: %s\n", GetErrorMacro( err ) );
 		goto STREAM;
 	}
 
-	err = EdsDownloadComplete((EdsDirectoryItemRef)pImageRef);
-	if (err != EDS_ERR_OK)
+	err = EdsDownloadComplete( (EdsDirectoryItemRef) pImageRef );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to complete download: %s\n", GetErrorMacro(err));
+		fprintf( stderr, "Failed to complete download: %s\n", GetErrorMacro( err ) );
 		goto STREAM;
 	}
 
 	EdsImageRef image;
-	err = EdsCreateImageRef(stream, &image);
-	if (err != EDS_ERR_OK)
+	err = EdsCreateImageRef( stream, &image );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to get image from stream: %s\n", GetErrorMacro(err));
+		fprintf( stderr, "Failed to get image from stream: %s\n", GetErrorMacro( err ) );
 		goto STREAM;
 	}
 
 	EdsRational ratVal;
-	err = EdsGetPropertyData(image, kEdsPropID_FocalLength, 0, sizeof(EdsRational), &ratVal);
-	if (err != EDS_ERR_OK)
+	err = EdsGetPropertyData( image, kEdsPropID_FocalLength, 0, sizeof( EdsRational ), &ratVal );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to get focal length: %s\n", GetErrorMacro(err));
+		fprintf( stderr, "Failed to get focal length: %s\n", GetErrorMacro( err ) );
 		goto IMAGE;
 	}
 	//printf( "Focal length: %f\n", ratVal.numerator / (double) ratVal.denominator );
 
-	EdsRelease(stream);
+	EdsRelease( stream );
 	EdsImageInfo imageInfo;
-	err = EdsGetImageInfo(image, kEdsImageSrc_FullView, &imageInfo);
-	if (err != EDS_ERR_OK)
+	err = EdsGetImageInfo( image, kEdsImageSrc_FullView, &imageInfo );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to get image info: %s\n", GetErrorMacro(err));
-		EdsRelease(image);
+		fprintf( stderr, "Failed to get image info: %s\n", GetErrorMacro( err ) );
+		EdsRelease( image );
 		goto RETURN;
 	}
 
-	err = EdsCreateMemoryStream(0, &stream);
-	if (err != EDS_ERR_OK)
+	err = EdsCreateMemoryStream( 0, &stream );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to create memory stream: %s\n", GetErrorMacro(err));
-		EdsRelease(image);
+		fprintf( stderr, "Failed to create memory stream: %s\n", GetErrorMacro( err ) );
+		EdsRelease( image );
 		goto RETURN;
 	}
 
-	err = EdsGetImage(image, kEdsImageSrc_FullView, kEdsTargetImageType_RGB, imageInfo.effectiveRect, imageInfo.effectiveRect.size, stream);
-	if (err != EDS_ERR_OK)
+	err = EdsGetImage( image, kEdsImageSrc_FullView, kEdsTargetImageType_RGB, imageInfo.effectiveRect, imageInfo.effectiveRect.size, stream );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to get image: %s\n", GetErrorMacro(err));
+		fprintf( stderr, "Failed to get image: %s\n", GetErrorMacro( err ) );
 		goto IMAGE;
 	}
 
-	EdsRelease(image);
+	EdsRelease( image );
 
 	unsigned char *pbData;
-	err = EdsGetPointer(stream, (EdsVoid**)&pbData);
-	if (err != EDS_ERR_OK)
+	err = EdsGetPointer( stream, (EdsVoid**) &pbData );
+	if( err != EDS_ERR_OK )
 	{
-		fprintf(stderr, "Failed to get image data: %s\n", GetErrorMacro(err));
+		fprintf( stderr, "Failed to get image data: %s\n", GetErrorMacro( err ) );
 		goto STREAM;
 	}
 
-	cv::cvtColor(cv::Mat(imageInfo.height, imageInfo.width, CV_8UC3, pbData), matImage, CV_BGR2RGB);
-	dFOV = 2 * 180 / M_PI * atan(CANON_SENSOR_DIAG / (2 * ratVal.numerator / (double)ratVal.denominator));
+	cv::cvtColor( cv::Mat( imageInfo.height, imageInfo.width, CV_8UC3, pbData ), matImage, CV_BGR2RGB );
+	dFOV = 2 * 180 / M_PI * atan( CANON_SENSOR_DIAG / ( 2 * ratVal.numerator / (double) ratVal.denominator ) );
 
 	fReturn = true;
 	goto STREAM;
 
 IMAGE:
-	EdsRelease(image);
+	EdsRelease( image );
 STREAM:
-	EdsRelease(stream);
+	EdsRelease( stream );
 RETURN:
 	return fReturn;
 }
 
-bool CCanon::DownloadLiveView(cv::Mat & matImage)
+bool CCanon::DownloadLiveView( cv::Mat & matImage )
 {
 	EdsError err = EDS_ERR_OK;
 	EdsEvfImageRef image = NULL;
@@ -431,22 +431,22 @@ bool CCanon::DownloadLiveView(cv::Mat & matImage)
 	EdsUInt64 qwSize = 0;
 	bool fReturn = false;
 
-	err = EdsCreateMemoryStream(0, &stream);
-	if (err != EDS_ERR_OK)
+	err = EdsCreateMemoryStream( 0, &stream );
+	if( err != EDS_ERR_OK )
 	{
 		std::cout << "Download Live View Image Error in Function EdsCreateMemoryStream: " << err << "\n";
 		goto RETURN;
 	}
 
-	err = EdsCreateEvfImageRef(stream, &image);
-	if (err != EDS_ERR_OK)
+	err = EdsCreateEvfImageRef( stream, &image );
+	if( err != EDS_ERR_OK )
 	{
 		std::cout << "Download Live View Image Error in Function EdsCreateEvfImageRef: " << err << "\n";
 		goto STREAM;
 	}
 
-	err = EdsDownloadEvfImage(m_Camera, image);
-	switch (err)
+	err = EdsDownloadEvfImage( m_Camera, image );
+	switch( err )
 	{
 	case EDS_ERR_OK:
 		break;
@@ -457,34 +457,34 @@ bool CCanon::DownloadLiveView(cv::Mat & matImage)
 		goto IMAGE;
 	}
 
-	err = EdsGetPointer(stream, (EdsVoid **)&data);
-	if (err != EDS_ERR_OK)
+	err = EdsGetPointer( stream, (EdsVoid **) &data );
+	if( err != EDS_ERR_OK )
 	{
 		std::cout << "Download Live View Image Error in Function EdsGetPointer: " << err << "\n";
 		goto IMAGE;
 	}
 
-	err = EdsGetLength(stream, &qwSize);
-	if (err != EDS_ERR_OK)
+	err = EdsGetLength( stream, &qwSize );
+	if( err != EDS_ERR_OK )
 	{
 		std::cout << "Download Live View Image Error in Function EdsGetLength: " << err << "\n";
 		goto IMAGE;
 	}
 
-	matImage = cv::imdecode(std::vector<char>(data, data + qwSize), 1);
+	matImage = cv::imdecode( std::vector<char>( data, data + qwSize ), 1 );
 
 	fReturn = true;
 IMAGE:
-	EdsRelease(image);
+	EdsRelease( image );
 STREAM:
-	EdsRelease(stream);
+	EdsRelease( stream );
 RETURN:
 	return fReturn;
 }
 
-const char *CCanon::GetErrorMacro(EdsError err)
+const char *CCanon::GetErrorMacro( EdsError err )
 {
-	switch (err)
+	switch( err )
 	{
 	case EDS_ISSPECIFIC_MASK:
 		return "EDS_ISSPECIFIC_MASK";
@@ -802,12 +802,12 @@ const char *CCanon::GetErrorMacro(EdsError err)
 	return nullptr;
 }
 
-EdsError EDSCALLBACK CCanon::HandleObjectEvent(EdsObjectEvent event, EdsBaseRef object, EdsVoid *pContext)
+EdsError EDSCALLBACK CCanon::HandleObjectEvent( EdsObjectEvent event, EdsBaseRef object, EdsVoid *pContext )
 {
-	switch (event)
+	switch( event )
 	{
 	case kEdsObjectEvent_DirItemRequestTransfer:
-		PostThreadMessage(g_dwMainThreadID, CAMERA_IMAGE_READY, (WPARAM)pContext, (LPARAM)object);
+		PostThreadMessage( g_dwMainThreadID, CAMERA_IMAGE_READY, (WPARAM) pContext, (LPARAM) object );
 		break;
 		//default:
 		//printf( "Received object event\n" );
@@ -815,15 +815,15 @@ EdsError EDSCALLBACK CCanon::HandleObjectEvent(EdsObjectEvent event, EdsBaseRef 
 	return EDS_ERR_OK;
 }
 
-EdsError EDSCALLBACK CCanon::HandlePropertyEvent(EdsPropertyEvent event, EdsPropertyID propertyID, EdsUInt32 dwParam, EdsVoid *pContext)
+EdsError EDSCALLBACK CCanon::HandlePropertyEvent( EdsPropertyEvent event, EdsPropertyID propertyID, EdsUInt32 dwParam, EdsVoid *pContext )
 {
-	switch (event)
+	switch( event )
 	{
 	case kEdsPropertyEvent_PropertyChanged:
-		switch (propertyID)
+		switch( propertyID )
 		{
 		case kEdsPropID_Evf_OutputDevice:
-			PostThreadMessage(g_dwMainThreadID, CAMERA_LIVEVIEW_READY, (WPARAM)pContext, 0);
+			PostThreadMessage( g_dwMainThreadID, CAMERA_LIVEVIEW_READY, (WPARAM) pContext, 0 );
 			break;
 			//default:
 			//printf( "Property %d changed\n", propertyID );

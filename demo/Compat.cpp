@@ -9,6 +9,8 @@
 #	include <libgen.h>
 #	include <fts.h>
 #	include <fnmatch.h>
+#	include <termios.h>
+#	include <stdio.h>
 #endif
 
 #ifdef _MSC_VER
@@ -91,7 +93,7 @@ int compat::CreateDirectory_d( const filestring_t &sPath )
 		if( stat( sPath.c_str( ), &sb ) )
 			return 1;
 
-		if( ( sb.st_mode & S_IFMT ) == S_IFDIR )
+		if( S_ISDIR( sb.st_mode ) )
 			return 0;
 
 		return 1;

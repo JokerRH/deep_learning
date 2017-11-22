@@ -21,7 +21,7 @@
 class CDetect : public CGazeData
 {
 public:
-	static bool Init( const std::wstring &sPath );
+	static bool Init( const filestring_t &sPath );
 	static void Terminate( void );
 	static std::vector<cv::Rect> GetFaces( const cv::Mat &matImage );
 

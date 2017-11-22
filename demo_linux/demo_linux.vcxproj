@@ -70,8 +70,12 @@
     </LibraryPath>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="..\demo\Camera\Camera.h" />
+    <ClInclude Include="..\demo\Camera\Webcam.h" />
     <ClInclude Include="..\demo\Compat.h" />
     <ClInclude Include="..\demo\Data.h" />
+    <ClInclude Include="..\demo\Detect.h" />
+    <ClInclude Include="..\demo\Display.h" />
     <ClInclude Include="..\demo\GazeData.h" />
     <ClInclude Include="..\demo\Render\Matrix.h" />
     <ClInclude Include="..\demo\Render\Ray.h" />
@@ -83,10 +87,15 @@
     <ClInclude Include="..\demo\Render\RenderPoint.h" />
     <ClInclude Include="..\demo\Render\Transformation.h" />
     <ClInclude Include="..\demo\Render\Vector.h" />
+    <ClInclude Include="..\demo\Scenery.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\demo\Camera\Camera.cpp" />
+    <ClCompile Include="..\demo\Camera\Webcam.cpp" />
     <ClCompile Include="..\demo\Compat.cpp" />
     <ClCompile Include="..\demo\Data.cpp" />
+    <ClCompile Include="..\demo\Detect.cpp" />
+    <ClCompile Include="..\demo\Display.cpp" />
     <ClCompile Include="..\demo\GazeData.cpp" />
     <ClCompile Include="..\demo\main.cpp" />
     <ClCompile Include="..\demo\Render\Ray.cpp" />
@@ -95,10 +104,12 @@
     <ClCompile Include="..\demo\Render\RenderObject.cpp" />
     <ClCompile Include="..\demo\Render\RenderPlane.cpp" />
     <ClCompile Include="..\demo\Render\Transformation.cpp" />
+    <ClCompile Include="..\demo\Scenery.cpp" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalOptions>-I"../shared" %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>WITH_CAFFE;CPU_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -106,6 +117,9 @@
       <LibraryDependencies>opencv_core;opencv_objdetect;opencv_highgui;%(LibraryDependencies)</LibraryDependencies>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <ClCompile>
+      <PreprocessorDefinitions>WITH_CAFFE;CPU_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

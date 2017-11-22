@@ -1,7 +1,11 @@
 #pragma once
 
 #include "Camera.h"
-#include <opencv2\videoio.hpp>
+#ifdef _MSC_VER
+#	include <opencv2/videocapture.hpp>
+#else
+#	include <opencv2/highgui/highgui.hpp>
+#endif
 
 class CWebcam : public CCamera
 {
@@ -29,7 +33,7 @@ inline std::vector<std::string> CWebcam::GetCameraList( void )
 
 inline bool CWebcam::TakePicture( void )
 {
-	PostThreadMessage( g_dwMainThreadID, CAMERA_IMAGE_READY, ( WPARAM ) this, 0 );
+	PostThreadMessage( g_dwMainThreadID, CAMERA_IMAGE_READY, (WPARAM) this, 0 );
 	return true;
 }
 

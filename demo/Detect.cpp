@@ -19,12 +19,17 @@
 #	endif
 #endif
 
+#ifdef _MSC_VER
 caffe::Net<float> *CDetect::s_pNetwork;
+#else
+caffe::Net *CDetect::s_pNetwork;
+#endif
 cv::Size CDetect::s_InputShape;
 cv::Mat CDetect::s_matMean;
 
 using namespace caffe;
 
+#ifdef _MSC_VER
 namespace caffe
 {
 	extern void Register_InputLayer( void );
@@ -41,8 +46,9 @@ namespace caffe
 	extern void Register_BatchNormLayer( void );
 	extern void Register_ConcatLayer( void );
 }
+#endif
 
-bool CDetect::Init( const std::wstring &sPath )
+bool CDetect::Init( const filestring_t &sPath )
 {
 	if( !CData::Init( sPath ) )
 		return false;
@@ -50,10 +56,11 @@ bool CDetect::Init( const std::wstring &sPath )
 	filestring_t sNetwork = compat::PathCombine_d( sPath, CFSTR( "network" ) );
 	if( !compat::PathFolderExists_d( sNetwork ) )
 	{
-		std::wcerr << "Network folder \"" << sNetwork << "\" does not exist" << std::endl;
+		std::wcerr << "Network folder \"" << compat::ToWString( sNetwork ) << "\" does not exist" << std::endl;
 		return false;
 	}
 
+#ifdef _MSC_VER
 	Register_InputLayer( );
 	Register_ConvolutionLayer( );
 	Register_PoolingLayer( );
@@ -67,6 +74,7 @@ bool CDetect::Init( const std::wstring &sPath )
 	Register_MVNLayer( );
 	Register_BatchNormLayer( );
 	Register_ConcatLayer( );
+#endif
 
 	caffe::Caffe::set_mode( caffe::Caffe::CPU );
 
@@ -74,14 +82,14 @@ bool CDetect::Init( const std::wstring &sPath )
 	filestring_t sProtoFile = compat::PathCombine_d( sNetwork, CFSTR( "deploy.prototxt" ) );
 	if( !compat::PathFileExists_d( sProtoFile ) )
 	{
-		std::wcerr << "Protofile \"" << sProtoFile << "\" not found" << std::endl;
+		std::wcerr << "Protofile \"" << compat::ToWString( sProtoFile ) << "\" not found" << std::endl;
 		return false;
 	}
 
 	filestring_t sMeanFile = compat::PathCombine_d( sNetwork, CFSTR( "data.binaryproto" ) );
 	if( !compat::PathFileExists_d( sMeanFile ) )
 	{
-		std::wcerr << "Mean file \"" << sMeanFile << "\" not found" << std::endl;
+		std::wcerr << "Mean file \"" << compat::ToWString( sMeanFile ) << "\" not found" << std::endl;
 		return false;
 	}
 
@@ -99,21 +107,51 @@ bool CDetect::Init( const std::wstring &sPath )
 	}
 
 	//Load network
+#ifdef _MSC_VER
 	s_pNetwork = new caffe::Net<float>( compat::ToString( sProtoFile ), caffe::TEST );
+#else
+	s_pNetwork = new caffe::Net( compat::ToString( sProtoFile ), caffe::TEST );
+#endif
 	s_pNetwork->CopyTrainedLayersFrom( compat::ToString( sModelFile ) );
 
-	CHECK_EQ( s_pNetwork->num_inputs( ), 1 ) << "Network should have exactly one input.";
-	CHECK_EQ( s_pNetwork->num_outputs( ), 1 ) << "Network should have exactly one output.";
+	if( s_pNetwork->num_inputs( ) != 1 )
+	{
+		std::wcerr << "Network should have exactly one input." << std::endl;
+		return false;
+	}
 
+	if( s_pNetwork->num_outputs( ) != 1 )
+	{
+		std::wcerr << "Network should have exactly one output." << std::endl;
+		return false;
+	}
+
+#ifdef _MSC_VER
 	Blob<float> *pInputLayer = s_pNetwork->input_blobs( )[ 0 ];
-	CHECK_EQ( pInputLayer->channels( ), 3 ) << "Input layer should have 3 channels";
+#else
+	Blob *pInputLayer = s_pNetwork->input_blobs( )[ 0 ];
+#endif
+	if( pInputLayer->channels( ) != 3 )
+	{
+		std::wcerr << "Input layer should have 3 channels" << std::endl;
+		return false;
+	}
+
+#ifdef _MSC_VER
 	Blob<float> *pOutputLayer = s_pNetwork->output_blobs( )[ 0 ];
-	CHECK_EQ( pOutputLayer->channels( ), 8 ) << "Output layer should have 3 channels";
+#else
+	Blob *pOutputLayer = s_pNetwork->output_blobs( )[ 0 ];
+#endif
+	if( pOutputLayer->channels( ) != 8 )
+	{
+		std::wcerr << "Output layer should have 3 channels" << std::endl;
+		return false;
+	}
 
 	s_InputShape = cv::Size( pInputLayer->width( ), pInputLayer->height( ) );
 	if( !SetMean( compat::ToString( sMeanFile ) ) )
 	{
-		std::wcerr << "Failed to set mean file \"" << sMeanFile << "\"" << std::endl;
+		std::wcerr << "Failed to set mean file \"" << compat::ToWString( sMeanFile ) << "\"" << std::endl;
 		delete s_pNetwork;
 		return false;
 	}
@@ -207,7 +245,7 @@ CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV
 
 bool CDetect::SetMean( const std::string &sMeanFile )
 {
-	BlobProto blob_proto;
+	caffe::BlobProto blob_proto;
 	if( !ReadProtoFromBinaryFile( sMeanFile.c_str( ), &blob_proto ) )
 		return false;
 
