@@ -25,7 +25,7 @@ public:
 	static void Terminate( void );
 	static std::vector<cv::Rect> GetFaces( const cv::Mat &matImage );
 
-	CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV, const std::wstring &sPath = std::wstring( ) );
+	CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV, const filestring_t &sPath = filestring_t( ) );
 	~CDetect( void ) override = default;
 
 private:

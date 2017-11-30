@@ -42,8 +42,8 @@ CScenery &CScenery::Fit( bool fShift )
 	CVector<3> vec3Max = CRenderObject::GetMax( { &m_Camera, &m_Forward, &m_Up, &m_Right } );
 	if( m_vecFaces.size( ) )
 	{
-		vec3Min = CVector<3>::GetMin( { vec3Min, CRenderObject::GetMin( std::initializer_list<const CRenderObject *>( vecpFaces.data( ), vecpFaces.data( ) + vecpFaces.size( ) ) ) } );
-		vec3Max = CVector<3>::GetMin( { vec3Max, CRenderObject::GetMax( std::initializer_list<const CRenderObject *>( vecpFaces.data( ), vecpFaces.data( ) + vecpFaces.size( ) ) ) } );
+		vec3Min = CVector<3>::GetMin( { vec3Min, CRenderObject::GetMin( vecpFaces.data( ), vecpFaces.data( ) + vecpFaces.size( ) ) } );
+		vec3Max = CVector<3>::GetMin( { vec3Max, CRenderObject::GetMax( vecpFaces.data( ), vecpFaces.data( ) + vecpFaces.size( ) ) } );
 	}
 
 	CVector<3> vec3Dim = CRenderObject::GetDim( vec3Min, vec3Max );

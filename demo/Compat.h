@@ -4,6 +4,8 @@
 #include <vector>
 #ifdef _MSC_VER
 #	include <Windows.h>
+#	include <windowsx.h>
+#	include <conio.h>
 #	include <Pathcch.h>
 #	include <Shlwapi.h>
 
@@ -12,6 +14,7 @@
 #	undef min
 #	undef max
 #else
+#	include "MessageLoop.h"
 #	include <sys/stat.h>
 #	include <sys/types.h>
 #	include <unistd.h>
@@ -27,8 +30,10 @@ typedef std::wstring filestring_t;
 typedef char filechar_t;
 typedef std::string filestring_t;
 
-#define CFSTR( str )	#str
+#define CFSTR( str )	str
 #endif
+
+extern DWORD g_dwMainThreadID;
 
 namespace compat
 {
@@ -43,6 +48,10 @@ namespace compat
 	bool PathFolderExists_d( const filestring_t &sPath );
 	filestring_t GetFullPathName_d( const filestring_t &sPath );
 }
+
+#ifndef _MSC_VER
+int _getch( void );
+#endif
 
 #ifdef _MSC_VER
 inline std::string compat::ToString( const filestring_t &sString )

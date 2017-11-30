@@ -4,10 +4,9 @@
 #include "Display.h"
 #include "Camera/Camera.h"
 #include <opencv2/highgui/highgui.hpp>
+#include <thread>
 
-#ifdef _MSC_VER
 DWORD g_dwMainThreadID;
-#endif
 
 #ifdef _MSC_VER
 int wmain( int argc, filechar_t **argv )
@@ -17,6 +16,8 @@ int main( int argc, filechar_t **argv )
 {
 #ifdef _MSC_VER
 	g_dwMainThreadID = GetCurrentThreadId( );
+#else
+	g_dwMainThreadID = 0;
 #endif
 
 	filestring_t sExecPath = compat::GetFullPathName_d( argv[ 0 ] );
@@ -49,7 +50,8 @@ int main( int argc, filechar_t **argv )
 
 	if( !pCamera )
 	{
-		system( "PAUSE" );
+		std::wcout << L"Press any key to continue..." << std::endl;
+		(void) _getch( );
 		iReturn = EXIT_SUCCESS;
 		goto LIVE_CANON;
 	}
@@ -61,6 +63,14 @@ int main( int argc, filechar_t **argv )
 	cv::moveWindow( "Window", 0, 0 );
 	cv::setWindowProperty( "Window", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN );
 
+#ifndef _MSC_VER
+	if( !MessageInit( g_dwMainThreadID, "Window" ) )
+	{
+		std::wcout << "Failed to initialize message loop" << std::endl;
+		goto LIVE_WINDOW;
+	}
+#endif
+
 	try
 	{
 		CDisplay::ShowLive( "Window", *pCamera );
@@ -70,14 +80,17 @@ int main( int argc, filechar_t **argv )
 		if( i == 27 )
 			iReturn = EXIT_SUCCESS;
 
-		goto LIVE_WINDOW;
+		goto LIVE_MESSAGE;
 	}
 
 	iReturn = EXIT_SUCCESS;
 
+LIVE_MESSAGE:
+#ifndef _MSC_VER
+	MessageTerminate( );
 LIVE_WINDOW:
+#endif
 	cv::destroyAllWindows( );
-LIVE_LIVEVIEW:
 	pCamera->StopLiveView( );
 LIVE_CAMERA:
 	delete pCamera;
@@ -87,7 +100,10 @@ LIVE_DETECT:
 	CDetect::Terminate( );
 LIVE_EXIT:
 	if( iReturn != EXIT_SUCCESS )
-		system( "PAUSE" );
+	{
+		std::wcout << L"Press any key to continue..." << std::endl;
+		(void) _getch( );
+	}
 
 	return iReturn;
 }

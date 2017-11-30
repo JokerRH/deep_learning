@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Data.h"
+#include "Compat.h"
 #include "Render/Ray.h"
 
 class CGazeData : public CData
@@ -15,10 +16,10 @@ public:
 	CRay rayEyeRight;
 
 protected:
-	CGazeData( const cv::Mat &matImage, const cv::Rect &rectFace, const std::wstring &sPath );
+	CGazeData( const cv::Mat &matImage, const cv::Rect &rectFace, const filestring_t &sPath );
 };
 
-inline CGazeData::CGazeData( const cv::Mat &matImage, const cv::Rect &rectFace, const std::wstring &sPath ) :
+inline CGazeData::CGazeData( const cv::Mat &matImage, const cv::Rect &rectFace, const filestring_t &sPath ) :
 	CData( matImage, rectFace, sPath )
 {
 

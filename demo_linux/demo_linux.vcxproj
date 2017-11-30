@@ -65,7 +65,7 @@
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>Include;$(IncludePath)</IncludePath>
+    <IncludePath>include;$(IncludePath)</IncludePath>
     <LibraryPath>
     </LibraryPath>
   </PropertyGroup>
@@ -77,6 +77,8 @@
     <ClInclude Include="..\demo\Detect.h" />
     <ClInclude Include="..\demo\Display.h" />
     <ClInclude Include="..\demo\GazeData.h" />
+    <ClInclude Include="..\demo\MessageLoop.h" />
+    <ClInclude Include="..\demo\Queue.h" />
     <ClInclude Include="..\demo\Render\Matrix.h" />
     <ClInclude Include="..\demo\Render\Ray.h" />
     <ClInclude Include="..\demo\Render\Render.h" />
@@ -98,6 +100,8 @@
     <ClCompile Include="..\demo\Display.cpp" />
     <ClCompile Include="..\demo\GazeData.cpp" />
     <ClCompile Include="..\demo\main.cpp" />
+    <ClCompile Include="..\demo\MessageLoop.cpp" />
+    <ClCompile Include="..\demo\Queue.cpp" />
     <ClCompile Include="..\demo\Render\Ray.cpp" />
     <ClCompile Include="..\demo\Render\RenderBox.cpp" />
     <ClCompile Include="..\demo\Render\RenderLine.cpp" />
@@ -111,10 +115,13 @@
       <AdditionalOptions>-I"../shared" %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>WITH_CAFFE;CPU_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <LibraryDependencies>opencv_core;opencv_highgui;opencv_videoio;opencv_objdetect;opencv_imgproc;pthread;X11;boost_system;gflags;glog;caffe;%(LibraryDependencies)</LibraryDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <LibraryDependencies>opencv_core;opencv_objdetect;opencv_highgui;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>opencv_core;opencv_highgui;opencv_videoio;opencv_objdetect;opencv_imgproc;pthread;X11;boost_system;gflags;glog;caffe;%(LibraryDependencies)</LibraryDependencies>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>

@@ -1,7 +1,7 @@
 #ifdef WITH_CAFFE
 
 #include "Detect.h"
-#include "compat.h"
+#include "Compat.h"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
 #ifndef _USE_MATH_DEFINES
@@ -19,11 +19,7 @@
 #	endif
 #endif
 
-#ifdef _MSC_VER
 caffe::Net<float> *CDetect::s_pNetwork;
-#else
-caffe::Net *CDetect::s_pNetwork;
-#endif
 cv::Size CDetect::s_InputShape;
 cv::Mat CDetect::s_matMean;
 
@@ -99,7 +95,7 @@ bool CDetect::Init( const filestring_t &sPath )
 		compat::FindFilesRecursively( sNetwork, CFSTR( "*.caffemodel" ), vecFiles );
 		if( !vecFiles.size( ) )
 		{
-			std::wcout << "No caffemodel found in folder \"" << sNetwork << "\"" << std::endl;
+			std::wcout << L"No caffemodel found in folder \"" << compat::ToWString( sNetwork ) << "\"" << std::endl;
 			return false;
 		}
 
@@ -107,11 +103,7 @@ bool CDetect::Init( const filestring_t &sPath )
 	}
 
 	//Load network
-#ifdef _MSC_VER
 	s_pNetwork = new caffe::Net<float>( compat::ToString( sProtoFile ), caffe::TEST );
-#else
-	s_pNetwork = new caffe::Net( compat::ToString( sProtoFile ), caffe::TEST );
-#endif
 	s_pNetwork->CopyTrainedLayersFrom( compat::ToString( sModelFile ) );
 
 	if( s_pNetwork->num_inputs( ) != 1 )
@@ -126,22 +118,14 @@ bool CDetect::Init( const filestring_t &sPath )
 		return false;
 	}
 
-#ifdef _MSC_VER
 	Blob<float> *pInputLayer = s_pNetwork->input_blobs( )[ 0 ];
-#else
-	Blob *pInputLayer = s_pNetwork->input_blobs( )[ 0 ];
-#endif
 	if( pInputLayer->channels( ) != 3 )
 	{
 		std::wcerr << "Input layer should have 3 channels" << std::endl;
 		return false;
 	}
 
-#ifdef _MSC_VER
 	Blob<float> *pOutputLayer = s_pNetwork->output_blobs( )[ 0 ];
-#else
-	Blob *pOutputLayer = s_pNetwork->output_blobs( )[ 0 ];
-#endif
 	if( pOutputLayer->channels( ) != 8 )
 	{
 		std::wcerr << "Output layer should have 3 channels" << std::endl;
@@ -182,7 +166,7 @@ std::vector<cv::Rect> CDetect::GetFaces( const cv::Mat & matImage )
 	return vecFaces;
 }
 
-CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV, const std::wstring &sPath ) :
+CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV, const filestring_t &sPath ) :
 	CGazeData( matImage, rectFace, sPath )
 {
 	std::array<float, 8> arOutput = Forward( matImage( rectFace ) );
@@ -198,8 +182,8 @@ CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV
 	std::wcout << "\t" << arOutput[ 7 ] << std::endl;
 	*/
 
-	ptEyeLeft = cv::Point( (int) ( arOutput[ 4 ] * rectFace.width ), (int) ( arOutput[ 5 ] * rectFace.height ) );
-	ptEyeRight = cv::Point( (int) ( arOutput[ 6 ] * rectFace.width ), (int) ( arOutput[ 7 ] * rectFace.height ) );
+	ptEyeLeft = cv::Point( (int) ( arOutput[ 4 ] * (double) rectFace.width ), (int) ( arOutput[ 5 ] * (double) rectFace.height ) );
+	ptEyeRight = cv::Point( (int) ( arOutput[ 6 ] * (double) rectFace.width ), (int) ( arOutput[ 7 ] * (double) rectFace.height ) );
 
 	CVector<2> vec2EyeLeft( { (double) ( rectFace.x + ptEyeLeft.x ), (double) ( rectFace.y + ptEyeLeft.y ) } );
 	CVector<2> vec2EyeRight( { (double) ( rectFace.x + ptEyeRight.x ), (double) ( rectFace.y + ptEyeRight.y ) } );

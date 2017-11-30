@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Camera.h"
+#include <string>
 #ifdef _MSC_VER
-#	include <opencv2/videocapture.hpp>
+#	include <opencv2/videoio/videoio.hpp>
 #else
 #	include <opencv2/highgui/highgui.hpp>
 #endif
@@ -33,7 +34,9 @@ inline std::vector<std::string> CWebcam::GetCameraList( void )
 
 inline bool CWebcam::TakePicture( void )
 {
+#ifdef _MSC_VER
 	PostThreadMessage( g_dwMainThreadID, CAMERA_IMAGE_READY, (WPARAM) this, 0 );
+#endif
 	return true;
 }
 
@@ -44,6 +47,8 @@ inline bool CWebcam::TakePicture( cv::Mat &matImage, double &dFOV )
 
 inline bool CWebcam::StartLiveView( void )
 {
+#ifdef _MSC_VER
 	PostThreadMessage( g_dwMainThreadID, CAMERA_LIVEVIEW_READY, (WPARAM) this, 0 );
+#endif
 	return true;
 }

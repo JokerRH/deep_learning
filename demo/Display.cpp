@@ -1,8 +1,8 @@
 #include "Display.h"
 #include "Detect.h"
 #include <iostream>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 
 #ifndef _MSC_VER
 #	include <X11/Xlib.h>
@@ -26,11 +26,11 @@ cv::Rect CDisplay::Show( const std::string & sWindow, const cv::Mat & matImage )
 
 void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const CData &dataref )
 {
-#ifdef _MSC_VER
 	CDisplay display( data );
 	display.DrawFace( data );
 
-	display.m_Scenery.Fit( ).Draw( display.GetSceneryROI( ) );
+	cv::Mat mat( display.GetSceneryROI( ) );
+	display.m_Scenery.Fit( ).Draw( mat );
 	display.Show( sWindow );
 
 	bool fReference = false;
@@ -56,7 +56,8 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 					uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_VSC );
 					if( ProcessKey( display.m_Scenery, { fReference ? &dataref : &data }, uKey, true ) )
 					{
-						display.m_Scenery.Draw( display.GetSceneryROI( ) );
+						cv::Mat mat( display.GetSceneryROI( ) );
+						display.m_Scenery.Draw( mat );
 						display.Show( sWindow );
 					}
 
@@ -65,7 +66,8 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 
 				if( ProcessKey( display.m_Scenery, { fReference ? &dataref : &data }, uKey, false ) )
 				{
-					display.m_Scenery.Draw( display.GetSceneryROI( ) );
+					cv::Mat mat( display.GetSceneryROI( ) );
+					display.m_Scenery.Draw( mat );
 					display.Show( sWindow );
 				}
 				switch( uKey )
@@ -88,7 +90,10 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 					}
 
 					fReference = !fReference;
-					display.m_Scenery.Draw( display.GetSceneryROI( ) );
+					{
+						cv::Mat mat( display.GetSceneryROI( ) );
+						display.m_Scenery.Draw( mat );
+					}
 					display.Show( sWindow );
 					break;
 				case 13:	//Enter
@@ -103,7 +108,8 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 		case WM_MOUSEMOVE:
 			if( display.ProcessMouse( display.m_Scenery, msg ) )
 			{
-				display.m_Scenery.Draw( display.GetSceneryROI( ) );
+				cv::Mat mat( display.GetSceneryROI( ) );
+				display.m_Scenery.Draw( mat );
 				display.Show( sWindow );
 			}
 			break;
@@ -115,54 +121,6 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 			DispatchMessage( &msg );
 		}
 	}
-#else
-	CDisplay display( data );
-	display.DrawFace( data );
-
-	display.m_Scenery.Fit( ).Draw( display.GetSceneryROI( ) );
-	display.Show( sWindow );
-
-	bool fReference = false;
-	int iKey;
-	while( true )
-	{
-		iKey = cv::waitKey( 0 );
-		if( ProcessKey( display.m_Scenery, { fReference ? &dataref : &data }, iKey, false ) )
-		{
-			display.m_Scenery.Draw( display.GetSceneryROI( ) );
-			display.Show( sWindow );
-		}
-		switch( iKey )
-		{
-		case 9:		//Tab
-			if( !dataref.IsValid( ) )
-				break;
-
-			if( fReference )
-			{
-				display.m_matScreen = cv::Scalar::all( 255 );
-				display.m_Scenery = display.m_Scenery.GetTransformation( ) * CScenery( data );
-				display.DrawFace( data );
-			}
-			else
-			{
-				display.m_Scenery = display.m_Scenery.GetTransformation( ) * CScenery( dataref );
-				display.DrawFace( dataref );
-				putText( display.m_matScreen, display.m_sReference, display.m_ptText, display.m_iFontFace, display.m_dFontScale, cv::Scalar( 51, 153, 255 ), display.m_iFontThickness, 8 );
-			}
-
-			fReference = !fReference;
-			display.m_Scenery.Draw( display.GetSceneryROI( ) );
-			display.Show( sWindow );
-			break;
-		case 13:	//Enter
-			return;
-		case 27:	//Escape
-			throw 27;
-		}
-		break;
-	}
-#endif
 }
 
 #ifdef WITH_CAFFE
@@ -202,18 +160,20 @@ void CDisplay::ShowLive( const std::string & sWindow, CCamera &camera )
 				if( !uKey )
 				{
 					uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_VSC );
-					if( ProcessKey( display.m_Scenery, display.m_vecData.begin( )._Ptr, display.m_vecData.end( )._Ptr, uKey, true ) )
+					if( ProcessKey( display.m_Scenery, &display.m_vecData.front( ), &display.m_vecData.back( ) + 1, uKey, true ) )
 					{
-						display.m_Scenery.Draw( display.GetSceneryROI( ) );
+						cv::Mat mat( display.GetSceneryROI( ) );
+						display.m_Scenery.Draw( mat );
 						display.Show( sWindow );
 					}
 
 					break;
 				}
 
-				if( ProcessKey( display.m_Scenery, display.m_vecData.begin( )._Ptr, display.m_vecData.end( )._Ptr, uKey, false ) )
+				if( ProcessKey( display.m_Scenery, &display.m_vecData.front( ), &display.m_vecData.back( ) + 1, uKey, false ) )
 				{
-					display.m_Scenery.Draw( display.GetSceneryROI( ) );
+					cv::Mat mat( display.GetSceneryROI( ) );
+					display.m_Scenery.Draw( mat );
 					display.Show( sWindow );
 				}
 				switch( uKey )
@@ -239,7 +199,8 @@ void CDisplay::ShowLive( const std::string & sWindow, CCamera &camera )
 		case WM_MOUSEMOVE:
 			if( display.ProcessMouse( display.m_Scenery, msg ) )
 			{
-				display.m_Scenery.Draw( display.GetSceneryROI( ) );
+				cv::Mat mat( display.GetSceneryROI( ) );
+				display.m_Scenery.Draw( mat );
 				display.Show( sWindow );
 			}
 			break;
@@ -318,7 +279,9 @@ void CDisplay::SetData( const cv::Mat &matImage, double dFOV )
 
 	matDraw.copyTo( m_matScreen( m_rectImage ) );
 	m_Scenery = m_Scenery.GetTransformation( ) * CScenery( m_vecData.data( ), m_vecData.data( ) + m_vecData.size( ) );
-	m_Scenery.Draw( GetSceneryROI( ) );
+
+	cv::Mat mat( GetSceneryROI( ) );
+	m_Scenery.Draw( mat );
 }
 #endif
 
