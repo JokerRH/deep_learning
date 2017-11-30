@@ -20,6 +20,12 @@ int main( int argc, filechar_t **argv )
 	g_dwMainThreadID = 0;
 #endif
 
+	while( true )
+	{
+		int iKey = _getch( );
+		std::wcout << L"Key: " << iKey << std::endl;
+	}
+
 	filestring_t sExecPath = compat::GetFullPathName_d( argv[ 0 ] );
 	if( sExecPath.empty( ) )
 	{

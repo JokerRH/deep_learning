@@ -22,7 +22,7 @@ void CCamera::WaitForLiveView( void )
 		switch( msg.message )
 		{
 		case WM_QUIT:
-			std::wcout << "Quit message" << std::endl;
+			std::wcout << L"Quit message" << std::endl;
 			PostQuitMessage( 0 );
 			throw 27;
 		case WM_KEYDOWN:
@@ -93,7 +93,7 @@ CCamera * CCamera::SelectCamera( void )
 	if( !uCount )
 	{
 		Cls( );
-		std::wcout << "No camera available" << std::endl;
+		std::wcout << L"No camera available" << std::endl;
 		return nullptr;
 	}
 

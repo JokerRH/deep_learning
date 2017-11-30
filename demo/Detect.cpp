@@ -104,7 +104,7 @@ bool CDetect::Init( const filestring_t &sPath )
 
 	//Load network
 	s_pNetwork = new caffe::Net<float>( compat::ToString( sProtoFile ), caffe::TEST );
-	s_pNetwork->CopyTrainedLayersFrom( compat::ToString( sModelFile ) );
+	s_pNetwork->CopyTrainedLayersFromBinaryProto( compat::ToString( sModelFile ) );
 
 	if( s_pNetwork->num_inputs( ) != 1 )
 	{

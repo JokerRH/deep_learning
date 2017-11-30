@@ -11,6 +11,9 @@
 #	include <fnmatch.h>
 #	include <termios.h>
 #	include <stdio.h>
+#	include <sys/ioctl.h>
+#	include <linux/kd.h>
+#	include <errno.h>
 #endif
 
 #ifdef _MSC_VER
@@ -83,26 +86,18 @@ void compat::FindFilesRecursively( const filestring_t &sDir, const filestring_t 
 #else
 int _getch( void )
 {
-	int character;
-	struct termios orig_term_attr;
-	struct termios new_term_attr;
+	struct termios oldattr, newattr;
+	int iKey;
 
-	//set the terminal to raw mode
-	tcgetattr( fileno( stdin ), &orig_term_attr );
-	memcpy( &new_term_attr, &orig_term_attr, sizeof( struct termios ) );
-	new_term_attr.c_lflag &= ~( ECHO | ICANON );
-	new_term_attr.c_cc[ VTIME ] = 0;
-	new_term_attr.c_cc[ VMIN ] = 0;
-	tcsetattr( fileno( stdin ), TCSANOW, &new_term_attr );
+	tcgetattr( STDIN_FILENO, &oldattr );
+	newattr = oldattr;
+	newattr.c_lflag &= ~( ICANON | ECHO );
+	tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
 
-	//read a character from the stdin stream without blocking
-	//returns EOF (-1) if no character is available
-	character = fgetc( stdin );
+	read( STDIN_FILENO, &iKey, sizeof( int ) );
 
-	//restore the original terminal attributes
-	tcsetattr( fileno( stdin ), TCSANOW, &orig_term_attr );
-
-	return character;
+	tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
+	return iKey;
 }
 
 int compat::CreateDirectory_d( const filestring_t &sPath )
@@ -154,7 +149,8 @@ filestring_t compat::PathFindFileName_d( const filestring_t &sPath )
 
 void compat::FindFilesRecursively( const filestring_t &sDir, const filestring_t &sPattern, std::vector<filestring_t> &vecsFiles )
 {
-	FTS *pFileSystem = fts_open( (char *const *) sDir.c_str( ), FTS_COMFOLLOW, nullptr );
+	char *const aszPath[ ] = { (char *const) sDir.c_str( ), nullptr };
+	FTS *pFileSystem = fts_open( aszPath, FTS_COMFOLLOW, nullptr );
 	if( !pFileSystem )
 	{
 		std::wcerr << L"Unable to read directory \"" << sDir.c_str( ) << "\"" << std::endl;
@@ -165,7 +161,7 @@ void compat::FindFilesRecursively( const filestring_t &sDir, const filestring_t 
 	while( ( pNode = fts_read( pFileSystem ) ) )
 	{
 		if( !fnmatch( sPattern.c_str( ), pNode->fts_name, 0 ) )
-			vecsFiles.push_back( compat::PathCombine_d( pNode->fts_path, pNode->fts_name ) );
+			vecsFiles.push_back( pNode->fts_path );
 	}
 
 	fts_close( pFileSystem );
