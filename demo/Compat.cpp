@@ -94,7 +94,7 @@ int _getch( void )
 	newattr.c_lflag &= ~( ICANON | ECHO );
 	tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
 
-	read( STDIN_FILENO, &iKey, sizeof( int ) );
+	(void) read( STDIN_FILENO, &iKey, sizeof( int ) );
 
 	tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
 	return iKey;

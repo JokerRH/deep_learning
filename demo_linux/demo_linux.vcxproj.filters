@@ -19,6 +19,12 @@
     <Filter Include="Source Files\Camera">
       <UniqueIdentifier>{252f1eeb-0e47-4717-8e89-9d82b7263b37}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Frednet">
+      <UniqueIdentifier>{f3bc3bc4-f1ef-4f2f-ab1e-deacbef4e0cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Frednet">
+      <UniqueIdentifier>{32f3eac3-006d-4c0b-9eab-d2c86f44dd67}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\demo\Render\Matrix.h">
@@ -66,9 +72,6 @@
     <ClInclude Include="..\demo\Camera\Webcam.h">
       <Filter>Header Files\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="..\demo\Detect.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\demo\Display.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -79,6 +82,45 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\demo\Queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\base_layer.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\caffe_parameter_parser.hpp">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\calc_shape.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\concat_layer.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\conv_layer.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\dynamic_arrays.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\fc_layer.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\flatten_layer.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\pooling_layer.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\ReLu_layer.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Detect_Caffe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Detect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Detect_Frednet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -119,9 +161,6 @@
     <ClCompile Include="..\demo\Camera\Webcam.cpp">
       <Filter>Source Files\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="..\demo\Detect.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\demo\Display.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -132,6 +171,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\demo\Queue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Frednet\calc_shape.cpp">
+      <Filter>Source Files\Frednet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Detect_Caffe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\demo\Detect_Frednet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

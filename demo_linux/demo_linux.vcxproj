@@ -66,8 +66,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>include;$(IncludePath)</IncludePath>
-    <LibraryPath>
-    </LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="..\demo\Camera\Camera.h" />
@@ -75,7 +74,19 @@
     <ClInclude Include="..\demo\Compat.h" />
     <ClInclude Include="..\demo\Data.h" />
     <ClInclude Include="..\demo\Detect.h" />
+    <ClInclude Include="..\demo\Detect_Caffe.h" />
+    <ClInclude Include="..\demo\Detect_Frednet.h" />
     <ClInclude Include="..\demo\Display.h" />
+    <ClInclude Include="..\demo\Frednet\base_layer.h" />
+    <ClInclude Include="..\demo\Frednet\caffe_parameter_parser.hpp" />
+    <ClInclude Include="..\demo\Frednet\calc_shape.h" />
+    <ClInclude Include="..\demo\Frednet\concat_layer.h" />
+    <ClInclude Include="..\demo\Frednet\conv_layer.h" />
+    <ClInclude Include="..\demo\Frednet\dynamic_arrays.h" />
+    <ClInclude Include="..\demo\Frednet\fc_layer.h" />
+    <ClInclude Include="..\demo\Frednet\flatten_layer.h" />
+    <ClInclude Include="..\demo\Frednet\pooling_layer.h" />
+    <ClInclude Include="..\demo\Frednet\ReLu_layer.h" />
     <ClInclude Include="..\demo\GazeData.h" />
     <ClInclude Include="..\demo\MessageLoop.h" />
     <ClInclude Include="..\demo\Queue.h" />
@@ -96,8 +107,10 @@
     <ClCompile Include="..\demo\Camera\Webcam.cpp" />
     <ClCompile Include="..\demo\Compat.cpp" />
     <ClCompile Include="..\demo\Data.cpp" />
-    <ClCompile Include="..\demo\Detect.cpp" />
+    <ClCompile Include="..\demo\Detect_Caffe.cpp" />
+    <ClCompile Include="..\demo\Detect_Frednet.cpp" />
     <ClCompile Include="..\demo\Display.cpp" />
+    <ClCompile Include="..\demo\Frednet\calc_shape.cpp" />
     <ClCompile Include="..\demo\GazeData.cpp" />
     <ClCompile Include="..\demo\main.cpp" />
     <ClCompile Include="..\demo\MessageLoop.cpp" />
@@ -113,7 +126,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalOptions>-I"../shared" %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>WITH_CAFFE;CPU_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WITH_FREDNET;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <LibraryDependencies>opencv_core;opencv_highgui;opencv_videoio;opencv_objdetect;opencv_imgproc;pthread;X11;boost_system;gflags;glog;caffe;%(LibraryDependencies)</LibraryDependencies>
@@ -125,7 +138,7 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
-      <PreprocessorDefinitions>WITH_CAFFE;CPU_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WITH_FREDNET;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
