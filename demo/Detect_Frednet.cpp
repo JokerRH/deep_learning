@@ -15,6 +15,8 @@
 #include "Frednet/conv_layer.h"
 #include "Frednet/ReLu_layer.h"
 #include "Frednet/pooling_layer.h"
+#include "Frednet/mvn_layer.h"
+#include "Frednet/flatten_layer.h"
 
 array3D<float> CDetect::s_Image( { IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_DEPTH } );
 std::array<base_layer<float> *, 20> CDetect::s_aLayers = { nullptr };
@@ -49,6 +51,7 @@ bool CDetect::Init( const filestring_t &sPath )
 		lp.stride = 4;
 		lp.kernelSize = 11;
 		lp.numOutput = 96;
+		lp.padding = 0;
 		s_aLayers[ 0 ] = new conv_layer<float>( lp, s_Image );
 	}
 
@@ -64,14 +67,167 @@ bool CDetect::Init( const filestring_t &sPath )
 		pooling_layer<float>::layerparam lp;
 		lp.kernelSize = 3;
 		lp.stride = 2;
-		lp.pool = 0;	//??
+		lp.pool = pooling_layer<float>::MAX;
 		lp.layerName = "pool1";
 		s_aLayers[ 2 ] = new pooling_layer<float>( lp, *s_aLayers[ 1 ] );
 	}
 
 	//norm1
 	{
+		mvn_layer<float>::layerparam lp;
+		lp.layerName = "norm1";
+		s_aLayers[ 3 ] = new mvn_layer<float>( lp, *s_aLayers[ 2 ] );
+	}
 
+	//conv2
+	{
+		conv_layer<float>::layerparam lp( parseConvWeights2array<float>( "deploy.caffemodel_conv2_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv2_bias.txt" ) );
+		lp.layerName = "conv2";
+		lp.stride = 1;
+		lp.kernelSize = 5;
+		lp.numOutput = 256;
+		lp.padding = 2;
+		s_aLayers[ 4 ] = new conv_layer<float>( lp, *s_aLayers[ 3 ] );
+	}
+
+	//relu2
+	{
+		relu_layer<float>::layerparam lp;
+		lp.layerName = "relu2";
+		s_aLayers[ 5 ] = new relu_layer<float>( lp, *s_aLayers[ 4 ] );
+	}
+
+	//pool2
+	{
+		pooling_layer<float>::layerparam lp;
+		lp.kernelSize = 3;
+		lp.stride = 2;
+		lp.pool = pooling_layer<float>::MAX;
+		lp.layerName = "pool2";
+		s_aLayers[ 6 ] = new pooling_layer<float>( lp, *s_aLayers[ 5 ] );
+	}
+
+	//norm2
+	{
+		mvn_layer<float>::layerparam lp;
+		lp.layerName = "norm2";
+		s_aLayers[ 7 ] = new pooling_layer<float>( lp, *s_aLayers[ 6 ] );
+	}
+
+	//conv3
+	{
+		conv_layer<float>::layerparam lp( parseConvWeights2array<float>( "deploy.caffemodel_conv3_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv3_bias.txt" ) );
+		lp.layerName = "conv3";
+		lp.stride = 1;
+		lp.kernelSize = 3;
+		lp.numOutput = 384;
+		lp.padding = 1;
+		s_aLayers[ 8 ] = new conv_layer<float>( lp, *s_aLayers[ 7 ] );
+	}
+
+	//relu3
+	{
+		relu_layer<float>::layerparam lp;
+		lp.layerName = "relu3";
+		s_aLayers[ 9 ] = new relu_layer<float>( lp, *s_aLayers[ 8 ] );
+	}
+
+	//conv4
+	{
+		conv_layer<float>::layerparam lp( parseConvWeights2array<float>( "deploy.caffemodel_conv4_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv4_bias.txt" ) );
+		lp.layerName = "conv4";
+		lp.stride = 1;
+		lp.kernelSize = 3;
+		lp.numOutput = 384;
+		lp.padding = 1;
+		s_aLayers[ 10 ] = new conv_layer<float>( lp, *s_aLayers[ 9 ] );
+	}
+
+	//relu4
+	{
+		relu_layer<float>::layerparam lp;
+		lp.layerName = "relu4";
+		s_aLayers[ 11 ] = new relu_layer<float>( lp, *s_aLayers[ 10 ] );
+	}
+
+	//conv5
+	{
+		conv_layer<float>::layerparam lp( parseConvWeights2array<float>( "deploy.caffemodel_conv5_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv5_bias.txt" ) );
+		lp.layerName = "conv5";
+		lp.stride = 1;
+		lp.kernelSize = 3;
+		lp.numOutput = 256;
+		lp.padding = 1;
+		s_aLayers[ 12 ] = new conv_layer<float>( lp, *s_aLayers[ 11 ] );
+	}
+
+	//relu5
+	{
+		relu_layer<float>::layerparam lp;
+		lp.layerName = "relu5";
+		s_aLayers[ 13 ] = new relu_layer<float>( lp, *s_aLayers[ 12 ] );
+	}
+
+	//pool5
+	{
+		pooling_layer<float>::layerparam lp;
+		lp.kernelSize = 3;
+		lp.stride = 2;
+		lp.pool = pooling_layer<float>::MAX;
+		lp.layerName = "pool5";
+		s_aLayers[ 14 ] = new pooling_layer<float>( lp, *s_aLayers[ 13 ] );
+	}
+
+	//pool6
+	{
+		pooling_layer<float>::layerparam lp;
+		lp.kernelSize = 3;
+		lp.stride = 2;
+		lp.pool = pooling_layer<float>::AVE;
+		lp.layerName = "pool6";
+		s_aLayers[ 15 ] = new pooling_layer<float>( lp, *s_aLayers[ 14 ] );
+	}
+
+	//relu6
+	{
+		relu_layer<float>::layerparam lp;
+		lp.layerName = "relu6";
+		s_aLayers[ 16 ] = new relu_layer<float>( lp, *s_aLayers[ 15 ] );
+	}
+
+	//pool7
+	{
+		pooling_layer<float>::layerparam lp;
+		lp.kernelSize = 3;
+		lp.stride = 2;
+		lp.pool = pooling_layer<float>::AVE;
+		lp.layerName = "pool7";
+		s_aLayers[ 17 ] = new pooling_layer<float>( lp, *s_aLayers[ 16 ] );
+	}
+
+	//relu7
+	{
+		relu_layer<float>::layerparam lp;
+		lp.layerName = "relu6";
+		s_aLayers[ 17 ] = new relu_layer<float>( lp, *s_aLayers[ 16 ] );
+	}
+
+	//flatten8
+	{
+		flatten_layer<float>::layerparam lp;
+		lp.layerName = "flatten8";
+		s_aLayers[ 18 ] = new flatten_layer<float>( lp, *s_aLayers[ 17 ] );
+	}
+
+	//fc8_gaze
+	{
+		conv_layer<float>::layerparam lp( parseConvWeights2array<float>( "deploy.caffemodel_conv5_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv5_bias.txt" ) );
+		lp.layerName = "conv5";
+		lp.stride = 1;
+		lp.kernelSize = 3;
+		lp.numOutput = 256;
+		lp.padding = 1;
+		s_aLayers[ 12 ] = new conv_layer<float>( lp, *s_aLayers[ 11 ] );
 	}
 
 	return true;

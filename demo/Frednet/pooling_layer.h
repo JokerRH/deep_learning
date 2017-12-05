@@ -1,28 +1,36 @@
-#ifndef POOLING_LAYER_H
-#define POOLING_LAYER_H
+#pragma once
 
+#include "image_layer.h"
+#include <array>
 
-template <class type>
-class pooling_layer :
-	public base_layer<type>
+template <class Dtype>
+class pooling_layer : public image_layer<Dtype>
 {
 public:
+	enum mode
+	{
+		MAX,
+		AVE,
+		STOCHASTIC
+	};
+
 	struct layerparam
 	{
 		int kernelSize;
 		int stride;
-		int pool;
+		mode pool;
 		std::string layerName = "";
 	};
 
-	pooling_layer( const layerparam &lp, array3D<type> &inputData );
-	pooling_layer( const layerparam &lp, base_layer<type> &parentLayer );
+	pooling_layer( const layerparam &lp, const array3D<Dtype> &inputData );
+	pooling_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer );
+	~pooling_layer( void ) = default override;
 
-	void forward();
-	~pooling_layer() override;
-
+	void forward( void ) override;
 
 private:
+	static std::array<unsigned, 3> CalcShape( const std::array<unsigned, 3> &auDim, const layerparam &lp );
+
 	int kernelSize;
 	int stride;
 	int pool;
@@ -30,9 +38,9 @@ private:
 
 
 // IMPLEMENTATION
-template<class type>
-inline pooling_layer<type>::pooling_layer( const layerparam &lp, array3D<type> &inputData ) :
-	base_layer( inputData, outputShape( inputData.aiDim[ 0 ], inputData.aiDim[ 1 ], inputData.aiDim[ 2 ] ), lp.layerName ),
+template<class Dtype>
+inline pooling_layer<Dtype>::pooling_layer( const layerparam &lp, const array3D<Dtype> &inputData ) :
+	image_layer( inputData, CalcShale( inputData.auDim, lp ) ),
 	kernelSize( lp.kernelSize ),
 	stride( lp.stride ),
 	pool( lp.pool )
@@ -40,10 +48,11 @@ inline pooling_layer<type>::pooling_layer( const layerparam &lp, array3D<type> &
 
 }
 
-template<class type>
-inline pooling_layer<type>::pooling_layer( const layerparam &lp, base_layer<type> &parentLayer ) :
-	pooling_layer( lp, parentLayer.getInput( ) )
+template<class Dtype>
+inline pooling_layer<Dtype>::pooling_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer ) :
+	pooling_layer( lp, parentLayer.getOutput( ) )
 {
+
 }
 
 // doing forward path (pooling)
@@ -52,15 +61,15 @@ inline pooling_layer<type>::pooling_layer( const layerparam &lp, base_layer<type
 // DONE:	Check passing pictureDepth and Picture Size via parameter
 //
 //*******************************************************************************
-template <class type>
-void pooling_layer<type>::forward()
+template <class Dtype>
+void pooling_layer<Dtype>::forward( void )
 {
 
 	// Parameters read from Layer parameter struct
 	int stride = this->stride;
-	int pictureDepth = inputData.aiDim[ 2 ];
-	int pictureSize = inputData.aiDim[ 1 ];   // has to be changed for unsymetric input!!!!!!!!!!
-	type tempMax = 0;
+	int pictureDepth = inputData.auDim[ 2 ];
+	int pictureSize = inputData.auDim[ 1 ];   // has to be changed for unsymetric input!!!!!!!!!!
+	Dtype tempMax = 0;
 	int kernelSize = this->kernelSize;
 
 	//int correctionFactorX = pictureSize - ((pictureSize - kernelSize) / (stride)+1);
@@ -111,15 +120,13 @@ void pooling_layer<type>::forward()
 
 }
 
-
-
-
-
-template <class type>
-pooling_layer<type>::~pooling_layer()
+template<class Dtype>
+inline std::array<unsigned, 3> pooling_layer<Dtype>::CalcShape( const std::array<unsigned, 3>& auDim, const layerparam & lp )
 {
+	return std::array<unsigned, 3>(
+	{
+		(unsigned) ( ( auDim[ 0 ] - lp.kernelSize ) / (Dtype) lp.stride + 1 ),
+		(unsigned) ( ( auDim[ 1 ] - lp.kernelSize ) / (Dtype) lp.stride + 1 ),
+		auDim[ 2 ]
+	} );
 }
-
-
-
-#endif

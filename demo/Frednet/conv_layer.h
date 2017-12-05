@@ -1,24 +1,20 @@
-#ifndef CONV_LAYER_H
-#define CONV_LAYER_H
+#pragma once
 
-#include "base_layer.h"
+#include "image_layer.h"
 #include "caffe_parameter_parser.hpp"
 
 // debug printing
 #include <iostream>
 using namespace std;
 
-
-
 // DEFINITION
-template <class type>
-class conv_layer :
-	public base_layer<type>
+template <class Dtype>
+class conv_layer : public image_layer<Dtype>
 {
 public:
 	struct layerparam
 	{
-		inline layerparam( const array4D<type> &weights, const array1D<type> &bias ) :
+		inline layerparam( const array4D<Dtype> &weights, const array1D<Dtype> &bias ) :
 			weights( weights ),
 			bias( bias )
 		{
@@ -31,30 +27,32 @@ public:
 		int padding;
 		std::string layerName = "";
 
-		array4D<type> weights;
-		array1D<type> bias;
+		array4D<Dtype> weights;
+		array1D<Dtype> bias;
 	};
 
-	conv_layer( const layerparam &lp, array3D<type> &inputData );
-	conv_layer( const layerparam &lp, base_layer<type> &parentLayer );
-	~conv_layer() override;
-	void printLayerParam();
-	void forward();
+	conv_layer( const layerparam &lp, const array3D<Dtype> &inputData );
+	conv_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer );
+	~conv_layer( void ) = default override;
+
+	void printLayerParam( void );
+	void forward( void ) override;
 
 private:
+	static std::array<unsigned, 3> CalcShape( const std::array<unsigned, 3> &auDim, const layerparam &lp );
+
 	int numOutputs;
 	int kernelSize;
 	int stride;
 	int padding;
-	array4D<type> convWeights;
-	array1D<type> bias;
-	string layerName;
+	array4D<Dtype> convWeights;
+	array1D<Dtype> bias;
 };
 
 // IMPLEMENTATION
-template <class type>
-inline conv_layer<type>::conv_layer( const conv_layer<type>::layerParam &lp, array3D<type> &inputData ) :
-	base_layer( lp, inputData, conv_output_shape( inputData.aiDim[ 1 ], inputData.aiDim[ 0 ], inputData.aiDim[ 2 ], lp.stride, 0, lp.numOutput, lp.kernelSize ), lp.layerName ),
+template <class Dtype>
+inline conv_layer<Dtype>::conv_layer( const conv_layer<Dtype>::layerParam &lp, array3D<Dtype> &inputData ) :
+	base_layer( lp, inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
 	convWeights( lp.weights ),
 	bias( lp.bias ),
 	numOutputs( lp.numOutputs ),
@@ -66,23 +64,16 @@ inline conv_layer<type>::conv_layer( const conv_layer<type>::layerParam &lp, arr
 
 }
 
-template <class type>
-inline conv_layer<type>::conv_layer( const layerparam &lp, base_layer<type> &parentLayer ) :
-	conv_layer( lp, parentLayer.getInput( ) )
+template <class Dtype>
+inline conv_layer<Dtype>::conv_layer( const layerparam &lp, base_layer<Dtype> &parentLayer ) :
+	conv_layer( lp, parentLayer.getOutput( ) )
 {
 
 }
-
-template <class type>
-inline conv_layer<type>::~conv_layer()
-{
-
-}
-
 
 // printing private members
-template <class type>
-void conv_layer<type>::printLayerParam()
+template <class Dtype>
+inline void conv_layer<Dtype>::printLayerParam()
 {
 	cout << "Layer Name: " << this->layerName << endl;
 	cout << "KernelSize: " << this->kernelSize << endl;
@@ -107,16 +98,16 @@ void conv_layer<type>::printLayerParam()
 //		 Check passing pictureDepth and Picture Size via parameter(line 100 - 102)
 //*******************************************************************************
 
-template <class type>
-void conv_layer<type>::forward()
+template <class Dtype>
+inline void conv_layer<Dtype>::forward()
 {
 	
 	// Parameters read from Layer parameter struct
 	int stride = this->stride;
 	int kernelSize = this->kernelSize;
 	int filterNum = this->numOutputs;
-	int pictureSize = inputData.aiDim[ 1 ]; // has to be changed for asymetric input!!!!!!!!!!
-	int pictureDepth = inputData.aiDim[ 2 ];
+	int pictureSize = inputData.auDim[ 1 ]; // has to be changed for asymetric input!!!!!!!!!!
+	int pictureDepth = inputData.auDim[ 2 ];
 	//int filterDepth = pictureDepth; // mandatory for CNN convultion layers
 	
 	// Temporary calculation of pictureSize subtraction value -> needs to be veriefied
@@ -172,4 +163,13 @@ void conv_layer<type>::forward()
 	}
 }
 
-#endif
+template<class Dtype>
+inline constexpr std::array<unsigned, 3> conv_layer<Dtype>::CalcShape( const std::array<unsigned, 3> &auDim, const layerparam &lp )
+{
+	return std::array<unsigned, 3>(
+	{
+		(unsigned) ( ( auDim[ 0 ] - lp.kernelSize + ( 2 * lp.padding ) ) / (Dtype) lp.stride + 1 ),
+		(unsigned) ( ( auDim[ 1 ] - lp.kernelSize + ( 2 * lp.padding ) ) / (Dtype) lp.stride + 1 ),
+		lp.numOutput
+	} );
+}

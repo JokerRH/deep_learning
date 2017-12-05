@@ -90,9 +90,6 @@
     <ClInclude Include="..\demo\Frednet\caffe_parameter_parser.hpp">
       <Filter>Header Files\Frednet</Filter>
     </ClInclude>
-    <ClInclude Include="..\demo\Frednet\calc_shape.h">
-      <Filter>Header Files\Frednet</Filter>
-    </ClInclude>
     <ClInclude Include="..\demo\Frednet\concat_layer.h">
       <Filter>Header Files\Frednet</Filter>
     </ClInclude>
@@ -122,6 +119,15 @@
     </ClInclude>
     <ClInclude Include="..\demo\Detect_Frednet.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\mvn_layer.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\flat_layer.h">
+      <Filter>Header Files\Frednet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\Frednet\image_layer.h">
+      <Filter>Header Files\Frednet</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -172,9 +178,6 @@
     </ClCompile>
     <ClCompile Include="..\demo\Queue.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\demo\Frednet\calc_shape.cpp">
-      <Filter>Source Files\Frednet</Filter>
     </ClCompile>
     <ClCompile Include="..\demo\Detect_Caffe.cpp">
       <Filter>Source Files</Filter>

@@ -1,65 +1,63 @@
-#ifndef FC_LAYER_H
-#define FC_LAYER_H
+#pragma once
 
+#include "flat_layer.h"
 
-template <class type>
-class fc_layer :
-	public base_layer<type>
+template <class Dtype>
+class fc_layer : public flat_layer<Dtype>
 {
 public:
-	fc_layer();
-	fc_layer(struct layerParameter lp, type *inputData, type *outputData);
+	struct layerparam
+	{
+		inline layerparam( const array2D<Dtype> &weights, const array1D<Dtype> &bias ) :
+			weights( weights ),
+			bias( bias )
+		{
 
-	~fc_layer();
-	void forward();
+		}
 
+		int numOutput;
+		std::string layerName = "";
+
+		array4D<type> weights;
+		array1D<type> bias;
+	};
+
+	fc_layer( const layerparam &lp, const array1D<type> &inputData );
+	fc_layer( const layerparam &lp, const base_flat_layer<type> &parentLayer );
+	~fc_layer( void ) = default override;
+
+	void forward( void ) override;
 
 private:
-	type *inputData;
-	type *outputData;
-	type **fcWeights;
-	type *bias;
-	int inputLenght;
-	int numOutput = 0;
-
+	array2D<Dtype> weights;
+	array1D<Dtype> bias;
 };
 
-
-
-
 // IMPLEMENTATION
-
-template <class type>
-fc_layer<type>::fc_layer()
+template<class Dtype>
+inline fc_layer<Dtype>::fc_layer( const layerparam &lp, const array1D<Dtype> &inputData ) :
+	flat_layer( inputData, lp.numOutput, lp.layerName ),
+	weights( lp.weights ),
+	bias( lp.bias )
 {
 
 }
 
-
-template <class type>
-fc_layer<type>::fc_layer(struct layerParameter lp, type *inputData, type *outputData)
+template<class Dtype>
+inline fc_layer<Dtype>::fc_layer( const layerparam &lp, const base_flat_layer<Dtype> &parentLayer ) :
+	fc_layer( lp, parentLayer.getOutput( ) )
 {
-	this->bias = lp.bias;
-	this->fcWeights = lp.fcWeights;
-	this->inputData = inputData;
-	this->outputData = outputData;
-	this->inputLenght = lp.inputLenght;
-	this->numOutput = lp.numOutput;
 
 }
 
-
-
-
-
-template <class type>
-void fc_layer<type>::forward()
+template <class Dtype>
+void fc_layer<Dtype>::forward( void )
 {
 	for (int outputCounter = 0; outputCounter < numOutput; outputCounter++) {
 
 		for (int inputCounter = 0; inputCounter < this->inputLenght; inputCounter++) {
 			//cout << outputCounter << " " << inputCounter << " " << inputCounter << " " << outputCounter << endl;
-			outputData[outputCounter] += inputData[inputCounter] * fcWeights[inputCounter][outputCounter];
+			outputData[outputCounter] += inputData[inputCounter] * weights[inputCounter][outputCounter];
 			
 		}
 		outputData[outputCounter] = outputData[outputCounter] + bias[outputCounter];
@@ -68,20 +66,4 @@ void fc_layer<type>::forward()
 		//cout << "Position: " << outputCounter << endl;
 		//cout << "Data: " << outputData[outputCounter] << endl;
 	}
-
-
-
 }
-
-template <class type>
-fc_layer<type>::~fc_layer()
-{
-
-}
-
-
-
-
-
-
-#endif

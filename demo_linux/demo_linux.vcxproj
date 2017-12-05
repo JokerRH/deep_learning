@@ -79,12 +79,14 @@
     <ClInclude Include="..\demo\Display.h" />
     <ClInclude Include="..\demo\Frednet\base_layer.h" />
     <ClInclude Include="..\demo\Frednet\caffe_parameter_parser.hpp" />
-    <ClInclude Include="..\demo\Frednet\calc_shape.h" />
     <ClInclude Include="..\demo\Frednet\concat_layer.h" />
     <ClInclude Include="..\demo\Frednet\conv_layer.h" />
     <ClInclude Include="..\demo\Frednet\dynamic_arrays.h" />
     <ClInclude Include="..\demo\Frednet\fc_layer.h" />
     <ClInclude Include="..\demo\Frednet\flatten_layer.h" />
+    <ClInclude Include="..\demo\Frednet\flat_layer.h" />
+    <ClInclude Include="..\demo\Frednet\image_layer.h" />
+    <ClInclude Include="..\demo\Frednet\mvn_layer.h" />
     <ClInclude Include="..\demo\Frednet\pooling_layer.h" />
     <ClInclude Include="..\demo\Frednet\ReLu_layer.h" />
     <ClInclude Include="..\demo\GazeData.h" />
@@ -110,7 +112,6 @@
     <ClCompile Include="..\demo\Detect_Caffe.cpp" />
     <ClCompile Include="..\demo\Detect_Frednet.cpp" />
     <ClCompile Include="..\demo\Display.cpp" />
-    <ClCompile Include="..\demo\Frednet\calc_shape.cpp" />
     <ClCompile Include="..\demo\GazeData.cpp" />
     <ClCompile Include="..\demo\main.cpp" />
     <ClCompile Include="..\demo\MessageLoop.cpp" />

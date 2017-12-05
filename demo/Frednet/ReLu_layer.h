@@ -1,12 +1,9 @@
-#ifndef RELU_LAYER_H
-#define RELU_LAYER_H
+#pragma once
 
-#include "base_layer.h"
+#include "image_layer.h"
 
-
-template <class type>
-class relu_layer :
-	public base_layer<type>
+template<class Dtype>
+class relu_layer : public image_layer<Dtype>
 {
 public:
 	struct layerparam
@@ -14,33 +11,24 @@ public:
 		std::string layerName = "";
 	};
 
-	relu_layer( const layerparam &lp, array3D<type> &inputData );
-	relu_layer( const layerparam &lp, base_layer<type> &parentLayer );
+	relu_layer( const layerparam &lp, const array3D<Dtype> &inputData );
+	relu_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer );
+	~relu_layer( void ) = default override;
 
-	~relu_layer() override;
-	void forward();
+	void forward( void ) override;
 };
 
-
 // IMPLEMENTATION
-
-template <class type>
-relu_layer<type>::relu_layer()
+template<class Dtype>
+inline relu_layer<Dtype>::relu_layer( const layerparam &lp, const array3D<Dtype> &inputData ) :
+	base_layer( inputData, outputShape( inputData.auDim[ 0 ], inputData.auDim[ 1 ], inputData.auDim[ 2 ] ), lp.layerName )
 {
 
 }
 
-
-template<class type>
-inline relu_layer<type>::relu_layer( const layerparam &lp, array3D<type> &inputData ) :
-	base_layer( inputData, outputShape( inputData.aiDim[ 0 ], inputData.aiDim[ 1 ], inputData.aiDim[ 2 ] ), lp.layerName )
-{
-
-}
-
-template<class type>
-inline relu_layer<type>::relu_layer( const layerparam &lp, base_layer<type> &parentLayer ) :
-	relu_layer( lp, parentLayer.getInput( ) )
+template<class Dtype>
+inline relu_layer<type>::relu_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer ) :
+	relu_layer( lp, parentLayer.getOutput( ) )
 {
 
 }
@@ -52,13 +40,12 @@ inline relu_layer<type>::relu_layer( const layerparam &lp, base_layer<type> &par
 //
 //*******************************************************************************
 
-template<class type>
-void relu_layer<type>::forward()
+template<class Dtype>
+void relu_layer<Dtype>::forward()
 {
-
-	int inputWidth = inputData.aiDim[ 0 ];
-	int inputHeight = inputData.aiDim[ 1 ];
-	int inputDepth = inputData.aiDim[ 2 ];
+	int inputWidth = inputData.auDim[ 0 ];
+	int inputHeight = inputData.auDim[ 1 ];
+	int inputDepth = inputData.auDim[ 2 ];
 
 	for (int depthCount = 0; depthCount < inputDepth; depthCount++) {
 		for (int widthCount = 0; widthCount < inputWidth; widthCount++) {
@@ -75,13 +62,3 @@ void relu_layer<type>::forward()
 	}
 
 }
-
-
-template <class type>
-relu_layer<type>::~relu_layer()
-{
-}
-
-
-
-#endif

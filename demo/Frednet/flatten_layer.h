@@ -1,50 +1,42 @@
-#ifndef FLATTEN_LAYER
-#define FLATTEN_LAYER
+#pragma once
 
+#include "flat_layer.h"
+#include "image_layer.h"
 
-template <class type>
-class flatten_layer :
-	public base_layer<type>
+template<class Dtype>
+class flatten_layer : public base_flat_layer<Dtype>
 {
 public:
-	flatten_layer();
-	flatten_layer(struct layerParameter lp, type ***inputData, type *outputData);
+	struct layerparam
+	{
+		std::string layerName = "";
+	};
 
-	~flatten_layer();
-	void forward();
+	flatten_layer( const layerparam &lp, const array3D<Dtype> &inputData );
+	flatten_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer );
+	~flatten_layer( void ) = default override;
 
+	void forward( void ) override;
 
 private:
-	type ***inputData;
-	type *outputData;
-	int inputWidth;
-	int inputHeight;
-	int inputDepth;
+	const array3D<type> &inputData;
 };
 
-
-
-
 // IMPLEMENTATION
-
-template <class type>
-flatten_layer<type>::flatten_layer()
+template<class type>
+inline flatten_layer<type>::flatten_layer( const layerparam &lp, const array3D<type> &inputData ) :
+	base_flat_layer( inputData.auDim[ 0 ] * inputData.auDim[ 1 ] * inputData.auDim[ 2 ], lp.layerName ),
+	inputData( inputData )
 {
 
 }
 
-
-template <class type>
-flatten_layer<type>::flatten_layer(struct layerParameter lp, type ***inputData, type *outputData)
+template<class type>
+inline flatten_layer<type>::flatten_layer( const layerparam &lp, const image_layer<type> &parentLayer ) :
+	flatten_layer( lp, parentLayer.getOutput( ) )
 {
-	this->inputData = inputData;
-	this->outputData = outputData;
-	this->inputWidth = lp.inputWidth;
-	this->inputHeight = lp.inputHeight;
-	this->inputDepth = lp.inputDepth;
 
 }
-
 
 // caffe flattening implementation: NxCxWxH H first then W and then C
 // 1. first channels first rows first element
@@ -53,13 +45,12 @@ flatten_layer<type>::flatten_layer(struct layerParameter lp, type ***inputData, 
 // 4. first channels second rows first element
 // 5. .............
 // 6. second channels first rows first element
-
 template <class type>
 void flatten_layer<type>::forward()
 {
-	int inputWidth = this->inputWidth;
-	int inputHeight = this->inputHeight;
-	int inputDepth = this->inputDepth;
+	int inputWidth = inputData.auDim[ 0 ];
+	int inputHeight = inputData.auDim[ 1 ];
+	int inputDepth = inputData.auDim[ 2 ];
 	int count = 0;
 	for (int depth = 0; depth < inputDepth; depth++) {
 		for (int lines = 0; lines < inputWidth; lines++) {
@@ -71,28 +62,7 @@ void flatten_layer<type>::forward()
 				//cout << "Data: " << outputData[count] << endl;
 				//cout << "Position: " << count << endl;
 				count++;
-
 			}
 		}
 	}
-
-
-
-
-
-
-
 }
-
-template <class type>
-flatten_layer<type>::~flatten_layer()
-{
-
-}
-
-
-
-
-
-
-#endif
