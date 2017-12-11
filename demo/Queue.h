@@ -19,12 +19,12 @@ Triggers can be installed to get information about the number of buffers remaini
 class CStorage
 {
 protected:
-	CStorage(unsigned int uCount, unsigned int uSize);
-	~CStorage(void) noexcept;
+	CStorage( unsigned int uCount, unsigned int uSize );
+	~CStorage( void ) noexcept;
 
-	void *GetPointer(void);
-	void *GetPointer_Try(void);
-	void ReleasePointer(void *pData);
+	void *GetPointer( void );
+	void *GetPointer_Try( void );
+	void ReleasePointer( void *pData );
 
 private:
 	char *m_pRawData;						///< Raw block of memory
@@ -45,16 +45,19 @@ template<typename _Up>
 class CQueue : private CStorage
 {
 public:
-	CQueue(unsigned int uCount);
-	~CQueue(void) noexcept;
+	CQueue( unsigned int uCount );
+	~CQueue( void ) noexcept;
 
 	template<typename... _Arguments>
-	void Emplace_Back(_Arguments&&... _Args);
-	void Push_Back(const _Up &val);
-	_Up *Pop_Front_Ptr(void);
-	_Up Pop_Front(void);
+	void Emplace_Back( _Arguments&&... _Args );
+	template<typename... _Arguments>
+	void FEmplace_Back( _Arguments&&... _Args );
+	void Push_Back( const _Up &val );
+	void FPush_Back( const _Up &val );
+	_Up *Pop_Front_Ptr( void );
+	_Up Pop_Front( void );
 	bool Peek_Front( _Up &val, bool fPop = true );
-	void Release(_Up *p);
+	void Release( _Up *p );
 
 private:
 	_Up **m_apData;							///< Array of size CQueue#m_uCount containing the buffers in the queue.
@@ -67,86 +70,161 @@ private:
 };
 
 template<typename _Up>
-inline CQueue<_Up>::CQueue(unsigned int uCount) :
-	CStorage(uCount, sizeof(_Up)),
-	m_uCount(uCount + 1)
+inline CQueue<_Up>::CQueue( unsigned int uCount ) :
+	CStorage( uCount, sizeof( _Up ) ),
+	m_uCount( uCount + 1 )
 {
-	m_apData = new _Up *[uCount];
+	m_apData = new _Up *[ uCount ];
 }
 
 template<typename _Up>
-inline CQueue<_Up>::~CQueue(void) noexcept
+inline CQueue<_Up>::~CQueue( void ) noexcept
 {
-	delete[] m_apData;
+	delete[ ] m_apData;
 }
 
 template<typename _Up>
 template<typename... _Args>
-inline void CQueue<_Up>::Emplace_Back(_Args&&... __args)
+inline void CQueue<_Up>::Emplace_Back( _Args&&... __args )
 {
-	_Up *pData = static_cast<_Up *>(GetPointer());
+	_Up *pData = static_cast<_Up *>( GetPointer( ) );
 	try
 	{
-		::new(pData) _Up(std::forward<_Args>(__args)...);
+		::new( pData ) _Up( std::forward<_Args>( __args )... );
 	}
-	catch (...)
+	catch( ... )
 	{
-		ReleasePointer(pData);
+		ReleasePointer( pData );
 		throw;
 	}
 
 	{
-		std::unique_lock<std::mutex> lock(m_mtxRead);
+		std::unique_lock<std::mutex> lock( m_mtxRead );
 
-		m_apData[m_uEnd] = pData;
-		m_uEnd = (m_uEnd + 1) % m_uCount;
+		m_apData[ m_uEnd ] = pData;
+		m_uEnd = ( m_uEnd + 1 ) % m_uCount;
 
 		//Signal waiting threads
-		m_condWait.notify_one();
+		m_condWait.notify_one( );
 	}
 }
 
 template<typename _Up>
-inline void CQueue<_Up>::Push_Back(const _Up &val)
+template<typename... _Args>
+inline void CQueue<_Up>::FEmplace_Back( _Args&&... __args )
 {
-	_Up *pData = static_cast<_Up *>(GetPointer());
-	::new(pData) _Up(val);
+	std::unique_lock<std::mutex> lock( m_mtxRead );
+	_Up *pData = static_cast<_Up *>( GetPointer_Try( ) );
+	if( !pData )
+	{
+		while( m_uStart == m_uEnd )
+			m_condWait.wait( lock );	//Queue empty, wait for an element to be pushed
+
+		pData = static_cast<_Up *>( m_apData[ m_uStart ] );
+		m_uStart = ( m_uStart + 1 ) % m_uCount;
+
+		pData->~_Up( );	//Destroy front element
+	}
+
+	try
+	{
+		::new( pData ) _Up( std::forward<_Args>( __args )... );
+	}
+	catch( ... )
+	{
+		ReleasePointer( pData );
+		throw;
+	}
+
+	m_apData[ m_uEnd ] = pData;
+	m_uEnd = ( m_uEnd + 1 ) % m_uCount;
+
+	//Signal waiting threads
+	m_condWait.notify_one( );
+}
+
+template<typename _Up>
+inline void CQueue<_Up>::Push_Back( const _Up &val )
+{
+	_Up *pData = static_cast<_Up *>( GetPointer( ) );
+	try
+	{
+		::new( pData ) _Up( val );
+	}
+	catch( ... )
+	{
+		ReleasePointer( pData );
+		throw;
+	}
 
 	{
-		std::unique_lock<std::mutex> lock(m_mtxRead);
+		std::unique_lock<std::mutex> lock( m_mtxRead );
 
-		m_apData[m_uEnd] = pData;
-		m_uEnd = (m_uEnd + 1) % m_uCount;
+		m_apData[ m_uEnd ] = pData;
+		m_uEnd = ( m_uEnd + 1 ) % m_uCount;
 
 		//Signal waiting threads
-		m_condWait.notify_one();
+		m_condWait.notify_one( );
 	}
 }
 
 template<typename _Up>
-inline _Up *CQueue<_Up>::Pop_Front_Ptr(void)
+inline void CQueue<_Up>::FPush_Back( const _Up &val )
+{
+	std::unique_lock<std::mutex> lock( m_mtxRead );
+	_Up *pData = static_cast<_Up *>( GetPointer_Try( ) );
+	if( !pData )
+	{
+		while( m_uStart == m_uEnd )
+			m_condWait.wait( lock );	//Queue empty, wait for an element to be pushed
+
+		pData = static_cast<_Up *>( m_apData[ m_uStart ] );
+		m_uStart = ( m_uStart + 1 ) % m_uCount;
+
+		pData->~_Up( );	//Destroy front element
+	}
+
+	try
+	{
+		::new( pData ) _Up( val );
+	}
+	catch( ... )
+	{
+		ReleasePointer( pData );
+		throw;
+	}
+
+	m_apData[ m_uEnd ] = pData;
+	m_uEnd = ( m_uEnd + 1 ) % m_uCount;
+
+	//Signal waiting threads
+	m_condWait.notify_one( );
+}
+
+template<typename _Up>
+inline _Up *CQueue<_Up>::Pop_Front_Ptr( void )
 {
 	_Up *pCurrent = nullptr;
 
 	//Lock mutex
 	{
-		std::unique_lock<std::mutex> lock(m_mtxRead);
+		std::unique_lock<std::mutex> lock( m_mtxRead );
 
-		while (m_uStart == m_uEnd)
-			m_condWait.wait(lock);	//Queue empty, wait for an element to be pushed
+		while( m_uStart == m_uEnd )
+			m_condWait.wait( lock );	//Queue empty, wait for an element to be pushed
 
-		pCurrent = static_cast<_Up *>(m_apData[m_uStart]);
-		m_uStart = (m_uStart + 1) % m_uCount;
+		pCurrent = static_cast<_Up *>( m_apData[ m_uStart ] );
+		m_uStart = ( m_uStart + 1 ) % m_uCount;
 	}
 	return pCurrent;
 }
 
 template<typename _Up>
-inline _Up CQueue<_Up>::Pop_Front(void)
+inline _Up CQueue<_Up>::Pop_Front( void )
 {
-	_Up *pRet = Pop_Front_Ptr();
+	_Up *pRet = Pop_Front_Ptr( );
 	_Up ret = *pRet;
-	Release(pRet);
+	Release( pRet );
 	return ret;
 }
 
@@ -175,8 +253,8 @@ inline bool CQueue<_Up>::Peek_Front( _Up &val, bool fPop )
 }
 
 template<typename _Up>
-inline void CQueue<_Up>::Release(_Up *p)
+inline void CQueue<_Up>::Release( _Up *p )
 {
-	p->~_Up();
-	ReleasePointer(p);
+	p->~_Up( );
+	ReleasePointer( p );
 }
