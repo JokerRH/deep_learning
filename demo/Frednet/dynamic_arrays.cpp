@@ -1,6 +1,5 @@
 //4D Array
 #include "dynamic_arrays.h"
-#include "stdafx.h"
 
 template <class T>
 T **** build4DArray(int width, int height, int depth, int amountCount) {

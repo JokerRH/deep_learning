@@ -86,8 +86,21 @@ void compat::FindFilesRecursively( const filestring_t &sDir, const filestring_t 
 #else
 int _getch( void )
 {
+	static int iLast = 0;
+	union
+	{
+		int iKey;
+		char abKey[ 4 ];
+	};
+
+	if( iLast )
+	{
+		iKey = iLast;
+		iLast = 0;
+		return iKey;
+	}
+
 	struct termios oldattr, newattr;
-	int iKey;
 
 	tcgetattr( STDIN_FILENO, &oldattr );
 	newattr = oldattr;
@@ -97,6 +110,19 @@ int _getch( void )
 	(void) read( STDIN_FILENO, &iKey, sizeof( int ) );
 
 	tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
+
+	//ASCII escape sequence to keycode
+	if( abKey[ 0 ] == 27 && abKey[ 1 ] == '[' )
+	{
+		if( abKey[ 2 ] == 'A' && abKey[ 3 ] == 0 ) { iKey = 0; iLast = 72; }		//ARROW_UP
+		else if( abKey[ 2 ] == 'B' && abKey[ 3 ] == 0 ) { iKey = 0; iLast = 80; }	//ARROW_DOWN
+		else if( abKey[ 2 ] == 'C' && abKey[ 3 ] == 0 ) { iKey = 0; iLast = 77; }	//ARROW_RIGHT
+		else if( abKey[ 2 ] == 'D' && abKey[ 3 ] == 0 ) { iKey = 0; iLast = 75; }	//ARROW_LEFT
+	}
+
+	if( iKey == 10 )
+		iKey = 13;
+
 	return iKey;
 }
 

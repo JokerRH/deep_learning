@@ -11,7 +11,6 @@
 
 #include "Frednet/caffe_parameter_parser.hpp"
 #include "Frednet/base_layer.h"
-#include "Frednet/calc_shape.h"
 #include "Frednet/conv_layer.h"
 #include "Frednet/ReLu_layer.h"
 #include "Frednet/pooling_layer.h"
@@ -318,43 +317,9 @@ CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV
 	rayEyeRight *= vec2Gaze[ 1 ];
 }
 
-bool CDetect::SetMean( const std::string &sMeanFile )
-{
-	caffe::BlobProto blob_proto;
-	if( !ReadProtoFromBinaryFile( sMeanFile.c_str( ), &blob_proto ) )
-		return false;
-
-	//Convert from BlobProto to Blob<float>
-	Blob<float> mean_blob;
-	mean_blob.FromProto( blob_proto );
-
-	CHECK_EQ( mean_blob.channels( ), 3 ) << "Number of channels of mean file doesn't match input layer.";
-
-	//The format of the mean file is planar 32-bit float BGR
-	std::vector<cv::Mat> channels;
-	float *data = mean_blob.mutable_cpu_data( );
-	for( int i = 0; i < 3; i++ )
-	{
-		//Extract an individual channel
-		cv::Mat channel( mean_blob.height( ), mean_blob.width( ), CV_32FC1, data );
-		channels.push_back( channel );
-
-		data += mean_blob.height( ) * mean_blob.width( );
-	}
-
-	//Merge the separate channels into a single image
-	cv::Mat mean;
-	cv::merge( channels, mean );
-
-	//Compute the global mean pixel value and create a mean image filled with this value
-	cv::Scalar channel_mean = cv::mean( mean );
-
-	s_matMean = cv::Mat( s_InputShape, mean.type( ), channel_mean );
-	return true;
-}
-
 std::array<float, 8> CDetect::Forward( cv::Mat matImage )
 {
+#if 0
 	Blob<float> *pInputLayer = s_pNetwork->input_blobs( )[ 0 ];
 	pInputLayer->Reshape( 1, 3, s_InputShape.height, s_InputShape.width );
 	s_pNetwork->Reshape( );	//Forward dimension change to all layers
@@ -396,5 +361,6 @@ std::array<float, 8> CDetect::Forward( cv::Mat matImage )
 	std::array<float, 8> arData;
 	std::copy( prBegin, prBegin + 8, arData.begin( ) );
 	return arData;
+#endif
 }
 #endif

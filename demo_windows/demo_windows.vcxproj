@@ -75,6 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -158,7 +159,21 @@
     <ClInclude Include="..\demo\Compat.h" />
     <ClInclude Include="..\demo\Data.h" />
     <ClInclude Include="..\demo\Detect.h" />
+    <ClInclude Include="..\demo\Detect_Caffe.h" />
+    <ClInclude Include="..\demo\Detect_Frednet.h" />
     <ClInclude Include="..\demo\Display.h" />
+    <ClInclude Include="..\demo\Frednet\base_layer.h" />
+    <ClInclude Include="..\demo\Frednet\caffe_parameter_parser.hpp" />
+    <ClInclude Include="..\demo\Frednet\concat_layer.h" />
+    <ClInclude Include="..\demo\Frednet\conv_layer.h" />
+    <ClInclude Include="..\demo\Frednet\dynamic_arrays.h" />
+    <ClInclude Include="..\demo\Frednet\fc_layer.h" />
+    <ClInclude Include="..\demo\Frednet\flatten_layer.h" />
+    <ClInclude Include="..\demo\Frednet\flat_layer.h" />
+    <ClInclude Include="..\demo\Frednet\image_layer.h" />
+    <ClInclude Include="..\demo\Frednet\mvn_layer.h" />
+    <ClInclude Include="..\demo\Frednet\pooling_layer.h" />
+    <ClInclude Include="..\demo\Frednet\ReLu_layer.h" />
     <ClInclude Include="..\demo\GazeData.h" />
     <ClInclude Include="..\demo\Render\Matrix.h" />
     <ClInclude Include="..\demo\Render\Ray.h" />
@@ -178,7 +193,8 @@
     <ClCompile Include="..\demo\Camera\Webcam.cpp" />
     <ClCompile Include="..\demo\Compat.cpp" />
     <ClCompile Include="..\demo\Data.cpp" />
-    <ClCompile Include="..\demo\Detect.cpp" />
+    <ClCompile Include="..\demo\Detect_Caffe.cpp" />
+    <ClCompile Include="..\demo\Detect_Frednet.cpp" />
     <ClCompile Include="..\demo\Display.cpp" />
     <ClCompile Include="..\demo\GazeData.cpp" />
     <ClCompile Include="..\demo\main.cpp" />

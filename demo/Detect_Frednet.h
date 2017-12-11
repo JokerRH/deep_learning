@@ -5,6 +5,7 @@
 #include "GazeData.h"
 #include "Render/Ray.h"
 #include "Frednet/dynamic_arrays.h"
+#include "Frednet/base_layer.h"
 #include <memory>
 #include <string>
 #include <opencv2/core/core.hpp>

@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <atomic>
 #include <thread>
+#include <iostream>
 #include <opencv2/highgui.hpp>
 
 static CQueue<MSG> g_MessageQueue( 10 );
@@ -41,6 +42,7 @@ bool MessageInit( DWORD idThread, const std::string &sWindow )
 {
 	g_hKeyboardThread = std::thread( KeyboardThread, idThread );
 	cv::setMouseCallback( sWindow, MouseCallback, nullptr );
+	return true;
 }
 
 void MessageTerminate( void )
@@ -53,6 +55,7 @@ BOOL GetMessage( LPMSG lpMsg, void *hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax
 {
 	assert( lpMsg );
 	*lpMsg = g_MessageQueue.Pop_Front( );
+	return true;
 }
 
 BOOL PeekMessage( LPMSG lpMsg, void *hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg )
@@ -68,10 +71,23 @@ BOOL PostThreadMessage( DWORD idThread, UINT Msg, WPARAM wParam, LPARAM lParam )
 	msg.wParam = wParam;
 	msg.lParam = lParam;
 	g_MessageQueue.Emplace_Back( msg );
+	return true;
 }
 
 UINT MapVirtualKey( UINT uCode, UINT uMapType )
 {
+	std::wcout << "Key: " << uCode << std::endl;
+	int iReturn = 0;
+	switch( uMapType )
+	{
+	case MAPVK_VK_TO_CHAR:
+		break;
+	case MAPVK_VK_TO_VSC:
+		break;
+	default:
+		std::wcerr << "Unknown map type " << uMapType << std::endl;
+	}
 
+	return iReturn;
 }
 #endif

@@ -9,8 +9,8 @@ public:
 	base_flat_layer( unsigned numOutput, const std::string &sLayerName );
 	virtual ~base_flat_layer( void ) = 0 override;
 
-	const array1D<Dtype> &getOutput( void ) const;
-	array1D<Dtype> &getOutput( void );
+	constexpr const array1D<Dtype> &getOutput( void ) const;
+	constexpr array1D<Dtype> &getOutputR( void );
 
 protected:
 	array1D<Dtype> outputData;
@@ -23,10 +23,10 @@ public:
 	flat_layer( const array1D<Dtype> &inputData, unsigned numOutput, const std::string &sLayerName );
 	virtual ~flat_layer( void ) = 0 override;
 
-	const array1D<type> &getInput( void ) const;
+	constexpr const array1D<Dtype> &getInput( void ) const;
 
 protected:
-	const array1D<type> &inputData;
+	const array1D<Dtype> &inputData;
 };
 
 template<class type>
@@ -43,8 +43,8 @@ inline constexpr const array1D<Dtype> &base_flat_layer<Dtype>::getOutput( void )
 	return outputData;
 }
 
-template<class type>
-inline constexpr array1D<type> &base_flat_layer<type>::getOutput( void )
+template<class Dtype>
+inline constexpr array1D<Dtype> &base_flat_layer<Dtype>::getOutputR( void )
 {
 	return outputData;
 }

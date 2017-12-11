@@ -124,6 +124,83 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 }
 
 #ifdef WITH_CAFFE
+void CDisplay::ShowImage( const std::string &sWindow, const cv::Mat &matImage, double dFOV )
+{
+	CDisplay display( (double) matImage.cols / matImage.rows );
+	display.SetData( matImage, dFOV );
+	display.Show( sWindow );
+
+	MSG msg;
+	bool fUpdate = true;
+	BOOL fReturn;
+	while( true )
+	{
+		if( ( fReturn = GetMessage( &msg, NULL, 0, 0 ) ) == -1 )
+			throw 27;	//Error
+
+		switch( msg.message )
+		{
+		case WM_QUIT:
+			std::wcout << "Quit message" << std::endl;
+			PostQuitMessage( 0 );
+			throw 27;
+		case WM_KEYDOWN:
+			{
+				unsigned uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_CHAR );
+				if( !uKey )
+				{
+					uKey = MapVirtualKey( (UINT) msg.wParam, MAPVK_VK_TO_VSC );
+					if( ProcessKey( display.m_Scenery, &display.m_vecData.front( ), &display.m_vecData.back( ) + 1, uKey, true ) )
+					{
+						cv::Mat mat( display.GetSceneryROI( ) );
+						display.m_Scenery.Draw( mat );
+						display.Show( sWindow );
+					}
+
+					break;
+				}
+
+				if( ProcessKey( display.m_Scenery, &display.m_vecData.front( ), &display.m_vecData.back( ) + 1, uKey, false ) )
+				{
+					cv::Mat mat( display.GetSceneryROI( ) );
+					display.m_Scenery.Draw( mat );
+					display.Show( sWindow );
+				}
+				switch( uKey )
+				{
+				case 13:	//Enter
+					if( fUpdate )
+						return;
+
+					fUpdate = true;
+					break;
+				case 27:	//Escape
+					throw 27;
+					//default:
+					//std::wcout << "Key: " << uKey << std::endl;
+				}
+				break;
+			}
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_MOUSEMOVE:
+			if( display.ProcessMouse( display.m_Scenery, msg ) )
+			{
+				cv::Mat mat( display.GetSceneryROI( ) );
+				display.m_Scenery.Draw( mat );
+				display.Show( sWindow );
+			}
+			break;
+		}
+
+		if( fReturn > 0 )
+		{
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
+		}
+	}
+}
+
 void CDisplay::ShowLive( const std::string & sWindow, CCamera &camera )
 {
 	camera.WaitForLiveView( );

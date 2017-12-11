@@ -18,6 +18,7 @@ public:
 	static cv::Rect Show( const std::string &sWindow, const cv::Mat &matImage );
 	static void ShowImage( const std::string &sWindow, const CData &data, const CData &dataref = CData( ) );
 #ifdef WITH_CAFFE
+	static void ShowImage( const std::string &sWindow, const cv::Mat &matImage, double dFOV );
 	static void ShowLive( const std::string &sWindow, CCamera &camera );
 #endif
 

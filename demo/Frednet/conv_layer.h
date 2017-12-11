@@ -39,7 +39,7 @@ public:
 	void forward( void ) override;
 
 private:
-	static std::array<unsigned, 3> CalcShape( const std::array<unsigned, 3> &auDim, const layerparam &lp );
+	static constexpr std::array<unsigned, 3> CalcShape( const std::array<unsigned, 3> &auDim, const layerparam &lp );
 
 	int numOutputs;
 	int kernelSize;
@@ -51,7 +51,7 @@ private:
 
 // IMPLEMENTATION
 template <class Dtype>
-inline conv_layer<Dtype>::conv_layer( const conv_layer<Dtype>::layerParam &lp, array3D<Dtype> &inputData ) :
+inline conv_layer<Dtype>::conv_layer( const conv_layer::layerParam &lp, array3D<Dtype> &inputData ) :
 	base_layer( lp, inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
 	convWeights( lp.weights ),
 	bias( lp.bias ),
@@ -65,7 +65,7 @@ inline conv_layer<Dtype>::conv_layer( const conv_layer<Dtype>::layerParam &lp, a
 }
 
 template <class Dtype>
-inline conv_layer<Dtype>::conv_layer( const layerparam &lp, base_layer<Dtype> &parentLayer ) :
+inline conv_layer<Dtype>::conv_layer( const conv_layer::layerparam &lp, base_layer<Dtype> &parentLayer ) :
 	conv_layer( lp, parentLayer.getOutput( ) )
 {
 

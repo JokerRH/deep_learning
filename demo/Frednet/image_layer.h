@@ -28,7 +28,7 @@ inline image_layer<Dtype>::image_layer( const array3D<Dtype> &inputData, const s
 }
 
 template<class Dtype>
-inline constexpr const array3D<type> &image_layer<Dtype>::getInput( void ) const
+inline constexpr const array3D<Dtype> &image_layer<Dtype>::getInput( void ) const
 {
 	return inputData;
 }
@@ -40,7 +40,7 @@ inline constexpr const array3D<Dtype> &image_layer<Dtype>::getOutput( void ) con
 }
 
 template<class Dtype>
-inline constexpr array3D<type> &image_layer<Dtype>::getOutput( void )
+inline constexpr array3D<Dtype> &image_layer<Dtype>::getOutput( void )
 {
 	return outputData;
 }

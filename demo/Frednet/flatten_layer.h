@@ -19,7 +19,7 @@ public:
 	void forward( void ) override;
 
 private:
-	const array3D<type> &inputData;
+	const array3D<Dtype> &inputData;
 };
 
 // IMPLEMENTATION
