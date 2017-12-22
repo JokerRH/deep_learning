@@ -4,6 +4,7 @@
 #include "Camera/Camera.h"
 #include "Scenery.h"
 #include "Compat.h"
+#include "Detect.h"
 #include <string>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -17,7 +18,7 @@ class CDisplay
 public:
 	static cv::Rect Show( const std::string &sWindow, const cv::Mat &matImage );
 	static void ShowImage( const std::string &sWindow, const CData &data, const CData &dataref = CData( ) );
-#ifdef WITH_CAFFE
+#ifdef HAS_DETECT
 	static void ShowImage( const std::string &sWindow, const cv::Mat &matImage, double dFOV );
 	static void ShowLive( const std::string &sWindow, CCamera &camera );
 #endif
@@ -26,7 +27,7 @@ private:
 	CDisplay( double dRatio );
 	CDisplay( const CData &data );
 
-#ifdef WITH_CAFFE
+#ifdef HAS_DETECT
 	void SetData( const cv::Mat &matImage, double dFOV );
 #endif
 

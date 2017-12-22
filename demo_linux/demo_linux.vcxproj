@@ -131,6 +131,7 @@
     </ClCompile>
     <Link>
       <LibraryDependencies>opencv_core;opencv_highgui;opencv_videoio;opencv_objdetect;opencv_imgproc;opencv_imgcodecs;pthread;X11;boost_system;gflags;glog;caffe;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

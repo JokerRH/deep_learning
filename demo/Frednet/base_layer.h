@@ -7,7 +7,7 @@ class base_layer
 {
 public:
 	base_layer( const std::string &sLayerName );
-	virtual ~base_layer( void ) = 0;
+	virtual ~base_layer( void ) = default;
 
 	virtual void forward( void ) = 0;
 

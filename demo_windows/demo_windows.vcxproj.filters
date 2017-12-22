@@ -66,9 +66,6 @@
     <ClInclude Include="..\demo\Data.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\demo\GazeData.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\demo\Detect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -127,6 +124,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\demo\Detect_Frednet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\demo\GazeData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

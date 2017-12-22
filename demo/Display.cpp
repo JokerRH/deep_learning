@@ -123,7 +123,7 @@ void CDisplay::ShowImage( const std::string &sWindow, const CData &data, const C
 	}
 }
 
-#ifdef WITH_CAFFE
+#ifdef HAS_DETECT
 void CDisplay::ShowImage( const std::string &sWindow, const cv::Mat &matImage, double dFOV )
 {
 	CDisplay display( (double) matImage.cols / matImage.rows );
@@ -330,7 +330,7 @@ CDisplay::CDisplay( const CData &data ) :
 	m_Scenery = CScenery{ &data };
 }
 
-#ifdef WITH_CAFFE
+#ifdef HAS_DETECT
 void CDisplay::SetData( const cv::Mat &matImage, double dFOV )
 {
 	std::vector<cv::Rect> vecFaces = CDetect::GetFaces( matImage );

@@ -26,26 +26,9 @@ public:
 
 private:
 	std::array<float, 8> Forward( cv::Mat matImage );
-
-	struct alexnet
-	{
-		array1D<float> conv1bias;
-		array4D<float> conv1Weights;
-		array1D<float> conv2bias;
-		array4D<float> conv2Weights;
-		array1D<float> conv3bias;
-		array4D<float> conv3Weights;
-		array1D<float> conv4bias;
-		array4D<float> conv4Weights;
-		array1D<float> conv5bias;
-		array4D<float> conv5Weights;
-		array1D<float> fc8Bias;
-		array2D<float> fc8Weights;
-	};
 	
 	static array3D<float> s_Image;
 	static std::array<base_layer<float> *, 20> s_aLayers;
-	static alexnet s_Network;
 };
 
 #endif

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dynamic_arrays.h"
 #include "image_layer.h"
 #include "caffe_parameter_parser.hpp"
 
@@ -9,37 +10,38 @@ using namespace std;
 
 // DEFINITION
 template <class Dtype>
+struct layerparam_conv
+{
+	inline layerparam_conv( const array4D<Dtype> &weights, const array1D<Dtype> &bias ) :
+		weights( weights ),
+		bias( bias )
+	{
+
+	}
+
+	int numOutput;
+	int kernelSize;
+	int stride;
+	int padding;
+	std::string layerName = "";
+
+	array4D<Dtype> weights;
+	array1D<Dtype> bias;
+};
+
+template <class Dtype>
 class conv_layer : public image_layer<Dtype>
 {
 public:
-	struct layerparam
-	{
-		inline layerparam( const array4D<Dtype> &weights, const array1D<Dtype> &bias ) :
-			weights( weights ),
-			bias( bias )
-		{
-
-		}
-
-		int numOutput;
-		int kernelSize;
-		int stride;
-		int padding;
-		std::string layerName = "";
-
-		array4D<Dtype> weights;
-		array1D<Dtype> bias;
-	};
-
-	conv_layer( const layerparam &lp, const array3D<Dtype> &inputData );
-	conv_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer );
-	~conv_layer( void ) = default override;
+	conv_layer( const layerparam_conv<Dtype> &lp, const array3D<Dtype> &inputData );
+	conv_layer( const layerparam_conv<Dtype> &lp, image_layer<Dtype> &parentLayer );
+	~conv_layer( void ) override = default;
 
 	void printLayerParam( void );
 	void forward( void ) override;
 
 private:
-	static constexpr std::array<unsigned, 3> CalcShape( const std::array<unsigned, 3> &auDim, const layerparam &lp );
+	static constexpr std::array<unsigned, 3> CalcShape( const std::array<unsigned, 3> &auDim, const layerparam_conv<Dtype> &lp );
 
 	int numOutputs;
 	int kernelSize;
@@ -51,21 +53,19 @@ private:
 
 // IMPLEMENTATION
 template <class Dtype>
-inline conv_layer<Dtype>::conv_layer( const conv_layer::layerParam &lp, array3D<Dtype> &inputData ) :
-	base_layer( lp, inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
+inline conv_layer<Dtype>::conv_layer( const layerparam_conv<Dtype> &lp, const array3D<Dtype> &inputData ) :
+	image_layer( inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
 	convWeights( lp.weights ),
 	bias( lp.bias ),
-	numOutputs( lp.numOutputs ),
 	kernelSize( lp.kernelSize ),
 	stride( lp.stride ),
-	padding( lp.padding ),
-	layerName( lp.layerName )
+	padding( lp.padding )
 {
 
 }
 
 template <class Dtype>
-inline conv_layer<Dtype>::conv_layer( const conv_layer::layerparam &lp, base_layer<Dtype> &parentLayer ) :
+inline conv_layer<Dtype>::conv_layer( const layerparam_conv<Dtype> &lp, image_layer<Dtype> &parentLayer ) :
 	conv_layer( lp, parentLayer.getOutput( ) )
 {
 
@@ -164,12 +164,12 @@ inline void conv_layer<Dtype>::forward()
 }
 
 template<class Dtype>
-inline constexpr std::array<unsigned, 3> conv_layer<Dtype>::CalcShape( const std::array<unsigned, 3> &auDim, const layerparam &lp )
+inline constexpr std::array<unsigned, 3> conv_layer<Dtype>::CalcShape( const std::array<unsigned, 3> &auDim, const layerparam_conv<Dtype> &lp )
 {
 	return std::array<unsigned, 3>(
 	{
 		(unsigned) ( ( auDim[ 0 ] - lp.kernelSize + ( 2 * lp.padding ) ) / (Dtype) lp.stride + 1 ),
 		(unsigned) ( ( auDim[ 1 ] - lp.kernelSize + ( 2 * lp.padding ) ) / (Dtype) lp.stride + 1 ),
-		lp.numOutput
+		(unsigned) lp.numOutput
 	} );
 }

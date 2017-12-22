@@ -4,9 +4,8 @@
 #include <array>
 
 template <class Dtype>
-class pooling_layer : public image_layer<Dtype>
+struct layerparam_pooling
 {
-public:
 	enum mode
 	{
 		MAX,
@@ -14,22 +13,24 @@ public:
 		STOCHASTIC
 	};
 
-	struct layerparam
-	{
-		int kernelSize;
-		int stride;
-		mode pool;
-		std::string layerName = "";
-	};
+	int kernelSize;
+	int stride;
+	mode pool;
+	std::string layerName = "";
+};
 
-	pooling_layer( const layerparam &lp, const array3D<Dtype> &inputData );
-	pooling_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer );
-	~pooling_layer( void ) = default override;
+template <class Dtype>
+class pooling_layer : public image_layer<Dtype>
+{
+public:
+	pooling_layer( const layerparam_pooling<Dtype> &lp, const array3D<Dtype> &inputData );
+	pooling_layer( const layerparam_pooling<Dtype> &lp, const image_layer<Dtype> &parentLayer );
+	~pooling_layer( void ) override = default;
 
 	void forward( void ) override;
 
 private:
-	static std::array<unsigned, 3> CalcShape( const std::array<unsigned, 3> &auDim, const layerparam &lp );
+	static std::array<unsigned, 3> CalcShape( const std::array<unsigned, 3> &auDim, const layerparam_pooling<Dtype> &lp );
 
 	int kernelSize;
 	int stride;
@@ -39,8 +40,8 @@ private:
 
 // IMPLEMENTATION
 template<class Dtype>
-inline pooling_layer<Dtype>::pooling_layer( const layerparam &lp, const array3D<Dtype> &inputData ) :
-	image_layer( inputData, CalcShale( inputData.auDim, lp ) ),
+inline pooling_layer<Dtype>::pooling_layer( const layerparam_pooling<Dtype> &lp, const array3D<Dtype> &inputData ) :
+	image_layer( inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
 	kernelSize( lp.kernelSize ),
 	stride( lp.stride ),
 	pool( lp.pool )
@@ -49,7 +50,7 @@ inline pooling_layer<Dtype>::pooling_layer( const layerparam &lp, const array3D<
 }
 
 template<class Dtype>
-inline pooling_layer<Dtype>::pooling_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer ) :
+inline pooling_layer<Dtype>::pooling_layer( const layerparam_pooling<Dtype> &lp, const image_layer<Dtype> &parentLayer ) :
 	pooling_layer( lp, parentLayer.getOutput( ) )
 {
 
@@ -121,7 +122,7 @@ void pooling_layer<Dtype>::forward( void )
 }
 
 template<class Dtype>
-inline std::array<unsigned, 3> pooling_layer<Dtype>::CalcShape( const std::array<unsigned, 3>& auDim, const layerparam & lp )
+inline std::array<unsigned, 3> pooling_layer<Dtype>::CalcShape( const std::array<unsigned, 3>& auDim, const layerparam_pooling<Dtype> & lp )
 {
 	return std::array<unsigned, 3>(
 	{

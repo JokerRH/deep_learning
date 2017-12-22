@@ -71,9 +71,9 @@ array4D<T> parseConvWeights2array( std::string filename ) {
 
 	std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
 
-	int commaCount = getDimension(file, "spatial");
-	int depthCount = getDimension(file, "depth");
-	int amountCount = getDimension(file, "amount");
+	unsigned commaCount = getDimension(file, "spatial");
+	unsigned depthCount = getDimension(file, "depth");
+	unsigned amountCount = getDimension(file, "amount");
 
 	file.close(); // closing file
 
@@ -97,7 +97,7 @@ array4D<T> parseConvWeights2array( std::string filename ) {
 					textLine.erase(textLine.begin(), textLine.end());
 				}
 				else {
-					arr[height][width][depth][amount] = atof(textLine.c_str()); // solving problem with different datatypes
+					arr[height][width][depth][amount] = (T) atof(textLine.c_str()); // solving problem with different datatypes
 					height++;
 					if (height == commaCount) {
 						height = 0;
@@ -153,7 +153,7 @@ array1D<T> parseBias2array(std::string filename) {
 
 	std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
 
-	int dimension = getDimension(file, "depth");
+	unsigned dimension = getDimension(file, "depth");
 	array1D<T> arr( { dimension } );
 	file.close();
 
@@ -167,7 +167,7 @@ array1D<T> parseBias2array(std::string filename) {
 	std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
 
 	while (std::getline(file, textLine)) {
-		arr[count] = atof(textLine.c_str());
+		arr[count] = (T) atof(textLine.c_str());
 		//std::cout << "Array values: " << arr[count] << std::endl;
 		count++;
 	}
@@ -190,8 +190,8 @@ array2D<T> parseFcWeights2array(std::string filename) {
 
 	std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
 
-	int inputs = 0;
-	int outputs = 1;
+	unsigned inputs = 0;
+	unsigned outputs = 1;
 
 	// getting Dimensions
 	std::getline(file, textLine);
@@ -214,14 +214,14 @@ array2D<T> parseFcWeights2array(std::string filename) {
 	file.close();
 
 	// building 2D array
-	array2D<T> arr( { input, output } );
+	array2D<T> arr( { inputs, outputs } );
 
 	// getting values and write them into array
 	file.open(filename.c_str());
 	int inputCount = 0;
 	int outputCount = 0;
 	while (std::getline(file, textLine, ',')) {
-		arr[inputCount][outputCount] = atof(textLine.c_str());
+		arr[inputCount][outputCount] = (T) atof(textLine.c_str());
 		//std::cout << "Array values: " << inputCount << ' ' << outputCount << ' ' << arr[inputCount][outputCount] << std::endl;
 		inputCount++;
 		if (inputCount == inputs) {

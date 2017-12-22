@@ -3,31 +3,32 @@
 #include "image_layer.h"
 
 template<class Dtype>
+struct layerparam_relu
+{
+	std::string layerName = "";
+};
+
+template<class Dtype>
 class relu_layer : public image_layer<Dtype>
 {
 public:
-	struct layerparam
-	{
-		std::string layerName = "";
-	};
-
-	relu_layer( const layerparam &lp, const array3D<Dtype> &inputData );
-	relu_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer );
-	~relu_layer( void ) = default override;
+	relu_layer( const layerparam_relu<Dtype> &lp, const array3D<Dtype> &inputData );
+	relu_layer( const layerparam_relu<Dtype> &lp, const image_layer<Dtype> &parentLayer );
+	~relu_layer( void ) override = default;
 
 	void forward( void ) override;
 };
 
 // IMPLEMENTATION
 template<class Dtype>
-inline relu_layer<Dtype>::relu_layer( const layerparam &lp, const array3D<Dtype> &inputData ) :
-	base_layer( inputData, outputShape( inputData.auDim[ 0 ], inputData.auDim[ 1 ], inputData.auDim[ 2 ] ), lp.layerName )
+inline relu_layer<Dtype>::relu_layer( const layerparam_relu<Dtype> &lp, const array3D<Dtype> &inputData ) :
+	image_layer( inputData, inputData.auDim, lp.layerName )
 {
 
 }
 
 template<class Dtype>
-inline relu_layer<type>::relu_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer ) :
+inline relu_layer<Dtype>::relu_layer( const layerparam_relu<Dtype> &lp, const image_layer<Dtype> &parentLayer ) :
 	relu_layer( lp, parentLayer.getOutput( ) )
 {
 

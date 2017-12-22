@@ -4,17 +4,18 @@
 #include "image_layer.h"
 
 template<class Dtype>
+struct layerparam_flatten
+{
+	std::string layerName = "";
+};
+
+template<class Dtype>
 class flatten_layer : public base_flat_layer<Dtype>
 {
 public:
-	struct layerparam
-	{
-		std::string layerName = "";
-	};
-
-	flatten_layer( const layerparam &lp, const array3D<Dtype> &inputData );
-	flatten_layer( const layerparam &lp, const image_layer<Dtype> &parentLayer );
-	~flatten_layer( void ) = default override;
+	flatten_layer( const layerparam_flatten<Dtype> &lp, const array3D<Dtype> &inputData );
+	flatten_layer( const layerparam_flatten<Dtype> &lp, const image_layer<Dtype> &parentLayer );
+	~flatten_layer( void ) override = default;
 
 	void forward( void ) override;
 
@@ -23,16 +24,16 @@ private:
 };
 
 // IMPLEMENTATION
-template<class type>
-inline flatten_layer<type>::flatten_layer( const layerparam &lp, const array3D<type> &inputData ) :
+template<class Dtype>
+inline flatten_layer<Dtype>::flatten_layer( const layerparam_flatten<Dtype> &lp, const array3D<Dtype> &inputData ) :
 	base_flat_layer( inputData.auDim[ 0 ] * inputData.auDim[ 1 ] * inputData.auDim[ 2 ], lp.layerName ),
 	inputData( inputData )
 {
 
 }
 
-template<class type>
-inline flatten_layer<type>::flatten_layer( const layerparam &lp, const image_layer<type> &parentLayer ) :
+template<class Dtype>
+inline flatten_layer<Dtype>::flatten_layer( const layerparam_flatten<Dtype> &lp, const image_layer<Dtype> &parentLayer ) :
 	flatten_layer( lp, parentLayer.getOutput( ) )
 {
 
