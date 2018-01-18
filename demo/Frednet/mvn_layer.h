@@ -5,7 +5,7 @@
 template <class Dtype>
 struct layerparam_mvn
 {
-	std::string layerName = "";
+	std::string layerName = std::string( "" );
 };
 
 template <class Dtype>
@@ -22,7 +22,7 @@ public:
 // IMPLEMENTATION
 template<class Dtype>
 inline mvn_layer<Dtype>::mvn_layer( const layerparam_mvn<Dtype> &lp, const array3D<Dtype> &inputData ) :
-	image_layer( inputData, inputData.auDim, lp.layerName )
+	image_layer<Dtype>( inputData, inputData.auDim, lp.layerName )
 {
 
 }
@@ -37,29 +37,29 @@ inline mvn_layer<Dtype>::mvn_layer( const layerparam_mvn<Dtype> &lp, const image
 template<class Dtype>
 inline void mvn_layer<Dtype>::forward( void )
 {
-	outputData.copy( inputData );
-	for( unsigned uZ = 0; uZ < outputData.auDim[ 2 ]; uZ++ )
+	image_layer<Dtype>::outputData.copy( image_layer<Dtype>::inputData );
+	for( unsigned uZ = 0; uZ < image_layer<Dtype>::outputData.auDim[ 2 ]; uZ++ )
 	{
 		//Calculate mean
 		Dtype rMean = 0;
-		for( unsigned uX = 0; uX < outputData.auDim[ 0 ]; uX++ )
-			for( unsigned uY = 0; uY < outputData.auDim[ 1 ]; uY++ )
-				rMean += outputData[ uX ][ uY ][ uZ ];
+		for( unsigned uX = 0; uX < image_layer<Dtype>::outputData.auDim[ 0 ]; uX++ )
+			for( unsigned uY = 0; uY < image_layer<Dtype>::outputData.auDim[ 1 ]; uY++ )
+				rMean += image_layer<Dtype>::outputData[ uX ][ uY ][ uZ ];
 
-		rMean /= outputData.auDim[ 0 ] * outputData.auDim[ 1 ];
+		rMean /= image_layer<Dtype>::outputData.auDim[ 0 ] * image_layer<Dtype>::outputData.auDim[ 1 ];
 
 		//Subtract mean
-		for( unsigned uX = 0; uX < outputData.auDim[ 0 ]; uX++ )
-			for( unsigned uY = 0; uY < outputData.auDim[ 1 ]; uY++ )
-				outputData[ uX ][ uY ][ uZ ] -= rMean;
+		for( unsigned uX = 0; uX < image_layer<Dtype>::outputData.auDim[ 0 ]; uX++ )
+			for( unsigned uY = 0; uY < image_layer<Dtype>::outputData.auDim[ 1 ]; uY++ )
+				image_layer<Dtype>::outputData[ uX ][ uY ][ uZ ] -= rMean;
 
 		//normalize variance
-		for( unsigned uX = 0; uX < outputData.auDim[ 0 ]; uX++ )
-			for( unsigned uY = 0; uY < outputData.auDim[ 1 ]; uY++ )
+		for( unsigned uX = 0; uX < image_layer<Dtype>::outputData.auDim[ 0 ]; uX++ )
+			for( unsigned uY = 0; uY < image_layer<Dtype>::outputData.auDim[ 1 ]; uY++ )
 			{
-				Dtype rVar = outputData[ uX ][ uY ][ uZ ] - rMean;
+				Dtype rVar = image_layer<Dtype>::outputData[ uX ][ uY ][ uZ ] - rMean;
 				rVar *= rVar;
-				outputData[ uX ][ uY ][ uZ ] /= (Dtype) ( rVar + ( 1e-9 ) );
+				image_layer<Dtype>::outputData[ uX ][ uY ][ uZ ] /= (Dtype) ( rVar + ( 1e-9 ) );
 			}
 	}
 }

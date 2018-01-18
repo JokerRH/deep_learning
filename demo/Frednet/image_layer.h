@@ -23,7 +23,7 @@ protected:
 
 template<class Dtype>
 inline image_layer<Dtype>::image_layer( const array3D<Dtype> &inputData, const std::array<unsigned, 3> &outputShape, const std::string &sLayerName ) :
-	base_layer( sLayerName ),
+	base_layer<Dtype>( sLayerName ),
 	inputData( inputData ),
 	outputData( outputShape )
 {

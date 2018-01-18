@@ -32,9 +32,9 @@ protected:
 	const array1D<Dtype> &inputData;
 };
 
-template<class type>
-inline base_flat_layer<type>::base_flat_layer( unsigned numOutput, const std::string &sLayerName ) :
-	base_layer( sLayerName ),
+template<class Dtype>
+inline base_flat_layer<Dtype>::base_flat_layer( unsigned numOutput, const std::string &sLayerName ) :
+	base_layer<Dtype>( sLayerName ),
 	outputData( { numOutput } )
 {
 
@@ -46,9 +46,9 @@ inline constexpr const array1D<Dtype> &base_flat_layer<Dtype>::getOutput( void )
 	return outputData;
 }
 
-template<class type>
-inline flat_layer<type>::flat_layer( const array1D<type> &inputData, unsigned numOutput, const std::string &sLayerName ) :
-	base_flat_layer( numOutput, sLayerName ),
+template<class Dtype>
+inline flat_layer<Dtype>::flat_layer( const array1D<Dtype> &inputData, unsigned numOutput, const std::string &sLayerName ) :
+	base_flat_layer<Dtype>( numOutput, sLayerName ),
 	inputData( inputData )
 {
 

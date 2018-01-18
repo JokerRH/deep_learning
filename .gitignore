@@ -256,3 +256,4 @@ ModelManifest.xml
 /demo_windows/include
 /demo_windows/lib
 /caffe_release
+/demo/build

@@ -6,7 +6,7 @@
 template<class Dtype>
 struct layerparam_flatten
 {
-	std::string layerName = "";
+	std::string layerName = std::string( "" );
 };
 
 template<class Dtype>
@@ -26,7 +26,7 @@ private:
 // IMPLEMENTATION
 template<class Dtype>
 inline flatten_layer<Dtype>::flatten_layer( const layerparam_flatten<Dtype> &lp, const array3D<Dtype> &inputData ) :
-	base_flat_layer( inputData.auDim[ 0 ] * inputData.auDim[ 1 ] * inputData.auDim[ 2 ], lp.layerName ),
+	base_flat_layer<Dtype>( inputData.auDim[ 0 ] * inputData.auDim[ 1 ] * inputData.auDim[ 2 ], lp.layerName ),
 	inputData( inputData )
 {
 
@@ -46,8 +46,8 @@ inline flatten_layer<Dtype>::flatten_layer( const layerparam_flatten<Dtype> &lp,
 // 4. first channels second rows first element
 // 5. .............
 // 6. second channels first rows first element
-template <class type>
-void flatten_layer<type>::forward()
+template <class Dtype>
+void flatten_layer<Dtype>::forward()
 {
 	int inputWidth = inputData.auDim[ 0 ];
 	int inputHeight = inputData.auDim[ 1 ];
@@ -57,7 +57,7 @@ void flatten_layer<type>::forward()
 		for (int lines = 0; lines < inputWidth; lines++) {
 			for (int row = 0; row < inputHeight; row++) {
 		
-				outputData[count] = inputData[lines][row][depth];
+				base_flat_layer<Dtype>::outputData[count] = inputData[lines][row][depth];
 				//cout << "Data: " <<inputData[lines][row][depth] << endl;
 				//cout << "Position: " << lines<< " " << row << " " <<depth << endl;
 				//cout << "Data: " << outputData[count] << endl;

@@ -16,7 +16,7 @@ struct layerparam_pooling
 	int kernelSize;
 	int stride;
 	mode pool;
-	std::string layerName = "";
+	std::string layerName = std::string( "" );
 };
 
 template <class Dtype>
@@ -41,7 +41,7 @@ private:
 // IMPLEMENTATION
 template<class Dtype>
 inline pooling_layer<Dtype>::pooling_layer( const layerparam_pooling<Dtype> &lp, const array3D<Dtype> &inputData ) :
-	image_layer( inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
+	image_layer<Dtype>( inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
 	kernelSize( lp.kernelSize ),
 	stride( lp.stride ),
 	pool( lp.pool )
@@ -68,8 +68,8 @@ void pooling_layer<Dtype>::forward( void )
 
 	// Parameters read from Layer parameter struct
 	int stride = this->stride;
-	int pictureDepth = inputData.auDim[ 2 ];
-	int pictureSize = inputData.auDim[ 1 ];   // has to be changed for unsymetric input!!!!!!!!!!
+	int pictureDepth = image_layer<Dtype>::inputData.auDim[ 2 ];
+	int pictureSize = image_layer<Dtype>::inputData.auDim[ 1 ];   // has to be changed for unsymetric input!!!!!!!!!!
 	Dtype tempMax = 0;
 	int kernelSize = this->kernelSize;
 
@@ -96,8 +96,8 @@ void pooling_layer<Dtype>::forward( void )
 						int xn = picturex + filterx; // coordinates picture where the filter "lays" on 
 						int yn = picturey + filtery;
 
-						if (inputData[xn][yn][depth] > tempMax)
-							tempMax = inputData[xn][yn][depth];
+						if (image_layer<Dtype>::inputData[xn][yn][depth] > tempMax)
+							tempMax = image_layer<Dtype>::inputData[xn][yn][depth];
 							//cout << "Temp: " << tempMax << endl;
 							//cout << "Filter X Koord. " << " Filter y Koord. " << " Pic. pos. x " << " Pic. pos. y " << " Depth "  << endl;
 							//cout << "        " << filterx << "                " << filtery << "               " << xn << "        " << yn << "          " << depth  << endl;						
@@ -105,7 +105,7 @@ void pooling_layer<Dtype>::forward( void )
 
 					}
 					//cout << "MAXIMUM: " << tempMax << endl;
-					outputData[outputX][outputY][depth] = tempMax;
+					image_layer<Dtype>::outputData[outputX][outputY][depth] = tempMax;
 					tempMax = 0;
 					//cout << "Output Data Position: " << outputX << " " << outputY << " " << depth << endl << endl;
 					//cout << "Output Data: " << outputData[outputX][outputY][depth] << endl;

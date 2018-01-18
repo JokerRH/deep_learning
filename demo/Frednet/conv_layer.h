@@ -54,12 +54,12 @@ private:
 // IMPLEMENTATION
 template <class Dtype>
 inline conv_layer<Dtype>::conv_layer( const layerparam_conv<Dtype> &lp, const array3D<Dtype> &inputData ) :
-	image_layer( inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
-	convWeights( lp.weights ),
-	bias( lp.bias ),
+	image_layer<Dtype>( inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
 	kernelSize( lp.kernelSize ),
 	stride( lp.stride ),
-	padding( lp.padding )
+	padding( lp.padding ),
+	convWeights( lp.weights ),
+	bias( lp.bias )
 {
 
 }
@@ -106,8 +106,8 @@ inline void conv_layer<Dtype>::forward()
 	int stride = this->stride;
 	int kernelSize = this->kernelSize;
 	int filterNum = this->numOutputs;
-	int pictureSize = inputData.auDim[ 1 ]; // has to be changed for asymetric input!!!!!!!!!!
-	int pictureDepth = inputData.auDim[ 2 ];
+	int pictureSize = image_layer<Dtype>::inputData.auDim[ 1 ]; // has to be changed for asymetric input!!!!!!!!!!
+	int pictureDepth = image_layer<Dtype>::inputData.auDim[ 2 ];
 	//int filterDepth = pictureDepth; // mandatory for CNN convultion layers
 	
 	// Temporary calculation of pictureSize subtraction value -> needs to be veriefied
@@ -135,7 +135,7 @@ inline void conv_layer<Dtype>::forward()
 							int xn = picturex + filtery; // coordinates picture where the filter "lays" on 
 							int yn = picturey + filterx;
 
-							oneDepth = oneDepth + (convWeights[filterx][filtery][depth][filterNr] * inputData[xn][yn][depth]);
+							oneDepth = oneDepth + (convWeights[filterx][filtery][depth][filterNr] * image_layer<Dtype>::inputData[xn][yn][depth]);
 							//cout << convWeights[filterx][filtery][depth][filterNr] << " " << inputData[xn][yn][depth] << endl;
 							//cout << "Filter X Koord. " << " Filter y Koord. " << " Pic. pos. x " << " Pic. pos. y " << " Depth " << " Filter Nr." << endl;
 							//cout << "        " << filterx << "                " << filtery << "               " << xn << "        " << yn << "          " << depth << "     " << filterNr << endl;
@@ -156,7 +156,7 @@ inline void conv_layer<Dtype>::forward()
 				//cout << "Output Data Position: " << picturex << " " << picturey << " " << filterNr << endl << endl;
 				// writing convolution result to outputArray
 				//if ((allDepth + bias[filterNr]) < 0) cout << "#####################################################################################################" << endl << endl << endl << endl << endl;
-				outputData[picturex][picturey][filterNr] = allDepth+bias[filterNr]; // maybe wrong with bigger Stride
+				image_layer<Dtype>::outputData[picturex][picturey][filterNr] = allDepth+bias[filterNr]; // maybe wrong with bigger Stride
 				allDepth = 0;
 			}
 		}

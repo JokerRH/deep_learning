@@ -5,7 +5,7 @@
 template<class Dtype>
 struct layerparam_relu
 {
-	std::string layerName = "";
+	std::string layerName = std::string( "" );
 };
 
 template<class Dtype>
@@ -22,7 +22,7 @@ public:
 // IMPLEMENTATION
 template<class Dtype>
 inline relu_layer<Dtype>::relu_layer( const layerparam_relu<Dtype> &lp, const array3D<Dtype> &inputData ) :
-	image_layer( inputData, inputData.auDim, lp.layerName )
+	image_layer<Dtype>( inputData, inputData.auDim, lp.layerName )
 {
 
 }
@@ -44,18 +44,18 @@ inline relu_layer<Dtype>::relu_layer( const layerparam_relu<Dtype> &lp, const im
 template<class Dtype>
 void relu_layer<Dtype>::forward()
 {
-	int inputWidth = inputData.auDim[ 0 ];
-	int inputHeight = inputData.auDim[ 1 ];
-	int inputDepth = inputData.auDim[ 2 ];
+	int inputWidth = image_layer<Dtype>::inputData.auDim[ 0 ];
+	int inputHeight = image_layer<Dtype>::inputData.auDim[ 1 ];
+	int inputDepth = image_layer<Dtype>::inputData.auDim[ 2 ];
 
 	for (int depthCount = 0; depthCount < inputDepth; depthCount++) {
 		for (int widthCount = 0; widthCount < inputWidth; widthCount++) {
 			for (int heightCount = 0; heightCount < inputHeight; heightCount++) {
 
-				if ((this->inputData[heightCount][widthCount][depthCount]) < 0)
-					this->outputData[heightCount][widthCount][depthCount] = 0;
+				if ((this->image_layer<Dtype>::inputData[heightCount][widthCount][depthCount]) < 0)
+					this->image_layer<Dtype>::outputData[heightCount][widthCount][depthCount] = 0;
 				else 
-					this->outputData[heightCount][widthCount][depthCount] = this->inputData[heightCount][widthCount][depthCount];
+					this->image_layer<Dtype>::outputData[heightCount][widthCount][depthCount] = this->image_layer<Dtype>::inputData[heightCount][widthCount][depthCount];
 				//cout << "Data Position: " << widthCount << " " << heightCount << " " << depthCount << endl;
 				//cout << "Data: " << outputData[heightCount][widthCount][depthCount] << endl;
 			}   
