@@ -291,8 +291,6 @@ std::array<float, 8> CDetect::Forward( cv::Mat matImage )
 	matImage.convertTo( matImage, CV_32FC3 );
 	cv::subtract( matImage, s_matMean, matImage );
 
-
-
 	//This operation will write the separate BGR planes directly to the input layer of the network because it is wrapped by the cv::Mat objects in vecInputChannels
 	cv::split( matImage, vecInputChannels );
 	CHECK( reinterpret_cast<float*>( vecInputChannels.at( 0 ).data ) == pInputLayer->cpu_data( ) ) << "Input channels are not wrapping the input layer of the network.";

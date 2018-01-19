@@ -27,7 +27,7 @@ inline image_layer<Dtype>::image_layer( const array3D<Dtype> &inputData, const s
 	inputData( inputData ),
 	outputData( outputShape )
 {
-
+	std::cout << "Layer \"" << sLayerName << "\" -> (" << outputShape[ 0 ] << ", " << outputShape[ 1 ] << ", " << outputShape[ 2 ] << ")" << std::endl;
 }
 
 template<class Dtype>

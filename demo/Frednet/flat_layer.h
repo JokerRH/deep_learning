@@ -37,7 +37,7 @@ inline base_flat_layer<Dtype>::base_flat_layer( unsigned numOutput, const std::s
 	base_layer<Dtype>( sLayerName ),
 	outputData( { numOutput } )
 {
-
+	std::cout << "Layer \"" << sLayerName << "\" -> (" << numOutput << ")" << std::endl;
 }
 
 template<class Dtype>

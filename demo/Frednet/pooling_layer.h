@@ -2,6 +2,7 @@
 
 #include "image_layer.h"
 #include <array>
+#include <cmath>
 
 template <class Dtype>
 struct layerparam_pooling
@@ -15,6 +16,7 @@ struct layerparam_pooling
 
 	int kernelSize;
 	int stride;
+	unsigned padding;
 	mode pool;
 	std::string layerName = std::string( "" );
 };
@@ -34,6 +36,7 @@ private:
 
 	int kernelSize;
 	int stride;
+	unsigned padding;
 	int pool;
 };
 
@@ -44,9 +47,10 @@ inline pooling_layer<Dtype>::pooling_layer( const layerparam_pooling<Dtype> &lp,
 	image_layer<Dtype>( inputData, CalcShape( inputData.auDim, lp ), lp.layerName ),
 	kernelSize( lp.kernelSize ),
 	stride( lp.stride ),
+	padding( lp.padding ),
 	pool( lp.pool )
 {
-
+	assert( !padding );	//Padding not yet implemented!
 }
 
 template<class Dtype>
@@ -65,69 +69,97 @@ inline pooling_layer<Dtype>::pooling_layer( const layerparam_pooling<Dtype> &lp,
 template <class Dtype>
 void pooling_layer<Dtype>::forward( void )
 {
+	unsigned uWidth = image_layer<Dtype>::inputData.auDim[ 0 ];
+	unsigned uHeight = image_layer<Dtype>::inputData.auDim[ 1 ];
 
-	// Parameters read from Layer parameter struct
-	int stride = this->stride;
-	int pictureDepth = image_layer<Dtype>::inputData.auDim[ 2 ];
-	int pictureSize = image_layer<Dtype>::inputData.auDim[ 1 ];   // has to be changed for unsymetric input!!!!!!!!!!
-	Dtype tempMax = 0;
-	int kernelSize = this->kernelSize;
+	if( pool == layerparam_pooling<Dtype>::MAX )
+		for( unsigned uZ = 0; uZ < image_layer<Dtype>::inputData.auDim[ 2 ]; uZ++ )
+			for( unsigned uY = 0, uOY = 0; uY < uHeight; uY += stride, uOY++ )
+				for( unsigned uX = 0, uOX = 0; uX < uWidth; uX += stride, uOX++ )
+				{
+					Dtype rMax = image_layer<Dtype>::inputData[ uX ][ uY ][ uZ ];
+					for( unsigned uFilterY = uY; uFilterY < std::min( uY + kernelSize, uHeight ); uFilterY++ )
+						for( unsigned uFilterX = uX; uFilterX < std::min( uX + kernelSize, uWidth ); uFilterX++ )
+							rMax = std::max( rMax, image_layer<Dtype>::inputData[ uFilterX ][ uFilterY ][ uZ ] );
 
-	//int correctionFactorX = pictureSize - ((pictureSize - kernelSize) / (stride)+1);
-	//int correctionFactorY = pictureSize- ((pictureSize - kernelSize) / (stride)+1);
-	//cout << "Korrektur Faktor: " << correctionFactorX << endl;
+					image_layer<Dtype>::outputData[ uOX ][ uOY ][ uZ ] = rMax;
+				}
+	else if( pool == layerparam_pooling<Dtype>::AVE )
+		for( unsigned uZ = 0; uZ < image_layer<Dtype>::inputData.auDim[ 2 ]; uZ++ )
+			for( unsigned uY = 0, uOY = 0; uY < uHeight; uY += stride, uOY++ )
+				for( unsigned uX = 0, uOX = 0; uX < uWidth; uX += stride, uOX++ )
+				{
+					Dtype rAve = 0;
+					for( unsigned uFilterY = uY; uFilterY < std::min( uY + kernelSize, uHeight ); uFilterY++ )
+						for( unsigned uFilterX = uX; uFilterX < std::min( uX + kernelSize, uWidth ); uFilterX++ )
+							rAve += image_layer<Dtype>::inputData[ uFilterX ][ uFilterY ][ uZ ];
 
+					image_layer<Dtype>::outputData[ uOX ][ uOY ][ uZ ] = rAve / ( kernelSize * kernelSize ) ;
+				}
+	else
+		assert( false );	//Not yet implemented
 
-	int outputX = 0; // necessary for finding right output position if stride is not equal to 1 ( maybe necessary in Conv)
-	int outputY = 0;
-
-	for (int depth = 0; depth < pictureDepth; depth++) {
-
-		for (int picturey = 0; picturey < pictureSize - 1; picturey += stride) { // pictureSize -1 or -2 depends on KernelSize
-
-			for (int picturex = 0; picturex < pictureSize - 1; picturex += stride) {  // pictureSize -1 or -2 depends on KernelSize 
-
-
-					//cout << "Filter Depth: " << depth << endl;
-				for (int filtery = 0; filtery < kernelSize; filtery++) { // first moving filter down ( y-Direction ) [][Y]
-
-					for (int filterx = 0; filterx < kernelSize; filterx++) {
-
-						int xn = picturex + filterx; // coordinates picture where the filter "lays" on 
-						int yn = picturey + filtery;
-
-						if (image_layer<Dtype>::inputData[xn][yn][depth] > tempMax)
-							tempMax = image_layer<Dtype>::inputData[xn][yn][depth];
-							//cout << "Temp: " << tempMax << endl;
-							//cout << "Filter X Koord. " << " Filter y Koord. " << " Pic. pos. x " << " Pic. pos. y " << " Depth "  << endl;
-							//cout << "        " << filterx << "                " << filtery << "               " << xn << "        " << yn << "          " << depth  << endl;						
+#if 0	//Caffe source
+	for (int n = 0; n < bottom[0]->num(); ++n) {
+		for (int c = 0; c < channels_; ++c) {
+			for (int ph = 0; ph < pooled_height_; ++ph) {
+				for (int pw = 0; pw < pooled_width_; ++pw) {
+					int hstart = ph * stride_h_ - pad_h_;
+					int wstart = pw * stride_w_ - pad_w_;
+					int hend = min(hstart + kernel_h_, height_);
+					int wend = min(wstart + kernel_w_, width_);
+					hstart = max(hstart, 0);
+					wstart = max(wstart, 0);
+					const int pool_index = ph * pooled_width_ + pw;
+					for (int h = hstart; h < hend; ++h) {
+						for (int w = wstart; w < wend; ++w) {
+							const int index = h * width_ + w;
+								if (bottom_data[index] > top_data[pool_index]) {
+									top_data[pool_index] = bottom_data[index];
+									if (use_top_mask) {
+										top_mask[pool_index] = static_cast<Dtype>(index);
+									} else {
+										mask[pool_index] = index;
+									}
+								}
+							}
 						}
-
 					}
-					//cout << "MAXIMUM: " << tempMax << endl;
-					image_layer<Dtype>::outputData[outputX][outputY][depth] = tempMax;
-					tempMax = 0;
-					//cout << "Output Data Position: " << outputX << " " << outputY << " " << depth << endl << endl;
-					//cout << "Output Data: " << outputData[outputX][outputY][depth] << endl;
-					outputX++;
+				}
 
-					
-			}outputX =0;
-			outputY++;
+				xxxxxx
+				aaa
+				  aaa
+				    aa
 
-		}outputY = 0;
-
-	}
-
+				// compute offset
+				bottom_data += bottom[0]->offset(0, 1);
+				top_data += top[0]->offset(0, 1);
+				if (use_top_mask) {
+					top_mask += top[0]->offset(0, 1);
+				} else {
+					mask += top[0]->offset(0, 1);
+				}
+			}
+		}
+#endif
 }
 
 template<class Dtype>
 inline std::array<unsigned, 3> pooling_layer<Dtype>::CalcShape( const std::array<unsigned, 3>& auDim, const layerparam_pooling<Dtype> & lp )
 {
+	assert( auDim[ 0 ] + 2 * lp.padding >= lp.kernelSize && auDim[ 1 ] + 2 * lp.padding >= lp.kernelSize );
 	return std::array<unsigned, 3>(
 	{
-		(unsigned) ( ( auDim[ 0 ] - lp.kernelSize ) / (Dtype) lp.stride + 1 ),
-		(unsigned) ( ( auDim[ 1 ] - lp.kernelSize ) / (Dtype) lp.stride + 1 ),
+		static_cast<unsigned>( std::ceil( static_cast<Dtype>( auDim[ 0 ] + 2 * lp.padding - lp.kernelSize ) / lp.stride ) ) + 1,
+		static_cast<unsigned>( std::ceil( static_cast<Dtype>( auDim[ 1 ] + 2 * lp.padding - lp.kernelSize ) / lp.stride ) ) + 1,
 		auDim[ 2 ]
 	} );
+
+	/* Caffe source:
+	pooled_height_ = static_cast<int>(ceil(static_cast<float>(
+		height_ + 2 * pad_h_ - kernel_h_) / stride_h_)) + 1;
+	pooled_width_ = static_cast<int>(ceil(static_cast<float>(
+		width_ + 2 * pad_w_ - kernel_w_) / stride_w_)) + 1;
+	*/
 }

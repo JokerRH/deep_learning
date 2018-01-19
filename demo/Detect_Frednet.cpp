@@ -33,9 +33,11 @@ bool CDetect::Init( const filestring_t &sPath )
 		return false;
 	}
 
+	std::cout << "Image -> (" << s_Image.auDim[ 0 ] << ", " << s_Image.auDim[ 1 ] << ", " << s_Image.auDim[ 2 ] << ")" << std::endl;
+
 	//conv1
 	{
-		layerparam_conv<float> lp( parseConvWeights2array<float>( "deploy.caffemodel_conv1_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv1_bias.txt" ) );
+		layerparam_conv<float> lp( parseConvWeights2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv1_weights.txt" ), parseBias2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv1_bias.txt" ) );
 		lp.layerName = "conv1";
 		lp.stride = 4;
 		lp.kernelSize = 11;
@@ -56,6 +58,7 @@ bool CDetect::Init( const filestring_t &sPath )
 		layerparam_pooling<float> lp;
 		lp.kernelSize = 3;
 		lp.stride = 2;
+		lp.padding = 0;
 		lp.pool = layerparam_pooling<float>::MAX;
 		lp.layerName = "pool1";
 		s_aLayers[ 2 ] = new pooling_layer<float>( lp, (image_layer<float> &) *s_aLayers[ 1 ] );
@@ -70,7 +73,7 @@ bool CDetect::Init( const filestring_t &sPath )
 
 	//conv2
 	{
-		layerparam_conv<float> lp( parseConvWeights2array<float>( "deploy.caffemodel_conv2_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv2_bias.txt" ) );
+		layerparam_conv<float> lp( parseConvWeights2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv2_weights.txt" ), parseBias2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv2_bias.txt" ) );
 		lp.layerName = "conv2";
 		lp.stride = 1;
 		lp.kernelSize = 5;
@@ -91,6 +94,7 @@ bool CDetect::Init( const filestring_t &sPath )
 		layerparam_pooling<float> lp;
 		lp.kernelSize = 3;
 		lp.stride = 2;
+		lp.padding = 0;
 		lp.pool = layerparam_pooling<float>::MAX;
 		lp.layerName = "pool2";
 		s_aLayers[ 6 ] = new pooling_layer<float>( lp, (image_layer<float> &) *s_aLayers[ 5 ] );
@@ -105,7 +109,7 @@ bool CDetect::Init( const filestring_t &sPath )
 
 	//conv3
 	{
-		layerparam_conv<float> lp( parseConvWeights2array<float>( "deploy.caffemodel_conv3_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv3_bias.txt" ) );
+		layerparam_conv<float> lp( parseConvWeights2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv3_weights.txt" ), parseBias2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv3_bias.txt" ) );
 		lp.layerName = "conv3";
 		lp.stride = 1;
 		lp.kernelSize = 3;
@@ -123,7 +127,7 @@ bool CDetect::Init( const filestring_t &sPath )
 
 	//conv4
 	{
-		layerparam_conv<float> lp( parseConvWeights2array<float>( "deploy.caffemodel_conv4_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv4_bias.txt" ) );
+		layerparam_conv<float> lp( parseConvWeights2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv4_weights.txt" ), parseBias2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv4_bias.txt" ) );
 		lp.layerName = "conv4";
 		lp.stride = 1;
 		lp.kernelSize = 3;
@@ -141,7 +145,7 @@ bool CDetect::Init( const filestring_t &sPath )
 
 	//conv5
 	{
-		layerparam_conv<float> lp( parseConvWeights2array<float>( "deploy.caffemodel_conv5_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_conv5_bias.txt" ) );
+		layerparam_conv<float> lp( parseConvWeights2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv5_weights.txt" ), parseBias2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_conv5_bias.txt" ) );
 		lp.layerName = "conv5";
 		lp.stride = 1;
 		lp.kernelSize = 3;
@@ -162,6 +166,7 @@ bool CDetect::Init( const filestring_t &sPath )
 		layerparam_pooling<float> lp;
 		lp.kernelSize = 3;
 		lp.stride = 2;
+		lp.padding = 0;
 		lp.pool = layerparam_pooling<float>::MAX;
 		lp.layerName = "pool5";
 		s_aLayers[ 14 ] = new pooling_layer<float>( lp, (image_layer<float> &) *s_aLayers[ 13 ] );
@@ -172,6 +177,7 @@ bool CDetect::Init( const filestring_t &sPath )
 		layerparam_pooling<float> lp;
 		lp.kernelSize = 3;
 		lp.stride = 2;
+		lp.padding = 0;
 		lp.pool = layerparam_pooling<float>::AVE;
 		lp.layerName = "pool6";
 		s_aLayers[ 15 ] = new pooling_layer<float>( lp, (image_layer<float> &) *s_aLayers[ 14 ] );
@@ -188,7 +194,8 @@ bool CDetect::Init( const filestring_t &sPath )
 	{
 		layerparam_pooling<float> lp;
 		lp.kernelSize = 3;
-		lp.stride = 2;
+		lp.stride = 1;
+		lp.padding = 0;
 		lp.pool = layerparam_pooling<float>::AVE;
 		lp.layerName = "pool7";
 		s_aLayers[ 17 ] = new pooling_layer<float>( lp, (image_layer<float> &) *s_aLayers[ 16 ] );
@@ -197,23 +204,23 @@ bool CDetect::Init( const filestring_t &sPath )
 	//relu7
 	{
 		layerparam_relu<float> lp;
-		lp.layerName = "relu6";
-		s_aLayers[ 17 ] = new relu_layer<float>( lp, (image_layer<float> &) *s_aLayers[ 16 ] );
+		lp.layerName = "relu7";
+		s_aLayers[ 18 ] = new relu_layer<float>( lp, (image_layer<float> &) *s_aLayers[ 17 ] );
 	}
 
 	//flatten8
 	{
 		layerparam_flatten<float> lp;
 		lp.layerName = "flatten8";
-		s_aLayers[ 18 ] = new flatten_layer<float>( lp, (image_layer<float> &) *s_aLayers[ 17 ] );
+		s_aLayers[ 19 ] = new flatten_layer<float>( lp, (image_layer<float> &) *s_aLayers[ 18 ] );
 	}
 
 	//fc8_gaze
 	{
-		layerparam_fc<float> lp( parseFcWeights2array<float>( "deploy.caffemodel_fc8_weights.txt" ), parseBias2array<float>( "deploy.caffemodel_fc8_bias.txt" ) );
+		layerparam_fc<float> lp( parseFcWeights2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_fc8_gaze_weights.txt" ), parseBias2array<float>( sNetwork + "/snapshot_iter_102000.bvlc.caffemodel_fc8_gaze_bias.txt" ) );
 		lp.layerName = "fc8";
 		lp.numOutput = 8;
-		s_aLayers[ 12 ] = new fc_layer<float>( lp, (base_flat_layer<float> &) *s_aLayers[ 11 ] );
+		s_aLayers[ 20 ] = new fc_layer<float>( lp, (base_flat_layer<float> &) *s_aLayers[ 19 ] );
 	}
 
 	return true;
@@ -304,6 +311,16 @@ CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV
 	rayEyeRight *= vec2Gaze[ 1 ];
 }
 
+static void CopyChannel( array3D<float> &image, unsigned uDim, const cv::Mat &matChannel )
+{
+	for( int i = 0; i < matChannel.cols; i++ )
+		for( int j = 0; j < matChannel.rows; j++ )
+		{
+			image[ i ][ j ][ uDim ] = ( matChannel.at<uchar>( i, j ) ) * 0.0125000001863;
+			//cout << "( " << i << ", " << j << ", " << uDim << "): " << image[ i ][ j ][ 0 ] << endl;
+		}
+}
+
 std::array<float, 8> CDetect::Forward( cv::Mat matImage )
 {
 	cv::Size inputShape( IMAGE_WIDTH, IMAGE_HEIGHT );
@@ -317,7 +334,15 @@ std::array<float, 8> CDetect::Forward( cv::Mat matImage )
 	if( matImage.size( ) != inputShape )
 		cv::resize( matImage, matImage, inputShape );
 
-	//s_Image = ...
+	//Copy image
+	cv::Mat aChannels[ 3 ];
+	//matImage.convertTo( matImage, CV_32FC3 );
+	//cv::subtract( matImage, s_matMean, matImage );
+	cv::split( matImage, aChannels );	//Splits to BGR!
+
+	CopyChannel( s_Image, 0, aChannels[ 0 ] );
+	CopyChannel( s_Image, 1, aChannels[ 1 ] );
+	CopyChannel( s_Image, 2, aChannels[ 2 ] );
 
 	for( base_layer<float> *pLayer : s_aLayers )
 		pLayer->forward( );

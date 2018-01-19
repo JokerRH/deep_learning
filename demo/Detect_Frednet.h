@@ -10,8 +10,8 @@
 #include <string>
 #include <opencv2/core/core.hpp>
 
-#define IMAGE_WIDTH		256
-#define IMAGE_HEIGHT	256
+#define IMAGE_WIDTH		448
+#define IMAGE_HEIGHT	448
 #define IMAGE_DEPTH		3
 
 class CDetect : public CGazeData

@@ -43,7 +43,6 @@ public:
 private:
 	static constexpr std::array<unsigned, 3> CalcShape( const std::array<unsigned, 3> &auDim, const layerparam_conv<Dtype> &lp );
 
-	int numOutputs;
 	int kernelSize;
 	int stride;
 	int padding;
@@ -101,11 +100,10 @@ inline void conv_layer<Dtype>::printLayerParam()
 template <class Dtype>
 inline void conv_layer<Dtype>::forward()
 {
-	
 	// Parameters read from Layer parameter struct
 	int stride = this->stride;
 	int kernelSize = this->kernelSize;
-	int filterNum = this->numOutputs;
+	int filterNum = image_layer<Dtype>::outputData.auDim[ 2 ];
 	int pictureSize = image_layer<Dtype>::inputData.auDim[ 1 ]; // has to be changed for asymetric input!!!!!!!!!!
 	int pictureDepth = image_layer<Dtype>::inputData.auDim[ 2 ];
 	//int filterDepth = pictureDepth; // mandatory for CNN convultion layers
@@ -166,6 +164,7 @@ inline void conv_layer<Dtype>::forward()
 template<class Dtype>
 inline constexpr std::array<unsigned, 3> conv_layer<Dtype>::CalcShape( const std::array<unsigned, 3> &auDim, const layerparam_conv<Dtype> &lp )
 {
+	//assert( auDim[ 0 ] - lp.kernelSize + ( 2 * lp.padding ) >= 0 && auDim[ 1 ] - lp.kernelSize + ( 2 * lp.padding ) >= 0 );
 	return std::array<unsigned, 3>(
 	{
 		(unsigned) ( ( auDim[ 0 ] - lp.kernelSize + ( 2 * lp.padding ) ) / (Dtype) lp.stride + 1 ),

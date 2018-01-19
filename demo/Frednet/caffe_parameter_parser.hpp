@@ -69,7 +69,7 @@ array4D<T> parseConvWeights2array( std::string filename ) {
 
 	std::string line;
 
-	std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
+	//std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
 
 	unsigned commaCount = getDimension(file, "spatial");
 	unsigned depthCount = getDimension(file, "depth");
@@ -119,7 +119,7 @@ array4D<T> parseConvWeights2array( std::string filename ) {
 		}
 	}
 
-	std::cout << "File content successfully parsed into c++ array" << std::endl;
+	//std::cout << "File content successfully parsed into c++ array" << std::endl;
 	// Printing Array content just for Debugging
 	/*int counter = 0;
 	for (int l = 0; l < amountCount; l++){
@@ -151,7 +151,7 @@ array1D<T> parseBias2array(std::string filename) {
 		return array1D<T>( { 0 } );
 	}
 
-	std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
+	//std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
 
 	unsigned dimension = getDimension(file, "depth");
 	array1D<T> arr( { dimension } );
@@ -164,14 +164,14 @@ array1D<T> parseBias2array(std::string filename) {
 		return array1D<T>( { 0 } );
 	}
 
-	std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
+	//std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
 
 	while (std::getline(file, textLine)) {
 		arr[count] = (T) atof(textLine.c_str());
 		//std::cout << "Array values: " << arr[count] << std::endl;
 		count++;
 	}
-	std::cout << "File content successfully parsed into c++ array" << std::endl;
+	//std::cout << "File content successfully parsed into c++ array" << std::endl;
 
 	return arr;
 }
@@ -188,7 +188,7 @@ array2D<T> parseFcWeights2array(std::string filename) {
 		return array2D<T>( { 0, 0 } );
 	}
 
-	std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
+	//std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
 
 	unsigned inputs = 0;
 	unsigned outputs = 1;
@@ -243,7 +243,7 @@ T *parseConvWeights2_1D_array(std::string filename) {
 	T *arr = NULL;
 
 	if (file.is_open()) {
-		std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
+		//std::cout << "File \" " << filename << "\" successfully opened" << std::endl;
 
 		int commaCount = getDimension(file, "spatial");
 		int depthCount = getDimension(file, "depth");
@@ -300,7 +300,7 @@ T *parseConvWeights2_1D_array(std::string filename) {
 			}
 		}
 
-		std::cout << "File content successfully parsed into c++ array" << std::endl;
+		//std::cout << "File content successfully parsed into c++ array" << std::endl;
 		// Printing Array content just for Debugging
 		/*int counter = 0;
 		for (int l = 0; l < amountCount; l++){
