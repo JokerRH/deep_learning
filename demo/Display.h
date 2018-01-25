@@ -67,6 +67,7 @@ inline cv::Mat CDisplay::GetSceneryROI( void )
 inline void CDisplay::Show( const std::string &sWindow )
 {
 	cv::imshow( sWindow, m_matScreen );
+	cv::waitKey( 1 );
 }
 
 inline bool CDisplay::ProcessKey( CScenery &scenery, const CData *pBegin, const CData *pEnd, unsigned uKey, bool fVSC )

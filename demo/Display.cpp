@@ -21,6 +21,7 @@ cv::Rect CDisplay::Show( const std::string & sWindow, const cv::Mat & matImage )
 	cv::resize( matImage, mat( rect ), size );
 
 	cv::imshow( sWindow, mat );
+	cv::waitKey( 0 );
 	return rect;
 }
 
@@ -222,6 +223,30 @@ void CDisplay::ShowLive( const std::string & sWindow, CCamera &camera )
 
 			display.SetData( matImage, dFOV );
 			display.Show( sWindow );
+
+			//Call robot here
+			//display.m_vecData contains all faces with their gaze data (See Data.h)
+			if( display.m_vecData.size( ) )
+			{
+				CData *pData = &display.m_vecData.front( );
+				CVector<3> vec3Eyes( ( pData->vec3EyeLeft + pData->vec3EyeRight ) / 2 );	//Center between left and right eye
+				CRay rayGaze( vec3Eyes, pData->vec3GazePoint - vec3Eyes );
+				CVector<2> vec2PitchYaw( rayGaze.AmplitudeRepresentation( ) );
+
+				std::wcout << "Pitch, Yaw: " << vec2PitchYaw << std::endl;
+				//vec2PitchYaw[ 0 ] = Pitch
+				//vec2PitchYaw[ 1 ] = Yaw
+				//Systemcall ROS
+				if (vec2PitchYaw[ 0 ] > 0.06)
+					system("xdotool key \"2\"");
+				else if (vec2PitchYaw[ 0 ] < -0.06)
+					system("xdotool key \"w\"");
+				if (vec2PitchYaw[ 1 ] > 0.06)
+					system("xdotool key \"1\"");
+				else if (vec2PitchYaw[ 1 ] < -0.06)
+					system("xdotool key \"q\"");
+			}
+
 			continue;
 		}
 
@@ -340,10 +365,19 @@ void CDisplay::SetData( const cv::Mat &matImage, double dFOV )
 	double dScaleY = (double) m_rectImage.height / matImage.rows;
 	cv::resize( matImage, matDraw, m_rectImage.size( ) );
 
+	CData old;
+	bool fSmooth = false;
+	if( m_vecData.size( ) )
+	{
+		old = m_vecData.front( );
+		fSmooth = true;
+	}
 	m_vecData.clear( );
 	for( const cv::Rect &face : vecFaces )
 	{
 		CDetect data( matImage, face, dFOV );
+		if( fSmooth )
+			data.Smooth( old );
 		m_vecData.emplace_back( data );
 
 		cv::Rect rectFace( (int) ( data.rectFace.x * dScaleX ), (int) ( data.rectFace.y * dScaleY ), (int) ( data.rectFace.width * dScaleX ), (int) ( data.rectFace.height * dScaleY ) );

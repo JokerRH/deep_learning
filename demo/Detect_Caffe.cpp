@@ -227,6 +227,20 @@ CDetect::CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV
 	rayEyeRight *= vec2Gaze[ 1 ];
 }
 
+#define INFLUENCE	( 2. / 3. )
+void CDetect::Smooth( const CData &old )
+{
+	ptEyeLeft = ptEyeLeft * ( 1 - INFLUENCE ) + old.ptEyeLeft * INFLUENCE;
+	ptEyeRight = ptEyeRight * ( 1 - INFLUENCE ) + old.ptEyeRight * INFLUENCE;
+	vec3EyeLeft = vec3EyeLeft * ( 1 - INFLUENCE ) + old.vec3EyeLeft * INFLUENCE;
+	vec3EyeRight = vec3EyeRight * ( 1 - INFLUENCE ) + old.vec3EyeRight * INFLUENCE;
+	vec3GazePoint = vec3GazePoint * ( 1 - INFLUENCE ) + old.vec3GazePoint * INFLUENCE;
+
+	rayEyeLeft = CRay( vec3GazePoint, vec3GazePoint - vec3EyeLeft );
+	rayEyeRight = CRay( vec3GazePoint, vec3GazePoint - vec3EyeRight );
+}
+#undef INFLUENCE
+
 bool CDetect::SetMean( const std::string &sMeanFile )
 {
 	caffe::BlobProto blob_proto;

@@ -100,6 +100,23 @@ inline void conv_layer<Dtype>::printLayerParam()
 template <class Dtype>
 inline void conv_layer<Dtype>::forward()
 {
+	std::cout << "\"" << image_layer<Dtype>::m_sLayerName << "\" running" << std::endl;
+	unsigned uWidth = image_layer<Dtype>::inputData.auDim[ 0 ];
+	unsigned uHeight = image_layer<Dtype>::inputData.auDim[ 1 ];
+	for( unsigned uOZ = 0; uOZ < image_layer<Dtype>::outputData.auDim[ 2 ]; uOZ++ )	//Iterate over all filters
+		for( unsigned uY = 0, uOY = 0; uY < uHeight + padding - kernelSize; uY += stride, uOY++ )
+			for( unsigned uX = 0, uOX = 0; uX < uWidth + padding - kernelSize; uX += stride, uOX++ )
+			{
+				Dtype rSum = 0;
+				for( unsigned uFilterX = uX; uFilterX < std::min( uX + kernelSize, uWidth ); uFilterX++ )
+					for( unsigned uFilterY = uY; uFilterY < std::min( uY + kernelSize, uHeight ); uFilterY++ )
+						for( unsigned uFilterZ = 0; uFilterZ < image_layer<Dtype>::inputData.auDim[ 2 ]; uFilterZ++ )
+							rSum += convWeights[ uFilterX - uX ][ uFilterY - uY ][ uFilterZ ][ uOZ ] * image_layer<Dtype>::inputData[ uFilterX ][ uFilterY ][ uFilterZ ];
+
+				image_layer<Dtype>::outputData[ uOX ][ uOY ][ uOZ ] = rSum + bias[ uOZ ];
+			}
+
+#if 0
 	// Parameters read from Layer parameter struct
 	int stride = this->stride;
 	int kernelSize = this->kernelSize;
@@ -159,6 +176,7 @@ inline void conv_layer<Dtype>::forward()
 			}
 		}
 	}
+#endif
 }
 
 template<class Dtype>

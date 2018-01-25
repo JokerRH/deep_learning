@@ -40,7 +40,7 @@ static void KeyboardThread( DWORD idThread )
 static std::thread g_hKeyboardThread;
 bool MessageInit( DWORD idThread, const std::string &sWindow )
 {
-	g_hKeyboardThread = std::thread( KeyboardThread, idThread );
+	//g_hKeyboardThread = std::thread( KeyboardThread, idThread );
 	cv::setMouseCallback( sWindow, MouseCallback, nullptr );
 	return true;
 }

@@ -8,8 +8,8 @@ add_compile_options( -Wall )
 
 set( libs opencv_core opencv_highgui opencv_videoio opencv_objdetect opencv_imgproc opencv_imgcodecs X11 )
 
-OPTION( WITH_CAFFE "Enables Caffe" OFF )
-OPTION( WITH_FREDNET "Enables Frednet" ON )
+OPTION( WITH_CAFFE "Enables Caffe" ON )
+OPTION( WITH_FREDNET "Enables Frednet" OFF )
 
 if( WITH_CAFFE )
 	message( STATUS "Using Caffe" )

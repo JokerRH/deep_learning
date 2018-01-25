@@ -28,6 +28,8 @@ public:
 	CDetect( const cv::Mat &matImage, const cv::Rect &rectFace, double dFOV, const filestring_t &sPath = filestring_t( ) );
 	~CDetect( void ) override = default;
 
+	void Smooth( const CData &old );
+
 private:
 	static bool SetMean( const std::string &sMeanFile );
 	std::array<float, 8> Forward( cv::Mat matImage );

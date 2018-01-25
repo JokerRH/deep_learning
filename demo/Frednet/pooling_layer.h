@@ -69,6 +69,7 @@ inline pooling_layer<Dtype>::pooling_layer( const layerparam_pooling<Dtype> &lp,
 template <class Dtype>
 void pooling_layer<Dtype>::forward( void )
 {
+	std::cout << "\"" << image_layer<Dtype>::m_sLayerName << "\" running" << std::endl;
 	unsigned uWidth = image_layer<Dtype>::inputData.auDim[ 0 ];
 	unsigned uHeight = image_layer<Dtype>::inputData.auDim[ 1 ];
 

@@ -44,6 +44,7 @@ inline relu_layer<Dtype>::relu_layer( const layerparam_relu<Dtype> &lp, const im
 template<class Dtype>
 void relu_layer<Dtype>::forward()
 {
+	std::cout << "\"" << image_layer<Dtype>::m_sLayerName << "\" running" << std::endl;
 	int inputWidth = image_layer<Dtype>::inputData.auDim[ 0 ];
 	int inputHeight = image_layer<Dtype>::inputData.auDim[ 1 ];
 	int inputDepth = image_layer<Dtype>::inputData.auDim[ 2 ];

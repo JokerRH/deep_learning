@@ -21,10 +21,14 @@ bool CWebcam::DownloadImage( cv::Mat &matImage, double &dFOV, void *pImageRef )
 	m_Cap.grab( );
 	m_Cap.grab( );
 	m_Cap.grab( );
-	return m_Cap.retrieve( matImage );
+	m_Cap >> matImage;
+	return true;
+	//return m_Cap.retrieve( matImage );
 }
 
 bool CWebcam::DownloadLiveView( cv::Mat & matImage )
 {
-	return m_Cap.retrieve( matImage );
+	m_Cap >> matImage;
+	return true;
+	//return m_Cap.retrieve( matImage );
 }
