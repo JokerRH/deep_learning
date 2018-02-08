@@ -4,8 +4,7 @@
 #include <string>
 #include <regex>
 #include <fstream>
-#define HAVE_STRUCT_TIMESPEC
-#include <pthread.h>
+#include <atomic>
 
 //===========================================================================
 // CGazeCapture_Set
@@ -59,7 +58,7 @@ public:
 	const std::string sRawPath;
 
 private:
-	pthread_spinlock_t m_spinIterator;
+	std::atomic_flag m_spinIterator = ATOMIC_FLAG_INIT;
 	std::vector<gazecapture>::iterator m_itData;
 	std::fstream m_FileWrite;
 	unsigned int m_uRead;
@@ -126,7 +125,7 @@ public:
 	const std::string sRawPath;
 
 private:
-	pthread_spinlock_t m_spinIterator;
+	std::atomic_flag m_spinIterator = ATOMIC_FLAG_INIT;
 	std::vector<gazedata>::iterator m_itData;
 	std::fstream m_FileWrite;
 	unsigned int m_uRead;
@@ -161,7 +160,7 @@ inline CGazeCapture_Set::CGazeCapture_Set( void ) :
 
 inline CGazeCapture_Set::~CGazeCapture_Set( void )
 {
-	pthread_spin_destroy( &m_spinIterator );
+
 }
 
 inline CGazeCapture_Set::CGazeCapture_Set( const CGazeCapture_Set &other ) :
@@ -170,7 +169,6 @@ inline CGazeCapture_Set::CGazeCapture_Set( const CGazeCapture_Set &other ) :
 	dEyeDistance( other.dEyeDistance ),
 	sDataPath( other.sDataPath )
 {
-	pthread_spin_init( &m_spinIterator, PTHREAD_PROCESS_PRIVATE );
 	ResetIterator( );
 }
 
@@ -186,7 +184,6 @@ inline CGazeCapture_Set::CGazeCapture_Set( CGazeCapture_Set &&other ) :
 	sName( std::move( other.sName ) ),
 	dEyeDistance( std::move( other.dEyeDistance ) ),
 	sDataPath( std::move( other.sDataPath ) ),
-	m_spinIterator( std::move( other.m_spinIterator ) ),
 	m_itData( std::move( other.m_itData ) ),
 	m_FileWrite( std::move( other.m_FileWrite ) )
 {
@@ -202,11 +199,10 @@ inline CGazeCapture_Set &CGazeCapture_Set::operator=( CGazeCapture_Set &&other )
 
 inline void CGazeCapture_Set::ResetIterator( void )
 {
-	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-		pthread_spin_lock( &m_spinIterator );
-		m_itData = vecData.begin( );
-		m_uRead = 0;
-	pthread_cleanup_pop( 1 );
+	while( m_spinIterator.test_and_set( std::memory_order_acquire ) );
+	m_itData = vecData.begin( );
+	m_uRead = 0;
+	m_spinIterator.clear( std::memory_order_release );
 }
 
 inline bool CGazeCapture_Set::OpenWrite( const std::string &sFile )
@@ -235,11 +231,10 @@ inline void CGazeCapture_Set::Shuffle( void )
 
 inline void CGazeCapture_Set::GetCount( unsigned &uTotal, unsigned &uCurrent )
 {
-	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-		pthread_spin_lock( &m_spinIterator );
-		uTotal = vecData.size( );
-		m_uRead = uCurrent;
-	pthread_cleanup_pop( 1 );
+	while( m_spinIterator.test_and_set( std::memory_order_acquire ) );
+	uTotal = (unsigned) vecData.size( );
+	m_uRead = uCurrent;
+	m_spinIterator.clear( std::memory_order_release );
 }
 
 //===========================================================================
@@ -268,7 +263,7 @@ inline CGazeData_Set::CGazeData_Set( void ) :
 
 inline CGazeData_Set::~CGazeData_Set( void )
 {
-	pthread_spin_destroy( &m_spinIterator );
+
 }
 
 inline CGazeData_Set::CGazeData_Set( const CGazeData_Set &other ) :
@@ -278,7 +273,6 @@ inline CGazeData_Set::CGazeData_Set( const CGazeData_Set &other ) :
 	sDataPath( other.sDataPath ),
 	sRawPath( other.sRawPath )
 {
-	pthread_spin_init( &m_spinIterator, PTHREAD_PROCESS_PRIVATE );
 	ResetIterator( );
 }
 
@@ -295,7 +289,6 @@ inline CGazeData_Set::CGazeData_Set( CGazeData_Set &&other ) :
 	dEyeDistance( std::move( other.dEyeDistance ) ),
 	sDataPath( std::move( other.sDataPath ) ),
 	sRawPath( std::move( other.sRawPath ) ),
-	m_spinIterator( std::move( other.m_spinIterator ) ),
 	m_itData( std::move( other.m_itData ) ),
 	m_FileWrite( std::move( other.m_FileWrite ) )
 {
@@ -311,11 +304,10 @@ inline CGazeData_Set &CGazeData_Set::operator=( CGazeData_Set &&other )
 
 inline void CGazeData_Set::ResetIterator( void )
 {
-	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-		pthread_spin_lock( &m_spinIterator );
-		m_itData = vecData.begin( );
-		m_uRead = 0;
-	pthread_cleanup_pop( 1 );
+	while( m_spinIterator.test_and_set( std::memory_order_acquire ) );
+	m_itData = vecData.begin( );
+	m_uRead = 0;
+	m_spinIterator.clear( std::memory_order_release );
 }
 
 inline bool CGazeData_Set::OpenWrite( const std::string &sFile )
@@ -344,9 +336,8 @@ inline void CGazeData_Set::Shuffle( void )
 
 inline void CGazeData_Set::GetCount( unsigned &uTotal, unsigned &uCurrent )
 {
-	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-		pthread_spin_lock( &m_spinIterator );
-		uTotal = vecData.size( );
-		m_uRead = uCurrent;
-	pthread_cleanup_pop( 1 );
+	while( m_spinIterator.test_and_set( std::memory_order_acquire ) );
+	uTotal = (unsigned) vecData.size( );
+	m_uRead = uCurrent;
+	m_spinIterator.clear( std::memory_order_release );
 }

@@ -2,6 +2,7 @@
 
 #include <opencv2/core.hpp>
 #ifdef _MSC_VER
+#	define NOMINMAX
 #	include <Windows.h>
 #else
 #	include <sys/stat.h>

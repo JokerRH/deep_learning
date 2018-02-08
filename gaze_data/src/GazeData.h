@@ -67,8 +67,8 @@ private:
 
 	static CQueue<CGazeData> s_QueueRead;
 	static CQueue<CGazeData> s_QueueWrite;
-	static std::vector<pthread_t> s_vecThreadRead;
-	static std::vector<pthread_t> s_vecThreadWrite;
+	static std::vector<std::thread> s_vecThreadRead;
+	static std::vector<std::thread> s_vecThreadWrite;
 	static unsigned s_uNextImage;
 
 	friend CQueue<CGazeData>;

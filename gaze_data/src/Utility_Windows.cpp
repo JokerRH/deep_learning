@@ -5,6 +5,9 @@
 #include <conio.h>
 #include <direct.h>
 #include <opencv2\highgui.hpp>
+#include <PathCch.h>
+
+bool CUtility::fNoQuery = false;
 
 unsigned int VK2VSC( unsigned int uKey )
 {
@@ -90,6 +93,9 @@ void CUtility::Cls( void )
 
 unsigned char CUtility::GetChar( void )
 {
+	if( fNoQuery )
+		return 10;
+
 	int iKey = _getch( );
 	switch( iKey )
 	{
@@ -118,5 +124,61 @@ bool CUtility::CreateFolder( const std::string &sPath )
 void CUtility::ShowCursor( bool fShow, const char *szWindow )
 {
 	::ShowCursor( fShow ? TRUE : FALSE );
+}
+
+typedef std::wstring filestring_t;
+void FindFilesRecursively( const filestring_t &sDir, const filestring_t &sPattern, std::vector<filestring_t> &vecsFiles )
+{
+	const WCHAR *lpFolder = sDir.c_str( );
+	const WCHAR *lpFilePattern = sPattern.c_str( );
+	WCHAR szFullPattern[ MAX_PATH ];
+	WIN32_FIND_DATA FindFileData;
+	HANDLE hFindFile;
+
+	//Process subdirectories
+	PathCchCombine( szFullPattern, MAX_PATH, lpFolder, L"*" );
+	hFindFile = FindFirstFile( szFullPattern, &FindFileData );
+	if( hFindFile != INVALID_HANDLE_VALUE )
+	{
+		do
+		{
+			if( FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY && FindFileData.cFileName[ 0 ] != '.' )
+			{
+				//Found subdirectory, process
+				PathCchCombine( szFullPattern, MAX_PATH, lpFolder, FindFileData.cFileName );
+				FindFilesRecursively( szFullPattern, lpFilePattern, vecsFiles );
+			}
+		} while( FindNextFile( hFindFile, &FindFileData ) );
+		FindClose( hFindFile );
+	}
+
+	// Now we are going to look for the matching files
+	PathCchCombine( szFullPattern, MAX_PATH, lpFolder, lpFilePattern );
+	hFindFile = FindFirstFile( szFullPattern, &FindFileData );
+	if( hFindFile != INVALID_HANDLE_VALUE )
+	{
+		do
+		{
+			if( !( FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) )
+			{
+				//Found file
+				PathCchCombine( szFullPattern, MAX_PATH, lpFolder, FindFileData.cFileName );
+				vecsFiles.push_back( szFullPattern );
+			}
+		} while( FindNextFile( hFindFile, &FindFileData ) );
+		FindClose( hFindFile );
+	}
+}
+
+std::vector<std::string> CUtility::GetFilesInDir( const std::string &sDir )
+{
+	std::vector<std::wstring> vecRes;
+	FindFilesRecursively( std::wstring( sDir.begin( ), sDir.end( ) ), L"*.*", vecRes );
+
+	std::vector<std::string> vecRet;
+	for( std::wstring &str : vecRes )
+		vecRet.emplace_back( std::string( str.begin( ), str.end( ) ) );
+
+	return vecRet;
 }
 #endif

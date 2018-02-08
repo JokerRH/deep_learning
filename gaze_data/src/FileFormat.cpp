@@ -152,33 +152,30 @@ CGazeCapture_Set::CGazeCapture_Set( const std::vector<gazecapture> &vecData, con
 	dEyeDistance( dEyeDistance ),
 	sDataPath( sDataPath )
 {
-	pthread_spin_init( &m_spinIterator, PTHREAD_PROCESS_PRIVATE );
 	ResetIterator( );
 }
 
 CGazeCapture_Set::gazecapture *CGazeCapture_Set::GetNext( void )
 {
 	gazecapture *pData = nullptr;
-	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-		pthread_spin_lock( &m_spinIterator );
-		if( m_itData < vecData.end( ) )
-		{
-			pData = &( *m_itData );
-			m_itData++;
-			m_uRead++;
-		}
-	pthread_cleanup_pop( 1 );
+	while( m_spinIterator.test_and_set( std::memory_order_acquire ) );
+	if( m_itData < vecData.end( ) )
+	{
+		pData = &( *m_itData );
+		m_itData++;
+		m_uRead++;
+	}
+	m_spinIterator.clear( std::memory_order_release );
 
 	return pData;
 }
 
 void CGazeCapture_Set::Write( const gazecapture &data, unsigned uPrecision )
 {
-	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-	pthread_spin_lock( &m_spinIterator );
+	while( m_spinIterator.test_and_set( std::memory_order_acquire ) );
 	vecData.push_back( data );
 	m_FileWrite << data.ToString( uPrecision ) << std::endl;
-	pthread_cleanup_pop( 1 );
+	m_spinIterator.clear( std::memory_order_release );
 }
 
 bool CGazeCapture_Set::WriteHeader( const std::string &sFile ) const
@@ -392,33 +389,30 @@ CGazeData_Set::CGazeData_Set( const std::vector<gazedata> &vecData, const std::s
 	sDataPath( sDataPath ),
 	sRawPath( sRawPath )
 {
-	pthread_spin_init( &m_spinIterator, PTHREAD_PROCESS_PRIVATE );
 	ResetIterator( );
 }
 
 CGazeData_Set::gazedata *CGazeData_Set::GetNext( void )
 {
 	gazedata *pData = nullptr;
-	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-		pthread_spin_lock( &m_spinIterator );
-		if( m_itData < vecData.end( ) )
-		{
-			pData = &( *m_itData );
-			m_itData++;
-			m_uRead++;
-		}
-	pthread_cleanup_pop( 1 );
+	while( m_spinIterator.test_and_set( std::memory_order_acquire ) );
+	if( m_itData < vecData.end( ) )
+	{
+		pData = &( *m_itData );
+		m_itData++;
+		m_uRead++;
+	}
+	m_spinIterator.clear( std::memory_order_release );
 
 	return pData;
 }
 
 void CGazeData_Set::Write( const gazedata &data, unsigned uPrecision )
 {
-	pthread_cleanup_push( ( void( *)( void * ) ) pthread_spin_unlock, (void *) &m_spinIterator );
-	pthread_spin_lock( &m_spinIterator );
+	while( m_spinIterator.test_and_set( std::memory_order_acquire ) );
 	vecData.push_back( data );
 	m_FileWrite << data.ToString( uPrecision ) << std::endl;
-	pthread_cleanup_pop( 1 );
+	m_spinIterator.clear( std::memory_order_release );
 }
 
 bool CGazeData_Set::WriteHeader( const std::string &sFile ) const

@@ -83,6 +83,7 @@
     <None Include="doxygen\Doxyfile">
       <Filter>Resource Files\doxygen</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="gaze_data.rc">
@@ -164,12 +165,6 @@
     <ClInclude Include="src\Render\Vector.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
-    <ClInclude Include="src\Canon.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -177,6 +172,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\FileFormat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Canon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -235,12 +236,6 @@
     <ClCompile Include="src\Render\RenderObject.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
-    <ClCompile Include="src\Canon.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Utility_Linux.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -254,6 +249,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\FileFormat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Canon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -14,8 +14,6 @@
 #include <thread>
 #include <algorithm>
 #include <chrono>
-#define HAVE_STRUCT_TIMESPEC
-#include <pthread.h>
 #ifdef _MSC_VER
 #	include <direct.h>
 #endif
@@ -28,8 +26,8 @@ CGazeData_Set CGazeData::s_DataSetRead;
 CGazeData_Set CGazeData::s_DataSetWrite;
 CQueue<CGazeData> CGazeData::s_QueueRead( 100 );
 CQueue<CGazeData> CGazeData::s_QueueWrite( 100 );
-std::vector<pthread_t> CGazeData::s_vecThreadRead;
-std::vector<pthread_t> CGazeData::s_vecThreadWrite;
+std::vector<std::thread> CGazeData::s_vecThreadRead;
+std::vector<std::thread> CGazeData::s_vecThreadWrite;
 unsigned CGazeData::s_uNextImage;
 
 bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
@@ -76,8 +74,7 @@ bool CGazeData::OpenWrite( const std::string &sFile, bool fCreateDataFolder )
 		case 141:	//Numpad enter
 		case 10:	//Enter
 			s_DataSetWrite.OpenWrite( sFile );
-			s_vecThreadWrite.emplace_back( );
-			pthread_create( &s_vecThreadWrite[ 0 ], nullptr, WriteThread, nullptr );
+			s_vecThreadWrite.emplace_back( WriteThread, nullptr );
 			return true;
 		case 27:	//Escape
 			return false;
@@ -91,7 +88,7 @@ void CGazeData::CloseWrite( void )
 		s_QueueWrite.Emplace_Back( );	//Signal threads to stop
 
 	for( auto &thread: s_vecThreadWrite )
-		pthread_join( thread, nullptr );
+		thread.join( );
 
 	s_DataSetWrite.CloseWrite( );
 }
@@ -128,8 +125,7 @@ bool CGazeData::OpenRead( const std::string &sFile )
 		{
 		case 141:	//Numpad enter
 		case 10:	//Enter
-			s_vecThreadRead.emplace_back( );
-			pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadThread, nullptr );
+			s_vecThreadRead.emplace_back( ReadThread, nullptr );
 			return true;
 		case 27:	//Escape
 			return false;
@@ -179,10 +175,8 @@ bool CGazeData::OpenReadRaw( const std::string &sFileRaw, const std::string &sFi
 		case 141:	//Numpad enter
 		case 10:	//Enter
 			for( unsigned u = 0; u < 2; u++ )
-			{
-				s_vecThreadRead.emplace_back( );
-				pthread_create( &s_vecThreadRead.back( ), nullptr, ReadRawThread, nullptr );
-			}
+				s_vecThreadRead.emplace_back( ReadRawThread, nullptr );
+
 			return true;
 		case 27:	//Escape
 			return false;
@@ -204,7 +198,7 @@ bool CGazeData::ReadAsync( CGazeData &val )
 
 	//All threads finished, join
 	for( auto &thread : s_vecThreadRead )
-		pthread_join( thread, nullptr );
+		thread.join( );
 
 	s_vecThreadRead.clear( );
 	uFinished = 0;
@@ -290,10 +284,8 @@ bool CGazeData::Export( const std::string &sFile, const std::string &sPath, unsi
 	printf( "Writing training data to %s\n", sTrainPath.c_str( ) );
 	s_DataSetRead = setTrain;
 	for( unsigned uThreads = 0; uThreads < GAZEDATA_READ_THREADS; uThreads++ )
-	{
-		s_vecThreadRead.emplace_back( );
-		pthread_create( &s_vecThreadRead.back( ), nullptr, ReadThread, nullptr );
-	}
+		s_vecThreadRead.emplace_back( ReadThread, nullptr );
+
 	dTotal = (double) s_DataSetRead.vecData.size( );
 	dCurrent = 0;
 	while( ReadAsync( val ) )
@@ -308,7 +300,7 @@ bool CGazeData::Export( const std::string &sFile, const std::string &sPath, unsi
 	}
 	putchar( '\n' );
 	for( auto &thread: s_vecThreadRead )
-		pthread_join( thread, nullptr );
+		thread.join( );
 	s_vecThreadRead.clear( );
 	if( !setTrain.Export( sTrainPath ) )
 		return false;
@@ -317,10 +309,8 @@ bool CGazeData::Export( const std::string &sFile, const std::string &sPath, unsi
 	printf( "Writing validation data to %s\n", sValPath.c_str( ) );
 	s_DataSetRead = setVal;
 	for( unsigned uThreads = 0; uThreads < GAZEDATA_READ_THREADS; uThreads++ )
-	{
-		s_vecThreadRead.emplace_back( );
-		pthread_create( &s_vecThreadRead.back( ), nullptr, ReadThread, nullptr );
-	}
+		s_vecThreadRead.emplace_back( ReadThread, nullptr );
+
 	dTotal = (double) s_DataSetRead.vecData.size( );
 	dCurrent = 0;
 	while( ReadAsync( val ) )
@@ -335,7 +325,7 @@ bool CGazeData::Export( const std::string &sFile, const std::string &sPath, unsi
 	}
 	putchar( '\n' );
 	for( auto &thread : s_vecThreadRead )
-		pthread_join( thread, nullptr );
+		thread.join( );
 	s_vecThreadRead.clear( );
 	if( !setVal.Export( sValPath ) )
 		return false;
@@ -417,8 +407,7 @@ bool CGazeData::Import( const std::string &sPath, const std::string &sRaw )
 		{
 		case 141:	//Numpad enter
 		case 10:	//Enter
-			s_vecThreadRead.emplace_back( );
-			pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadThread, nullptr );
+			s_vecThreadRead.emplace_back( ReadThread, nullptr );
 			return true;
 		case 27:	//Escape
 			return false;
@@ -579,8 +568,8 @@ bool CGazeData::DrawScenery( const char *szWindow )
 	CImage imgFace( m_imgGaze );
 	imgFace.Crop( m_boxFace );
 	cv::resize( imgFace.matImage, imgFace.matImage, cv::Size( 525, 525 ) );
-	cv::circle( imgFace.matImage, cv::Point( m_ptEyeLeft.GetRelPositionX( 0 ) * imgFace.matImage.cols, m_ptEyeLeft.GetRelPositionY( 0 ) * imgFace.matImage.rows ), 1, cv::Scalar( 0, 255, 0 ), -1 );
-	cv::circle( imgFace.matImage, cv::Point( m_ptEyeRight.GetRelPositionX( 0 ) * imgFace.matImage.cols, m_ptEyeRight.GetRelPositionY( 0 ) * imgFace.matImage.rows ), 1, cv::Scalar( 0, 255, 0 ), -1 );
+	cv::circle( imgFace.matImage, cv::Point( (int) ( m_ptEyeLeft.GetRelPositionX( 0 ) * imgFace.matImage.cols ), (int) ( m_ptEyeLeft.GetRelPositionY( 0 ) * imgFace.matImage.rows ) ), 1, cv::Scalar( 0, 255, 0 ), -1 );
+	cv::circle( imgFace.matImage, cv::Point( (int) ( m_ptEyeRight.GetRelPositionX( 0 ) * imgFace.matImage.cols ), (int) ( m_ptEyeRight.GetRelPositionY( 0 ) * imgFace.matImage.rows ) ), 1, cv::Scalar( 0, 255, 0 ), -1 );
 
 	//Write distance
 	char szDistance[ 8 ];

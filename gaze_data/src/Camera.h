@@ -1,4 +1,4 @@
-#include "..\..\generate\Camera.h"
+//#include "..\..\generate\Camera.h"
 #pragma once
 
 #include "Image.h"
@@ -21,6 +21,7 @@ public:
 	CCamera( unsigned int uIndex );
 	~CCamera( void ) override;
 	bool TakePicture( CImage &img ) override;
+	void StopLiveView( void );
 
 private:
 	cv::VideoCapture m_Cap;

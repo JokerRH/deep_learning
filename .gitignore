@@ -257,3 +257,6 @@ ModelManifest.xml
 /demo_windows/lib
 /caffe_release
 /demo/build
+/gaze_data/include
+/gaze_data/lib
+/gaze_data/test

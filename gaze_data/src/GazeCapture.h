@@ -7,6 +7,7 @@
 #include "Queue.h"
 #include "FileFormat.h"
 #include <fstream>
+#include <thread>
 #include <regex>
 #ifdef _MSC_VER
 #	define NOMINMAX
@@ -52,8 +53,8 @@ private:
 
 	static CQueue<CGazeCapture> s_QueueRead;
 	static CQueue<CGazeCapture> s_QueueWrite;
-	static std::vector<pthread_t> s_vecThreadRead;
-	static std::vector<pthread_t> s_vecThreadWrite;
+	static std::vector<std::thread> s_vecThreadRead;
+	static std::vector<std::thread> s_vecThreadWrite;
 	static unsigned s_uNextImage;
 
 	static const std::regex s_regex_name;

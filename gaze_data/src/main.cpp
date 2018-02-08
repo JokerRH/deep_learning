@@ -12,7 +12,6 @@
 #include "GazeData.h"
 #include "Scenery.h"
 #include "Render/RenderHelper.h"
-#include "Canon.h"
 #include "Camera.h"
 #include "Utility.h"
 
@@ -27,6 +26,7 @@
 using namespace cv;
 
 CConfig g_Config;
+DWORD g_dwMainThreadID;
 
 int EditDataset( const char *szFile )
 {
@@ -40,7 +40,7 @@ int EditDataset( const char *szFile )
 	{
 		if( i == 1 )
 		{
-			CBaseCamera::Terminate( );
+			CCamera::Terminate( );
 			return EXIT_SUCCESS;
 		}
 
@@ -49,7 +49,7 @@ int EditDataset( const char *szFile )
 
 	srand( (unsigned int) time( nullptr ) );
 	if( !CGazeCapture::OpenWrite( szFile ) )
-		return EXIT_SUCCESS;
+		return EXIT_FAILURE;
 
 	namedWindow( "Window", CV_WINDOW_NORMAL );
 	setWindowProperty( "Window", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
@@ -74,7 +74,7 @@ int EditDataset( const char *szFile )
 
 	CGazeCapture::CloseWrite( );
 	delete pCamera;
-	CBaseCamera::Terminate( );
+	CCamera::Terminate( );
 	return EXIT_SUCCESS;
 }
 
@@ -213,7 +213,7 @@ int LoadCGDataset( const char *szCGDPath, const char *szFile )
 
 int TestImage( void )
 {
-	(void) CBaseCamera::Init( );
+	(void) CCamera::Init( );
 	CBaseCamera *pCamera;
 	try
 	{
@@ -239,7 +239,12 @@ int TestImage( void )
 	bool fContinueKey;
 	while( fContinue )
 	{
-		pCamera->TakePicture( imgTest );
+		if( !pCamera->TakePicture( imgTest ) )
+		{
+			fprintf( stderr, "Error taking picture!\n" );
+			system( "PAUSE" );
+			return EXIT_FAILURE;
+		}
 		imgTest.Show( "Window" );
 
 		fContinueKey = true;
@@ -260,7 +265,7 @@ int TestImage( void )
 	}
 
 	destroyAllWindows( );
-	CBaseCamera::Terminate( );
+	CCamera::Terminate( );
 	delete pCamera;
 	return EXIT_SUCCESS;
 }
@@ -282,6 +287,11 @@ int main(int argc, char **argv)
 	}
 #endif
 */
+#ifdef _MSC_VER
+	g_dwMainThreadID = GetCurrentThreadId( );
+#else
+	g_dwMainThreadID = 0;
+#endif
 
 	g_Config = CConfig( "./config.cfg" );
 

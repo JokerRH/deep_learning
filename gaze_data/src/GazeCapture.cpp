@@ -28,8 +28,8 @@ CGazeCapture_Set CGazeCapture::s_DataSetRead;
 CGazeCapture_Set CGazeCapture::s_DataSetWrite;
 CQueue<CGazeCapture> CGazeCapture::s_QueueRead( 100 );
 CQueue<CGazeCapture> CGazeCapture::s_QueueWrite( 25 );
-std::vector<pthread_t> CGazeCapture::s_vecThreadRead;
-std::vector<pthread_t> CGazeCapture::s_vecThreadWrite;
+std::vector<std::thread> CGazeCapture::s_vecThreadRead;
+std::vector<std::thread> CGazeCapture::s_vecThreadWrite;
 unsigned CGazeCapture::s_uNextImage;
 
 const std::regex CGazeCapture::s_regex_name( R"a(name=([\s\S]*).*)a" );
@@ -85,8 +85,7 @@ bool CGazeCapture::OpenWrite( const std::string &sFile )
 		case 141:	//Numpad enter
 		case 10:	//Enter
 			s_DataSetWrite.OpenWrite( sFile );
-			s_vecThreadWrite.emplace_back( );
-			pthread_create( &s_vecThreadWrite[ 0 ], nullptr, WriteThread, nullptr );
+			s_vecThreadWrite.emplace_back( WriteThread, nullptr );
 			return true;
 		case 27:	//Escape
 			return false;
@@ -99,8 +98,8 @@ void CGazeCapture::CloseWrite( void )
 	for( unsigned u = 0; u < s_vecThreadWrite.size( ); u++ )
 		s_QueueWrite.Emplace_Back( );	//Signal threads to stop
 
-	for( auto &thread: s_vecThreadWrite )
-		pthread_join( thread, nullptr );
+	for( auto &thread : s_vecThreadWrite )
+		thread.join( );
 
 	s_DataSetWrite.CloseWrite( );
 }
@@ -139,8 +138,7 @@ bool CGazeCapture::OpenRead( const std::string &sFile, bool fThreaded )
 			if( !fThreaded )
 				return true;
 
-			s_vecThreadRead.emplace_back( );
-			pthread_create( &s_vecThreadRead[ 0 ], nullptr, ReadThread, nullptr );
+			s_vecThreadRead.emplace_back( ReadThread, nullptr );
 			return true;
 		case 27:	//Escape
 			return false;
@@ -160,7 +158,7 @@ bool CGazeCapture::ReadAsync( CGazeCapture &val )
 
 	//All threads finished, join
 	for( auto &thread: s_vecThreadRead )
-		pthread_join( thread, nullptr );
+		thread.join( );
 
 	s_vecThreadRead.clear( );
 	uFinished = 0;
@@ -228,7 +226,7 @@ bool CGazeCapture::ImportCGD( const std::string &sCGDPath, const std::string &sF
 		} ), sFile );
 	}
 	
-	unsigned uProcessed = s_DataSetRead.vecData.size( );
+	unsigned uProcessed = (unsigned) s_DataSetRead.vecData.size( );
 	s_DataSetRead = CGazeCapture_Set(
 		vecData,
 		"Various",
@@ -252,10 +250,8 @@ bool CGazeCapture::ImportCGD( const std::string &sCGDPath, const std::string &sF
 		case 141:	//Numpad enter
 		case 10:	//Enter
 			for( unsigned u = 0; u < 4; u++ )
-			{
-				s_vecThreadRead.emplace_back( );
-				pthread_create( &s_vecThreadRead.back( ), nullptr, ReadThread, nullptr );
-			}
+				s_vecThreadRead.emplace_back( ReadThread, nullptr );
+
 			return true;
 		case 27:	//Escape
 			return false;
