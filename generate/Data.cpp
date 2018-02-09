@@ -573,7 +573,7 @@ void CData::WriteThread(void)
 			PathCchCombine(szFullPattern, MAX_PATH, s_sPathWrite.c_str(), data.sImage.c_str());
 			if (!cv::imwrite(std::string(szFullPattern, szFullPattern + wcslen(szFullPattern)), data.matImage))
 			{
-				std::cerr << "Failed to write image to \"" << szFullPattern << "\"" << std::endl;
+				std::wcerr << L"Failed to write image to \"" << szFullPattern << L"\"" << std::endl;
 				continue;
 			}
 		}

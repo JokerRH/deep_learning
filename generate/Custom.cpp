@@ -45,7 +45,7 @@ std::vector<CCustom::fileformat> CCustom::Load( const std::wstring &sPath, const
 			continue;
 
 		fileformat data;
-		data.sImage = LR"a(Path\img_)a" + std::to_wstring( std::stoul( match[ 7 ].str( ) ) ) + L".jpg";
+		data.sImage = LR"a(..\gaze_data\Data\Fynn\img_)a" + std::to_wstring( std::stoul( match[ 7 ].str( ) ) ) + L".jpg";
 		data.dFOV = std::stod( match[ 8 ].str( ) );
 		data.vec3GazePoint = CVector<3>( { std::stod( match[ 9 ].str( ) ), std::stod( match[ 10 ].str( ) ), std::stod( match[ 11 ].str( ) ) } );
 		vecImages.push_back( data );
